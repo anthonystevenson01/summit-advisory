@@ -30,7 +30,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 sm:pt-32 sm:pb-24 px-4 sm:px-6 lg:px-8">
+      <section className="pt-24 pb-8 sm:pt-32 sm:pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-white/25 backdrop-blur-sm sm:backdrop-blur-lg rounded-2xl p-6 sm:p-10 lg:p-12 inline-block shadow-xl">
@@ -46,7 +46,7 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section id="services" className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white/30 backdrop-blur-sm sm:backdrop-blur-xl rounded-2xl border border-white/40 shadow-2xl p-6 sm:p-10 lg:p-12">
@@ -112,7 +112,7 @@ export default function Home() {
       </section>
 
       {/* Value Proposition Section */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white/30 backdrop-blur-sm sm:backdrop-blur-xl rounded-2xl border border-white/40 shadow-2xl p-6 sm:p-10 lg:p-12">
