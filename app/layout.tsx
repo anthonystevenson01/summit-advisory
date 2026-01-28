@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   title: "Summit Advisory - Fractional CXO Leadership for Growing SMBs",
   description: "Strategic guidance in growth, product evolution, market entrance, and sales acceleration for small and medium businesses.",
   metadataBase: new URL("https://summitadvisory.com"),
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+  },
   openGraph: {
     title: "Summit Advisory - Fractional CXO Leadership",
     description: "Strategic guidance in growth, product evolution, market entrance, and sales acceleration for small and medium businesses.",
