@@ -38,7 +38,7 @@ export default function Home() {
                 Vision. Action. Growth.
               </h1>
               <p className="text-lg sm:text-xl lg:text-2xl text-slate-800 max-w-3xl mx-auto leading-relaxed">
-                By providing fractional CXO support, our seasoned executives can extend your leadership team cost effectively. We bring the strategic ideas and hands-on execution needed to achieve sustained growth
+                Summit enables your team to do more and grow faster. We provide fractional CXO support, to extend your leadership team. Our strategic thinking and hands-on execution will help you achieve sustained growth
               </p>
             </div>
           </div>
