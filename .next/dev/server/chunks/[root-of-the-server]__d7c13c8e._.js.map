@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 46, "column": 0}, "map": {"version":3,"sources":["file:///Users/anthonystevenson/chat-app/src/lib/prisma.ts"],"sourcesContent":["import { PrismaClient } from '@prisma/client'\n\nconst globalForPrisma = globalThis as unknown as { prisma: PrismaClient }\n\nexport const prisma = globalForPrisma.prisma || new PrismaClient()\n\nif (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma\n"],"names":[],"mappings":";;;;AAAA;;AAEA,MAAM,kBAAkB;AAEjB,MAAM,SAAS,gBAAgB,MAAM,IAAI,IAAI,sMAAY;AAEhE,wCAA2C,gBAAgB,MAAM,GAAG"}},
+    {"offset": {"line": 59, "column": 0}, "map": {"version":3,"sources":["file:///Users/anthonystevenson/chat-app/src/app/api/rooms/route.ts"],"sourcesContent":["import { NextResponse } from 'next/server'\nimport { prisma } from '@/lib/prisma'\n\nexport async function GET() {\n  const rooms = await prisma.room.findMany({ orderBy: { createdAt: 'desc' } })\n  return NextResponse.json(rooms)\n}\n\nexport async function POST(req: Request) {\n  const { name } = await req.json()\n  const room = await prisma.room.create({ data: { name } })\n  return NextResponse.json(room)\n}\n"],"names":[],"mappings":";;;;;;AAAA;AACA;;;AAEO,eAAe;IACpB,MAAM,QAAQ,MAAM,gIAAM,CAAC,IAAI,CAAC,QAAQ,CAAC;QAAE,SAAS;YAAE,WAAW;QAAO;IAAE;IAC1E,OAAO,gJAAY,CAAC,IAAI,CAAC;AAC3B;AAEO,eAAe,KAAK,GAAY;IACrC,MAAM,EAAE,IAAI,EAAE,GAAG,MAAM,IAAI,IAAI;IAC/B,MAAM,OAAO,MAAM,gIAAM,CAAC,IAAI,CAAC,MAAM,CAAC;QAAE,MAAM;YAAE;QAAK;IAAE;IACvD,OAAO,gJAAY,CAAC,IAAI,CAAC;AAC3B"}}]
+}
