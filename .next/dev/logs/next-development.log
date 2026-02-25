@@ -1,0 +1,479 @@
+[00:00:04.058] Server  LOG     
+[00:00:04.059] Server  LOG       We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+[00:00:04.059] Server  LOG       The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+[00:00:04.060] Server  LOG       	- include was updated to add '.next/types/**/*.ts'
+[00:00:04.060] Server  LOG       	- include was updated to add '.next/dev/types/**/*.ts'
+[00:00:04.060] Server  LOG     
+[00:00:04.060] Server  LOG       The following mandatory changes were made to your tsconfig.json:
+
+[00:00:04.060] Server  LOG       	- jsx was set to react-jsx (next.js uses the React automatic runtime)
+[00:00:04.061] Server  LOG     
+[00:00:04.351] Server  LOG     ✓ Ready in 3.8s
+[00:00:07.372] Server  LOG     ○ Compiling / ...
+[00:00:09.129] Server  ERROR   ⨯ ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+
+./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+
+
+[00:00:11.607] Browser ERROR   uncaughtError: Error: ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+[00:00:11.803] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:00:11.803] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:00:12.094] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:00:12.094] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:03:14.865] Server  ERROR   ⨯ ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+
+./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+
+
+[00:03:15.006] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:03:15.006] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:03:15.123] Browser ERROR   uncaughtError: Error: ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+[00:03:15.258] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:03:15.259] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:03:15.274] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:03:15.274] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:03:15.274] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:03:15.274] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:11.971] Server  ERROR   ⨯ ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+
+./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+
+
+[00:34:12.253] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:12.253] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:12.253] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:12.253] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:12.255] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:12.255] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:12.255] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:12.255] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:12.422] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:12.422] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:12.780] Browser ERROR   uncaughtError: Error: ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+[00:34:12.960] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:12.960] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:13.001] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:13.002] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:34:13.063] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:34:13.063] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:45:00.466] Server  ERROR   ⨯ ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+
+./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+
+
+[00:45:00.637] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:45:00.637] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:45:00.883] Browser ERROR   uncaughtError: Error: ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+
+[00:45:01.060] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:45:01.060] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:45:01.086] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:45:01.086] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:45:01.171] Browser ERROR   ./src/app/layout.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+[00:45:01.171] Browser ERROR   ./src/app/page.tsx
+Specified module format (CommonJs) is not matching the module format of the source code (EcmaScript Modules)
+The CommonJs module format was specified in the package.json that is affecting this source file or by using an special extension, but Ecmascript import/export syntax is used in the source code.
+The module was automatically converted to an EcmaScript module, but that is in conflict with the specified module format. Either change the "type" field in the package.json or replace EcmaScript import/export syntax with CommonJs syntas in the source file.
+In some cases EcmaScript import/export syntax is added by an transform and isn't actually part of the source code. In these cases revisit transformation options to inject the correct syntax.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
