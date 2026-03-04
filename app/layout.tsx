@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -20,15 +20,16 @@ export const metadata: Metadata = {
   title: "Summit Advisory - Fractional CXO Leadership for Growing SMBs",
   description: "Strategic guidance in growth, product evolution, market entrance, and sales acceleration for small and medium businesses.",
   metadataBase: new URL("https://summitadvisory.com"),
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
   openGraph: {
     title: "Summit Advisory - Fractional CXO Leadership",
     description: "Strategic guidance in growth, product evolution, market entrance, and sales acceleration for small and medium businesses.",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
