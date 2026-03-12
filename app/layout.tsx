@@ -1,33 +1,19 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-  preload: true,
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-  preload: false,
-});
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
-  title: "Summit Advisory - Fractional CXO Leadership for Growing SMBs",
-  description: "Strategic guidance in growth, product evolution, market entrance, and sales acceleration for small and medium businesses.",
+  title: "Summit Strategy Advisory — Vision. Action. Growth.",
+  description: "We work alongside founders and leadership teams to create strategy and deliver sustained growth. AI Product Studio, Loyalty & Retail Media, Scale-Up Advisory.",
   metadataBase: new URL("https://summitadvisory.com"),
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
   openGraph: {
-    title: "Summit Advisory - Fractional CXO Leadership",
-    description: "Strategic guidance in growth, product evolution, market entrance, and sales acceleration for small and medium businesses.",
+    title: "Summit Strategy Advisory — Vision. Action. Growth.",
+    description: "We work alongside founders and leadership teams to create strategy and deliver sustained growth.",
   },
 };
 
@@ -38,9 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         {children}
       </body>
     </html>
