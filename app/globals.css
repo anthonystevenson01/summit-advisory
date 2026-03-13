@@ -121,9 +121,10 @@ body {
   position: absolute;
   inset: 0;
   opacity: 0.55;
-  background-image: url("data:image/svg+xml,%3Csvg width='80' height='56' viewBox='0 0 80 56' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23005A66' opacity='0.7'%3E%3Cpolygon points='10,36 22,16 34,36'/%3E%3Cpolygon points='18,36 26,24 34,36' fill='%23005A66' opacity='0.5'/%3E%3Cpolygon points='46,36 60,12 74,36'/%3E%3Cpolygon points='54,36 63,22 72,36' opacity='0.5'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 80px 56px;
-  background-repeat: repeat;
+  background-image: url("/brand-icons/pattern-hero.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   pointer-events: none;
 }
 
@@ -304,9 +305,10 @@ body {
   position: absolute;
   inset: 0;
   opacity: 0.45;
-  background-image: url("data:image/svg+xml,%3Csvg width='80' height='56' viewBox='0 0 80 56' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23005A66' opacity='0.7'%3E%3Cpolygon points='10,36 22,16 34,36'/%3E%3Cpolygon points='18,36 26,24 34,36' fill='%23005A66' opacity='0.5'/%3E%3Cpolygon points='46,36 60,12 74,36'/%3E%3Cpolygon points='54,36 63,22 72,36' opacity='0.5'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 80px 56px;
-  background-repeat: repeat;
+  background-image: url("/brand-icons/pattern-alt.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   pointer-events: none;
 }
 
