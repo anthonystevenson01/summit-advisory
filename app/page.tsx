@@ -309,7 +309,7 @@ function AIStudioPage({ onBack }: { onBack: () => void }) {
 }
 
 // ── Retail Advisory Page ──
-function RetailAdvisoryPage({ onBack }: { onBack: () => void }) {
+function RetailAdvisoryPage({ onBack, onBook }: { onBack: () => void; onBook: () => void }) {
   const focusAreas = [
     { tag: "Review & Recommendation", title: "Audit. Diagnose. Recommend.", body: "We assess your loyalty program, retail media capability, or technology stack — finding the gaps, quantifying the opportunity, and delivering a clear set of prioritised recommendations. Not a report that sits on a shelf. A blueprint you can act on." },
     { tag: "Supercharge with AI", title: "AI-Native Retail Thinking.", body: "We identify the AI quick wins that lift team and program performance today, and help you blueprint the bigger bets — personalisation engines, predictive analytics, supplier optimisation — that drive compounding growth over time." },
@@ -432,9 +432,13 @@ function RetailAdvisoryPage({ onBack }: { onBack: () => void }) {
               <h2 className="calendly-title">Let&apos;s talk about your retail challenge.</h2>
               <p className="calendly-body">A 30-minute call is enough to know if there&apos;s a fit. No deck, no pitch — just a direct conversation about what you&apos;re trying to solve.</p>
             </div>
-            <a className="calendly-btn" href={BOOK_CALL_URL}>
+            <button
+              type="button"
+              className="calendly-btn"
+              onClick={onBook}
+            >
               Book a 30-Minute Call →
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -468,9 +472,13 @@ function PracticePage({ id, onBack, onContact }: { id: string; onBack: () => voi
             <h3>{p.cta}</h3>
             <p>Book a 30-minute call — no obligation.</p>
           </div>
-          <a className="cta-bar-btn" href={BOOK_CALL_URL}>
+          <button
+            type="button"
+            className="cta-bar-btn"
+            onClick={onContact}
+          >
             Book a 30-Minute Call →
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -575,6 +583,24 @@ function ContactPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
         )}
+      </div>
+      <div className="inner-body" id="book-call">
+        <div className="section-label">Book a Call</div>
+        <p className="section-intro">Pick a 30-minute slot that works for you.</p>
+        <div
+          style={{
+            border: "1px solid var(--border)",
+            overflow: "hidden",
+            background: "var(--off)",
+          }}
+        >
+          <iframe
+            src={BOOK_CALL_URL}
+            title="Book a call with Anthony"
+            style={{ width: "100%", height: "800px", border: "0" }}
+            loading="lazy"
+          />
+        </div>
       </div>
     </div>
   );
@@ -699,9 +725,13 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
             <h3>Think you&apos;re the one?</h3>
             <p>Tell us what you&apos;ve built and how you work. We&apos;ll take it from there.</p>
           </div>
-          <a className="cta-bar-btn" href={BOOK_CALL_URL}>
+          <button
+            type="button"
+            className="cta-bar-btn"
+            onClick={onContact}
+          >
             Book a 30-Minute Call →
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -716,6 +746,16 @@ export default function Summit() {
     window.scrollTo(0, 0);
   };
 
+  const goToBooking = () => {
+    setPage("contact");
+    window.setTimeout(() => {
+      const el = document.getElementById("book-call");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 0);
+  };
+
   return (
     <>
       <nav className="nav">
@@ -725,19 +765,23 @@ export default function Summit() {
           <button type="button" className="nav-link" onClick={() => nav("resources")}>Resources</button>
           <button type="button" className="nav-link" onClick={() => nav("blog")}>Blog</button>
           <button type="button" className="nav-link" onClick={() => nav("careers")}>Careers</button>
-          <a className="nav-cta" href={BOOK_CALL_URL}>
+          <button
+            type="button"
+            className="nav-cta"
+            onClick={goToBooking}
+          >
             Give Us a Call
-          </a>
+          </button>
         </div>
       </nav>
       <div className="page">
         {page === "home" && <HomePage onNavigate={nav} />}
         {page === "ai" && <AIStudioPage onBack={() => nav("home")} />}
-        {page === "retail" && <RetailAdvisoryPage onBack={() => nav("home")} />}
-        {page === "sme" && <PracticePage id="sme" onBack={() => nav("home")} onContact={() => nav("contact")} />}
+        {page === "retail" && <RetailAdvisoryPage onBack={() => nav("home")} onBook={goToBooking} />}
+        {page === "sme" && <PracticePage id="sme" onBack={() => nav("home")} onContact={goToBooking} />}
         {page === "resources" && <ResourcesPage onBack={() => nav("home")} />}
         {page === "blog" && <BlogPage onBack={() => nav("home")} />}
-        {page === "careers" && <CareersPage onBack={() => nav("home")} onContact={() => nav("contact")} />}
+        {page === "careers" && <CareersPage onBack={() => nav("home")} onContact={goToBooking} />}
         {page === "contact" && <ContactPage onBack={() => nav("home")} />}
         <footer className="footer">
           {/* eslint-disable-next-line @next/next/no-img-element */}
