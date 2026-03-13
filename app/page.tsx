@@ -432,7 +432,7 @@ function RetailAdvisoryPage({ onBack }: { onBack: () => void }) {
               <h2 className="calendly-title">Let&apos;s talk about your retail challenge.</h2>
               <p className="calendly-body">A 30-minute call is enough to know if there&apos;s a fit. No deck, no pitch — just a direct conversation about what you&apos;re trying to solve.</p>
             </div>
-            <a className="calendly-btn" href={BOOK_CALL_URL} target="_blank" rel="noopener noreferrer">
+            <a className="calendly-btn" href={BOOK_CALL_URL}>
               Book a 30-Minute Call →
             </a>
           </div>
@@ -468,7 +468,7 @@ function PracticePage({ id, onBack, onContact }: { id: string; onBack: () => voi
             <h3>{p.cta}</h3>
             <p>Book a 30-minute call — no obligation.</p>
           </div>
-          <a className="cta-bar-btn" href={BOOK_CALL_URL} target="_blank" rel="noopener noreferrer">
+          <a className="cta-bar-btn" href={BOOK_CALL_URL}>
             Book a 30-Minute Call →
           </a>
         </div>
@@ -699,7 +699,7 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
             <h3>Think you&apos;re the one?</h3>
             <p>Tell us what you&apos;ve built and how you work. We&apos;ll take it from there.</p>
           </div>
-          <a className="cta-bar-btn" href={BOOK_CALL_URL} target="_blank" rel="noopener noreferrer">
+          <a className="cta-bar-btn" href={BOOK_CALL_URL}>
             Book a 30-Minute Call →
           </a>
         </div>
@@ -725,7 +725,7 @@ export default function Summit() {
           <button type="button" className="nav-link" onClick={() => nav("resources")}>Resources</button>
           <button type="button" className="nav-link" onClick={() => nav("blog")}>Blog</button>
           <button type="button" className="nav-link" onClick={() => nav("careers")}>Careers</button>
-          <a className="nav-cta" href={BOOK_CALL_URL} target="_blank" rel="noopener noreferrer">
+          <a className="nav-cta" href={BOOK_CALL_URL}>
             Give Us a Call
           </a>
         </div>
