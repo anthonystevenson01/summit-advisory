@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
 
-const BOOK_CALL_URL = "https://calendar.app.google/n6zsiTaE6p37Jzcu6";
+const BOOK_CALL_URL =
+  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
 // ── Arrow icons ──
 function ArrowRight() {
@@ -597,7 +598,8 @@ function ContactPage({ onBack }: { onBack: () => void }) {
           <iframe
             src={BOOK_CALL_URL}
             title="Book a call with Anthony"
-            style={{ width: "100%", height: "800px", border: "0" }}
+            style={{ width: "100%", height: "600px", border: "0" }}
+            frameBorder={0}
             loading="lazy"
           />
         </div>
