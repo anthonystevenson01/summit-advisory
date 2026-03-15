@@ -29,6 +29,18 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Environment variables
+
+- **AI Studio form (email)**  
+  Set in `.env.local` and in Vercel → Settings → Environment Variables:  
+  `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `NOTIFY_EMAIL`  
+  so submissions send a notification email.
+
+- **AI Studio form (persistent storage)**  
+  To store submissions in production (Vercel has a read-only filesystem), use [Upstash Redis](https://upstash.com) (free tier). Create a Redis database, then set:  
+  `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`  
+  Submissions are appended to the Redis list `ai-studio-requests` (each item is a JSON string). You can read them via the Upstash console or a small admin script.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
