@@ -58,11 +58,14 @@ export async function POST(req: NextRequest) {
       website: (body.website || "").trim(),
       teamMembers: Array.isArray(body.teamMembers)
         ? body.teamMembers
-            .filter((m): m is Record<string, unknown> => m != null && typeof m === "object")
-            .map((m) => ({
-              name: String(m.name ?? "").trim(),
-              linkedin: String(m.linkedin ?? "").trim(),
-            }))
+            .filter((m) => m != null && typeof m === "object")
+            .map((m) => {
+              const o = m as Record<string, unknown>;
+              return {
+                name: String(o.name ?? "").trim(),
+                linkedin: String(o.linkedin ?? "").trim(),
+              };
+            })
         : [],
       product: (body.product || "").trim(),
       problem: (body.problem || "").trim(),
