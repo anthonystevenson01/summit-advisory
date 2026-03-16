@@ -190,9 +190,14 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   const [company, setCompany] = useState("");
   const [showCRM, setShowCRM] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
   const charCount = icpText.length;
   const resultsRef = useRef<HTMLElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+  }, []);
 
   const handleEvaluate = async () => {
     if (charCount < 50) return;
@@ -241,8 +246,8 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         @media (max-width: 700px) { .icp-eval-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
-      {/* Back button + Share */}
-      <div style={{ padding: "16px 32px 0", maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {/* Back button */}
+      <div style={{ padding: "16px 32px 0", maxWidth: 1060, margin: "0 auto" }}>
         <button
           type="button"
           onClick={onBack}
@@ -264,42 +269,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
           </svg>
           Resources
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({ title: "ICP Evaluator — Summit Strategy Advisory", url: window.location.href }).catch(() => {});
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              setShareCopied(true);
-              setTimeout(() => setShareCopied(false), 2000);
-            }
-          }}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 14px",
-            borderRadius: 6,
-            border: `1px solid ${BRAND.border}`,
-            background: BRAND.white,
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13,
-            fontWeight: 600,
-            color: BRAND.teal,
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-          </svg>
-          {shareCopied ? "Link copied!" : "Share"}
-        </button>
       </div>
 
       {/* HERO */}
@@ -320,9 +289,72 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
           <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
             Your ICP Is the Most Important Document in Your GTM Stack
           </h1>
-          <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
+          <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: "0 0 24px" }}>
             Score it. Find the gaps. Fix them before they cost you accounts you can&apos;t replace.
           </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setShareCopied(true);
+                setTimeout(() => setShareCopied(false), 2000);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 18px",
+                borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.3)",
+                background: "rgba(255,255,255,0.1)",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 13,
+                fontWeight: 600,
+                color: BRAND.white,
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+              {shareCopied ? "Link copied!" : "Copy link"}
+            </button>
+            {canNativeShare && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.share({ title: "ICP Evaluator — Summit Strategy Advisory", url: window.location.href }).catch(() => {});
+                }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 18px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  background: "rgba(255,255,255,0.1)",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: BRAND.white,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
+                Share
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
