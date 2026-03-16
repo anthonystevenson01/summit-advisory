@@ -189,6 +189,9 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [showCRM, setShowCRM] = useState(false);
+  const [crmRequest, setCrmRequest] = useState("");
+  const [crmSubmitted, setCrmSubmitted] = useState(false);
+  const [crmSubmitting, setCrmSubmitting] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
@@ -730,96 +733,100 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   </div>
                 ) : (
                   <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                    <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginTop: 0, marginBottom: 16 }}>Connect Your CRM</h3>
-                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                      <div style={{ flex: 1, minWidth: 220, background: BRAND.white, borderRadius: 8, padding: 20, border: `1px solid ${BRAND.border}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 6, background: "#FF7A59", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <span style={{ color: BRAND.white, fontWeight: 700, fontSize: 14 }}>H</span>
-                          </div>
-                          <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, color: BRAND.darkGreen }}>HubSpot</span>
-                        </div>
-                        <p style={{ fontSize: 12, color: BRAND.mid, margin: "0 0 14px", lineHeight: 1.5 }}>Authorise read-only access via OAuth. We pull deal data once then disconnect.</p>
-                        <button
-                          type="button"
-                          style={{
-                            width: "100%",
-                            padding: "10px",
-                            borderRadius: 6,
-                            border: "none",
-                            background: "#FF7A59",
-                            color: BRAND.white,
-                            fontFamily: "'Oswald', sans-serif",
-                            fontWeight: 600,
-                            fontSize: 13,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Connect HubSpot
-                        </button>
+                    <div style={{ textAlign: "center", marginBottom: 24 }}>
+                      <div style={{ display: "inline-block", padding: "6px 16px", borderRadius: 20, background: `${BRAND.amber}20`, border: `1px solid ${BRAND.amber}40`, marginBottom: 16 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: BRAND.amber, letterSpacing: "0.06em", textTransform: "uppercase" }}>Coming Soon</span>
                       </div>
-                      <div style={{ flex: 1, minWidth: 220, background: BRAND.white, borderRadius: 8, padding: 20, border: `1px solid ${BRAND.border}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 6, background: "#1A1A1A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <span style={{ color: BRAND.white, fontWeight: 700, fontSize: 14 }}>20</span>
-                          </div>
-                          <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, color: BRAND.darkGreen }}>Twenty CRM</span>
-                        </div>
-                        <div style={{ marginBottom: 10 }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 3 }}>Instance URL</label>
-                          <input
-                            placeholder="https://crm.yourcompany.com"
-                            style={{
-                              width: "100%",
-                              padding: "8px 10px",
-                              borderRadius: 5,
-                              border: `1px solid ${BRAND.border}`,
-                              fontSize: 12,
-                              fontFamily: "'DM Sans', sans-serif",
-                              boxSizing: "border-box",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-                        <div style={{ marginBottom: 12 }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 3 }}>API Key</label>
-                          <input
-                            placeholder="Your API key"
-                            type="password"
-                            style={{
-                              width: "100%",
-                              padding: "8px 10px",
-                              borderRadius: 5,
-                              border: `1px solid ${BRAND.border}`,
-                              fontSize: 12,
-                              fontFamily: "'DM Sans', sans-serif",
-                              boxSizing: "border-box",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          style={{
-                            width: "100%",
-                            padding: "10px",
-                            borderRadius: 6,
-                            border: "none",
-                            background: BRAND.darkGreen,
-                            color: BRAND.white,
-                            fontFamily: "'Oswald', sans-serif",
-                            fontWeight: 600,
-                            fontSize: 13,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Connect & Analyse
-                        </button>
-                      </div>
+                      <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px" }}>CRM Reality Check</h3>
+                      <p style={{ fontSize: 13, color: BRAND.mid, margin: "0 0 20px", maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
+                        We&apos;re building one-click CRM integrations to compare your stated ICP against your actual deal data. Planned integrations include:
+                      </p>
                     </div>
-                    <p style={{ fontSize: 11, color: BRAND.mid, textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-                      We read your deal data once, generate your report, then permanently disconnect. No data is stored beyond the aggregate summary.
-                    </p>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
+                      {[
+                        { name: "HubSpot", color: "#FF7A59", icon: "H" },
+                        { name: "Salesforce", color: "#00A1E0", icon: "SF" },
+                        { name: "Twenty CRM", color: "#1A1A1A", icon: "20" },
+                        { name: "Pipedrive", color: "#017737", icon: "P" },
+                        { name: "Attio", color: "#5B5FC7", icon: "A" },
+                        { name: "Close", color: "#5551FF", icon: "C" },
+                      ].map((crm, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: BRAND.white, borderRadius: 8, border: `1px solid ${BRAND.border}` }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 6, background: crm.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <span style={{ color: BRAND.white, fontWeight: 700, fontSize: 11 }}>{crm.icon}</span>
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen }}>{crm.name}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {crmSubmitted ? (
+                      <div style={{ textAlign: "center", padding: "20px 0" }}>
+                        <p style={{ fontSize: 14, color: BRAND.brandGreen, fontWeight: 600, margin: "0 0 4px" }}>Thanks for your input!</p>
+                        <p style={{ fontSize: 12, color: BRAND.mid, margin: 0 }}>We&apos;ll notify you when CRM integrations launch.</p>
+                      </div>
+                    ) : (
+                      <div style={{ background: BRAND.lightBg, borderRadius: 8, padding: 20, border: `1px solid ${BRAND.border}` }}>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>
+                          Which CRM(s) would you like us to add?
+                        </label>
+                        <textarea
+                          value={crmRequest}
+                          onChange={(e) => setCrmRequest(e.target.value)}
+                          placeholder="e.g. HubSpot, Salesforce — or tell us about a CRM not listed above"
+                          style={{
+                            width: "100%",
+                            minHeight: 70,
+                            padding: 12,
+                            borderRadius: 6,
+                            border: `1px solid ${BRAND.border}`,
+                            fontSize: 13,
+                            fontFamily: "'DM Sans', sans-serif",
+                            color: BRAND.dark,
+                            lineHeight: 1.5,
+                            resize: "vertical",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          disabled={crmSubmitting}
+                          onClick={async () => {
+                            setCrmSubmitting(true);
+                            try {
+                              await fetch("/api/crm-interest", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: email || "(not provided)", crms: crmRequest }),
+                              });
+                              setCrmSubmitted(true);
+                            } catch {
+                              // silent fail
+                            } finally {
+                              setCrmSubmitting(false);
+                            }
+                          }}
+                          style={{
+                            marginTop: 10,
+                            padding: "10px 24px",
+                            borderRadius: 6,
+                            border: "none",
+                            background: BRAND.brandGreen,
+                            color: BRAND.white,
+                            fontFamily: "'Oswald', sans-serif",
+                            fontWeight: 600,
+                            fontSize: 13,
+                            cursor: crmSubmitting ? "not-allowed" : "pointer",
+                            letterSpacing: "0.03em",
+                            opacity: crmSubmitting ? 0.7 : 1,
+                          }}
+                        >
+                          {crmSubmitting ? "Sending..." : "Submit Request"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
