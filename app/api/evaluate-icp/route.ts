@@ -282,6 +282,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ICP text must be at least 50 characters." }, { status: 400 });
   }
 
+  // Load rubric from Google Docs (cached in memory for 10 min)
+  const rubric = await loadSkillsFromDrive();
+
   const scoringPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Reply with only valid JSON, no markdown or extra text.
 
 Score the ICP across these 7 dimensions, each 1-5:
@@ -295,7 +298,7 @@ Score the ICP across these 7 dimensions, each 1-5:
 
 Score accurately — a missing dimension should score 1, not 3. A vague mention scores 2. Specific detail scores 3-4. Comprehensive with evidence scores 5.
 
-Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 3, "fs": 4 } }`;
+${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.prompt}\n\n` : ""}Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 3, "fs": 4 } }`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
@@ -343,7 +346,8 @@ Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 
           scores,
           dimensionReasoning: [],
           recommendations: [],
-          rubricLoaded: false,
+          rubricLoaded: rubric.rubricLoaded,
+          rubricSource: rubric.rubricSource,
           submittedAt: new Date().toISOString(),
         })
       );
@@ -353,7 +357,7 @@ Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 
       console.error("ICP submission: Redis persist failed", redisErr);
     }
 
-    return NextResponse.json({ totalScore, scores, dimensionReasoning: [], recommendations: [], id: submissionId, rubricLoaded: false, rubricSource: "scores_only" });
+    return NextResponse.json({ totalScore, scores, dimensionReasoning: [], recommendations: [], id: submissionId, rubricLoaded: rubric.rubricLoaded, rubricSource: rubric.rubricSource });
   } catch (err) {
     console.error("evaluate-icp error", err);
     const msg = err instanceof Error ? err.message : String(err);
