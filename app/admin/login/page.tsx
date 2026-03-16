@@ -13,14 +13,6 @@ const BRAND = {
   red: "#C0392B",
 };
 
-const ERROR_MESSAGES: Record<string, string> = {
-  unauthorized: "That Google account is not authorised for admin access.",
-  token_failed: "Google authentication failed. Please try again.",
-  oauth_failed: "Something went wrong with Google sign-in.",
-  no_code: "Google sign-in was cancelled.",
-  not_configured: "Google sign-in is not configured.",
-};
-
 export default function AdminLoginPage() {
   return (
     <Suspense>
@@ -32,11 +24,10 @@ export default function AdminLoginPage() {
 function AdminLoginInner() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [clientError, setClientError] = useState("");
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const searchParams = useSearchParams();
-  const oauthError = searchParams.get("error");
+  const serverError = searchParams.get("error");
 
   useEffect(() => {
     fetch("/api/admin/setup")
@@ -45,68 +36,28 @@ function AdminLoginInner() {
       .catch(() => setIsSetup(false));
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ password }),
-      });
-      if (res.ok) {
-        await new Promise((r) => setTimeout(r, 100));
-        window.location.href = "/admin";
-      } else {
-        const data = (await res.json()) as { error?: string };
-        setError(data.error || "Login failed");
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const error = clientError || serverError || "";
 
-  const handleSetup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  // Client-side validation before form submit for setup
+  const handleSetupSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    setClientError("");
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      e.preventDefault();
+      setClientError("Password must be at least 8 characters");
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      e.preventDefault();
+      setClientError("Passwords don't match");
       return;
     }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/setup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ password }),
-      });
-      if (res.ok) {
-        await new Promise((r) => setTimeout(r, 100));
-        window.location.href = "/admin";
-      } else {
-        const data = (await res.json()) as { error?: string };
-        setError(data.error || "Setup failed");
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    // Let the form submit natively
   };
 
   if (isSetup === null) {
     return (
       <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)` }}>
-        <p style={{ color: BRAND.white, fontSize: 14 }}>Loading...</p>
+        <p style={{ color: BRAND.white, fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading...</p>
       </div>
     );
   }
@@ -155,7 +106,7 @@ function AdminLoginInner() {
           {isSetup ? "Set up your password to get started" : "Summit Strategy Advisory"}
         </p>
 
-        {(error || oauthError) && (
+        {error && (
           <div
             style={{
               background: "#FFEBEE",
@@ -167,17 +118,19 @@ function AdminLoginInner() {
               color: BRAND.red,
             }}
           >
-            {error || (oauthError && ERROR_MESSAGES[oauthError]) || "Authentication failed"}
+            {error}
           </div>
         )}
 
         {isSetup ? (
-          <form onSubmit={handleSetup}>
+          /* Native form POST — browser handles the redirect + cookie */
+          <form method="POST" action="/api/admin/setup" onSubmit={handleSetupSubmit}>
             <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>
               Password
             </label>
             <input
               type="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Choose a password (min 8 characters)"
@@ -215,7 +168,7 @@ function AdminLoginInner() {
             />
             <button
               type="submit"
-              disabled={!password || !confirmPassword || loading}
+              disabled={!password || !confirmPassword}
               style={{
                 width: "100%",
                 padding: "11px",
@@ -230,17 +183,19 @@ function AdminLoginInner() {
                 letterSpacing: "0.03em",
               }}
             >
-              {loading ? "Setting up..." : "Create Account"}
+              Create Account
             </button>
           </form>
         ) : (
           <>
-            <form onSubmit={handleLogin}>
+            {/* Native form POST — browser handles the redirect + cookie */}
+            <form method="POST" action="/api/admin/login">
               <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>
                 Password
               </label>
               <input
                 type="password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin password"
@@ -258,7 +213,7 @@ function AdminLoginInner() {
               />
               <button
                 type="submit"
-                disabled={!password || loading}
+                disabled={!password}
                 style={{
                   width: "100%",
                   padding: "11px",
@@ -273,7 +228,7 @@ function AdminLoginInner() {
                   letterSpacing: "0.03em",
                 }}
               >
-                {loading ? "Signing in..." : "Sign In"}
+                Sign In
               </button>
             </form>
 
