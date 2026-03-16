@@ -88,24 +88,19 @@ function extractTextFromDocBody(content: unknown[]): string {
 }
 
 async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
-  const url = `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}?key=${encodeURIComponent(apiKey)}`;
+  // Use Google Drive API export (supports API keys for public docs)
+  // instead of Google Docs API (which requires OAuth2)
+  const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain&key=${encodeURIComponent(apiKey)}`;
   const res = await fetch(url);
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`Google Docs API: ${res.status} ${t.slice(0, 200)}`);
+    throw new Error(`Google Drive export API: ${res.status} ${t.slice(0, 200)}`);
   }
-  const data = (await res.json()) as { title?: string; body?: { content?: unknown[] } };
-  const content = data.body?.content;
-  if (!Array.isArray(content)) {
-    console.error(`Google Doc ${docId}: no body.content array. Title: "${data.title ?? "unknown"}". Keys: ${Object.keys(data).join(", ")}`);
-    return "";
-  }
-  const nodeTypes = content.map((n) => (n && typeof n === "object" ? Object.keys(n as Record<string, unknown>).join(",") : "null"));
-  const text = extractTextFromDocBody(content);
+  const text = (await res.text()).trim();
   if (!text) {
-    console.error(`Google Doc ${docId}: body.content has ${content.length} nodes (types: ${nodeTypes.slice(0, 10).join("; ")}), but extracted text is empty. Title: "${data.title ?? "unknown"}"`);
+    console.error(`Google Doc ${docId}: Drive export returned empty text`);
   } else {
-    console.log(`Google Doc ${docId}: extracted ${text.length} chars from ${content.length} nodes. Title: "${data.title ?? "unknown"}"`);
+    console.log(`Google Doc ${docId}: exported ${text.length} chars via Drive API`);
   }
   return text;
 }
