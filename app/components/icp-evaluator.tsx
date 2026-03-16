@@ -193,6 +193,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   const [crmSubmitted, setCrmSubmitted] = useState(false);
   const [crmSubmitting, setCrmSubmitting] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const charCount = icpText.length;
@@ -234,16 +235,44 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
     }
   };
 
-  const handleUnlock = () => {
-    if (!name || !email || !company) return;
+  const handleUnlock = async () => {
+    if (!name || !email || !company || !evalResult) return;
     setUnlocked(true);
+    setLoadingDetails(true);
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
     // Persist unlock data (fire-and-forget)
     fetch("/api/icp-unlock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: submissionId, name, email, company }),
     }).catch(() => {});
+
+    // Fetch detailed reasoning + recommendations from Sonnet
+    try {
+      const res = await fetch("/api/evaluate-icp-details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: submissionId, scores: evalResult.scores }),
+      });
+      if (res.ok) {
+        const details = await res.json();
+        setEvalResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                dimensionReasoning: details.dimensionReasoning || [],
+                recommendations: details.recommendations || [],
+                rubricLoaded: details.rubricLoaded ?? prev.rubricLoaded,
+              }
+            : prev
+        );
+      }
+    } catch {
+      // Details failed — user still sees scores and dimension bars
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   return (
@@ -669,7 +698,18 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
               <>
                 <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
                   <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Recommendations</h3>
-                  {evalResult.recommendations.map((rec, i) => (
+                  {loadingDetails ? (
+                    <div style={{ textAlign: "center", padding: "32px 0" }}>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: BRAND.teal, animation: "pulse 1.2s ease-in-out infinite", animationDelay: `${i * 0.2}s` }} />
+                        ))}
+                      </div>
+                      <p style={{ color: BRAND.teal, fontSize: 13, fontWeight: 500, margin: 0 }}>Generating detailed analysis...</p>
+                    </div>
+                  ) : evalResult.recommendations.length === 0 ? (
+                    <p style={{ fontSize: 13, color: BRAND.mid, textAlign: "center", padding: "16px 0" }}>All dimensions scored 4 or above — no recommendations needed.</p>
+                  ) : evalResult.recommendations.map((rec, i) => (
                     <div
                       key={i}
                       style={{
