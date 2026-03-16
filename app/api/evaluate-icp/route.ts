@@ -279,6 +279,15 @@ Your JSON response MUST include a "dimensionReasoning" array with an entry for e
 
 TONE: Use a constructive, advisory tone throughout. The score communicates severity — your text should focus on what to improve and how, not on criticising what is missing. Avoid harsh language like "fails to", "weak", "poor", "needs more work", "inadequate". Instead frame gaps as opportunities: "could be strengthened by", "consider adding", "an opportunity to deepen". You are a helpful advisor, not a critic.
 
+Your JSON response MUST also include a "recommendations" array. Each entry must have:
+- "dim": the full dimension name (e.g. "Buying Committee & Access Mapping")
+- "score": the score you assigned (1-5)
+- "gap": 1-2 sentences describing the specific gap found in THIS ICP — reference concrete details from the input, not generic advice
+- "consequence": 1 sentence explaining what this gap means for their enterprise outreach specifically
+- "action": 1 concrete, specific next step they can take to close this gap — tailor it to their industry/market if mentioned
+
+Only include recommendations for dimensions scoring 3 or below. If a dimension scores 4 or 5, omit it from recommendations.
+
 Example structure:
 {
   "totalScore": 45,
@@ -287,7 +296,9 @@ Example structure:
     { "dim": "bca", "score": 2, "reasoning": "The ICP mentions 'VP of Engineering' as a buyer but does not map the full buying committee, access paths, or internal champions. No mention of procurement or legal involvement." },
     ...
   ],
-  "recommendations": [...]
+  "recommendations": [
+    { "dim": "Buying Committee & Access Mapping", "score": 2, "gap": "Your ICP identifies the VP of Engineering as the buyer but doesn't map other stakeholders like procurement, legal, or the CFO who typically approve deals of this size.", "consequence": "Without a full committee map, your reps will get blocked late in the cycle by stakeholders they didn't anticipate.", "action": "Interview your last 3 closed-won customers to map every person involved in their buying process, then add those roles to your ICP." }
+  ]
 }
 
 ${skillsPrompt}`;

@@ -633,7 +633,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                         borderRadius: 8,
                         padding: 20,
                         marginBottom: 12,
-                        borderLeft: `3px solid ${rec.score <= 1 ? BRAND.red : BRAND.amber}`,
+                        borderLeft: `3px solid ${rec.score <= 2 ? BRAND.red : BRAND.amber}`,
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -644,8 +644,8 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                             fontWeight: 600,
                             padding: "2px 10px",
                             borderRadius: 12,
-                            background: rec.score <= 1 ? "#FFEBEE" : "#FFF8E1",
-                            color: rec.score <= 1 ? BRAND.red : BRAND.amber,
+                            background: rec.score <= 2 ? "#FFEBEE" : "#FFF8E1",
+                            color: rec.score <= 2 ? BRAND.red : BRAND.amber,
                           }}
                         >
                           {rec.score}/5
