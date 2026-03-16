@@ -27,20 +27,23 @@ export async function setupAdmin(password: string): Promise<void> {
   await redis.set(ADMIN_PASSWORD_KEY, hash);
 }
 
-export async function createSession(): Promise<string> {
+/** Create session in Redis and return the token. Caller must set the cookie on the response. */
+export async function createSessionToken(): Promise<string> {
   const token = crypto.randomUUID();
   const redis = getRedis();
   await redis.set(`admin:session:${token}`, "1", { ex: SESSION_TTL });
+  return token;
+}
 
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+export function sessionCookieOptions() {
+  return {
+    name: SESSION_COOKIE,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: SESSION_TTL,
-  });
-  return token;
+  };
 }
 
 export async function validateSession(): Promise<boolean> {

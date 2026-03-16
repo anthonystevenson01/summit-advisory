@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyPassword, createSession } from "@/app/lib/auth";
+import { verifyPassword, createSessionToken, sessionCookieOptions } from "@/app/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,8 +13,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    await createSession();
-    return NextResponse.json({ ok: true });
+    const token = await createSessionToken();
+    const opts = sessionCookieOptions();
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(opts.name, token, {
+      httpOnly: opts.httpOnly,
+      secure: opts.secure,
+      sameSite: opts.sameSite,
+      path: opts.path,
+      maxAge: opts.maxAge,
+    });
+    return response;
   } catch {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }

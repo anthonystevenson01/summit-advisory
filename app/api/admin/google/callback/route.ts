@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSession } from "@/app/lib/auth";
+import { createSessionToken, sessionCookieOptions } from "@/app/lib/auth";
 
 type GoogleTokenResponse = {
   access_token?: string;
@@ -59,9 +59,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL("/admin/login?error=unauthorized", req.url));
     }
 
-    // Create session
-    await createSession();
-    return NextResponse.redirect(new URL("/admin", req.url));
+    // Create session and set cookie on redirect response
+    const token = await createSessionToken();
+    const opts = sessionCookieOptions();
+    const response = NextResponse.redirect(new URL("/admin", req.url));
+    response.cookies.set(opts.name, token, {
+      httpOnly: opts.httpOnly,
+      secure: opts.secure,
+      sameSite: opts.sameSite,
+      path: opts.path,
+      maxAge: opts.maxAge,
+    });
+    return response;
   } catch {
     return NextResponse.redirect(new URL("/admin/login?error=oauth_failed", req.url));
   }
