@@ -15,9 +15,16 @@ const WEIGHTS: Record<string, number> = {
   fs: 0.05,
 };
 
+type DimensionReasoning = {
+  dim: string;
+  score: number;
+  reasoning: string;
+};
+
 type EvaluateResponse = {
   totalScore: number;
   scores: Record<string, number>;
+  dimensionReasoning: DimensionReasoning[];
   recommendations: Array<{
     dim: string;
     score: number;
@@ -59,29 +66,50 @@ async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
   return extractTextFromDocBody(content);
 }
 
-async function loadSkillsFromDrive(): Promise<string> {
+async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: boolean; rubricSource: string }> {
   const apiKey = process.env.GOOGLE_API_KEY;
   const skillId = process.env.SKILL_DOC_ID;
   const recId = process.env.RECOMMENDATIONS_DOC_ID;
   if (!apiKey || !skillId) {
-    return "Score the ICP on seven dimensions: bca (25%), pa (18%), usp (15%), it (15%), cd (12%), nf (10%), fs (5%). Each 1-5. Return JSON: { totalScore, scores: { bca, pa, usp, it, cd, nf, fs }, recommendations: [{ dim, score, gap, consequence, action }] }.";
+    return {
+      prompt: "Score the ICP on seven dimensions: bca (25%), pa (18%), usp (15%), it (15%), cd (12%), nf (10%), fs (5%). Each 1-5. Return JSON: { totalScore, scores: { bca, pa, usp, it, cd, nf, fs }, dimensionReasoning: [{ dim, score, reasoning }], recommendations: [{ dim, score, gap, consequence, action }] }.",
+      rubricLoaded: false,
+      rubricSource: apiKey ? "missing SKILL_DOC_ID" : "missing GOOGLE_API_KEY",
+    };
   }
   const parts: string[] = [];
+  const sources: string[] = [];
   try {
-    parts.push(await fetchGoogleDoc(skillId, apiKey));
+    const skillText = await fetchGoogleDoc(skillId, apiKey);
+    if (skillText) {
+      parts.push(skillText);
+      sources.push("skill_doc");
+    }
   } catch (e) {
     console.error("Failed to fetch SKILL_DOC_ID", e);
+    sources.push("skill_doc_failed");
   }
   if (recId && apiKey) {
     try {
       const recText = await fetchGoogleDoc(recId, apiKey);
-      if (recText) parts.push("--- Recommendations rubric ---\n" + recText);
+      if (recText) {
+        parts.push("--- Recommendations rubric ---\n" + recText);
+        sources.push("recommendations_doc");
+      }
     } catch (e) {
       console.error("Failed to fetch RECOMMENDATIONS_DOC_ID", e);
+      sources.push("recommendations_doc_failed");
     }
   }
   const combined = parts.filter(Boolean).join("\n\n---\n\n");
-  return combined || "Return JSON with totalScore (0-100), scores (bca, pa, usp, it, cd, nf, fs each 1-5), and recommendations array with dim, score, gap, consequence, action.";
+  if (!combined) {
+    return {
+      prompt: "Return JSON with totalScore (0-100), scores (bca, pa, usp, it, cd, nf, fs each 1-5), dimensionReasoning array with dim, score, reasoning, and recommendations array with dim, score, gap, consequence, action.",
+      rubricLoaded: false,
+      rubricSource: "docs_fetched_but_empty",
+    };
+  }
+  return { prompt: combined, rubricLoaded: true, rubricSource: sources.join("+") };
 }
 
 function parseJsonFromResponse(text: string): EvaluateResponse | null {
@@ -98,9 +126,19 @@ function parseJsonFromResponse(text: string): EvaluateResponse | null {
       const v = parsed.scores[k];
       scores[k] = typeof v === "number" && v >= 1 && v <= 5 ? Math.round(v) : 3;
     }
+    const dimensionReasoning: DimensionReasoning[] = Array.isArray(parsed.dimensionReasoning)
+      ? parsed.dimensionReasoning.filter(
+          (r: { dim?: string; score?: number; reasoning?: string }) =>
+            r &&
+            typeof r.dim === "string" &&
+            typeof r.score === "number" &&
+            typeof r.reasoning === "string"
+        )
+      : [];
     return {
       totalScore: Math.min(100, Math.max(0, Math.round(parsed.totalScore))),
       scores,
+      dimensionReasoning,
       recommendations: parsed.recommendations.filter(
         (r: { dim?: string; score?: number; gap?: string; consequence?: string; action?: string }) =>
           r &&
@@ -134,8 +172,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ICP text must be at least 50 characters." }, { status: 400 });
   }
 
-  const skillsPrompt = await loadSkillsFromDrive();
-  const systemPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Use the following rubric and dimensions. Reply with only valid JSON, no markdown or extra text.\n\n${skillsPrompt}`;
+  const { prompt: skillsPrompt, rubricLoaded, rubricSource } = await loadSkillsFromDrive();
+  const systemPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Use the following rubric and dimensions. Reply with only valid JSON, no markdown or extra text.
+
+Your JSON response MUST include a "dimensionReasoning" array with an entry for each of the 7 dimensions (bca, pa, usp, it, cd, nf, fs). Each entry must have:
+- "dim": the dimension key
+- "score": the score you assigned (1-5)
+- "reasoning": 2-3 sentences explaining exactly what evidence you found (or didn't find) in the ICP text that justified this score. Quote specific phrases from the input where possible. Be critical — a missing dimension should score 1, not 3.
+
+Example structure:
+{
+  "totalScore": 45,
+  "scores": { "bca": 2, "pa": 3, ... },
+  "dimensionReasoning": [
+    { "dim": "bca", "score": 2, "reasoning": "The ICP mentions 'VP of Engineering' as a buyer but does not map the full buying committee, access paths, or internal champions. No mention of procurement or legal involvement." },
+    ...
+  ],
+  "recommendations": [...]
+}
+
+${skillsPrompt}`;
   const userPrompt = `Evaluate this ICP document and return the JSON object only.\n\n---\n\n${icpText}`;
 
   try {
@@ -158,7 +214,7 @@ export async function POST(req: NextRequest) {
       (DIMENSION_KEYS.reduce((sum, k) => sum + (result.scores[k] ?? 3) * (WEIGHTS[k] ?? 0), 0) / 5) * 100;
     result.totalScore = Math.round(weightedTotal);
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, rubricLoaded, rubricSource });
   } catch (err) {
     console.error("evaluate-icp error", err);
     const message = err instanceof Error ? err.message : String(err);

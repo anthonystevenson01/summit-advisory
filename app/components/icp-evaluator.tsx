@@ -175,7 +175,10 @@ function DimensionBar({
 type EvaluationResult = {
   totalScore: number;
   scores: Record<string, number>;
+  dimensionReasoning: Array<{ dim: string; score: number; reasoning: string }>;
   recommendations: Array<{ dim: string; score: number; gap: string; consequence: string; action: string }>;
+  rubricLoaded: boolean;
+  rubricSource: string;
 };
 
 export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => void; onBookCall: () => void }) {
@@ -461,11 +464,35 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   <p style={{ fontSize: 14, color: BRAND.mid, marginTop: 12, lineHeight: 1.5, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>{getGrade(evalResult.totalScore).desc}</p>
                 </div>
 
+                {!evalResult.rubricLoaded && (
+                  <div style={{ background: "#FFF8E1", border: `1px solid ${BRAND.amber}40`, borderRadius: 8, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>&#9888;</span>
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: BRAND.dark, margin: "0 0 4px" }}>Scoring rubric not loaded</p>
+                      <p style={{ fontSize: 12, color: BRAND.mid, margin: 0, lineHeight: 1.5 }}>
+                        The detailed scoring rubric from Google Docs could not be loaded ({evalResult.rubricSource}). Scores were generated using a minimal fallback prompt, which may produce inaccurate results.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
                   <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
-                  {DIMENSIONS.map((dim) => (
-                    <DimensionBar key={dim.key} dim={dim} score={evalResult.scores[dim.key] ?? 0} locked={!unlocked} />
-                  ))}
+                  {DIMENSIONS.map((dim) => {
+                    const reasoning = evalResult.dimensionReasoning?.find((r) => r.dim === dim.key);
+                    return (
+                      <div key={dim.key}>
+                        <DimensionBar dim={dim} score={evalResult.scores[dim.key] ?? 0} locked={!unlocked} />
+                        {unlocked && reasoning?.reasoning && (
+                          <div style={{ marginTop: -8, marginBottom: 20, marginLeft: 2, padding: "10px 14px", background: BRAND.white, borderRadius: 6, borderLeft: `2px solid ${BRAND.teal}40` }}>
+                            <p style={{ fontSize: 12, color: BRAND.mid, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>
+                              {reasoning.reasoning}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
             {!unlocked ? (
