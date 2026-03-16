@@ -318,12 +318,14 @@ ${skillsPrompt}`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
-      max_tokens: 1500,
+    // Stream for faster time-to-first-token, collect full response server-side
+    const stream = anthropic.messages.stream({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
+    const message = await stream.finalMessage();
 
     const textBlock = message.content.find((b) => b.type === "text");
     const text = textBlock && "text" in textBlock ? textBlock.text : "";
