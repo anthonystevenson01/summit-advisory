@@ -110,39 +110,54 @@ async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
   return text;
 }
 
-async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: boolean; rubricSource: string }> {
+async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: boolean; rubricSource: string; debug?: Record<string, unknown> }> {
   const apiKey = process.env.GOOGLE_API_KEY;
   const skillId = process.env.SKILL_DOC_ID;
   const recId = process.env.RECOMMENDATIONS_DOC_ID;
+  const debug: Record<string, unknown> = {
+    hasApiKey: !!apiKey,
+    apiKeyPrefix: apiKey ? apiKey.slice(0, 8) + "..." : null,
+    skillId: skillId ?? null,
+    recId: recId ?? null,
+  };
   if (!apiKey || !skillId) {
     return {
       prompt: "Score the ICP on seven dimensions: bca (25%), pa (18%), usp (15%), it (15%), cd (12%), nf (10%), fs (5%). Each 1-5. Return JSON: { totalScore, scores: { bca, pa, usp, it, cd, nf, fs }, dimensionReasoning: [{ dim, score, reasoning }], recommendations: [{ dim, score, gap, consequence, action }] }.",
       rubricLoaded: false,
       rubricSource: apiKey ? "missing SKILL_DOC_ID" : "missing GOOGLE_API_KEY",
+      debug,
     };
   }
   const parts: string[] = [];
   const sources: string[] = [];
   try {
     const skillText = await fetchGoogleDoc(skillId, apiKey);
+    debug.skillDocChars = skillText.length;
+    debug.skillDocPreview = skillText.slice(0, 100) || "(empty)";
     if (skillText) {
       parts.push(skillText);
       sources.push("skill_doc");
     }
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     console.error("Failed to fetch SKILL_DOC_ID", e);
     sources.push("skill_doc_failed");
+    debug.skillDocError = msg;
   }
   if (recId && apiKey) {
     try {
       const recText = await fetchGoogleDoc(recId, apiKey);
+      debug.recDocChars = recText.length;
+      debug.recDocPreview = recText.slice(0, 100) || "(empty)";
       if (recText) {
         parts.push("--- Recommendations rubric ---\n" + recText);
         sources.push("recommendations_doc");
       }
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.error("Failed to fetch RECOMMENDATIONS_DOC_ID", e);
       sources.push("recommendations_doc_failed");
+      debug.recDocError = msg;
     }
   }
   const combined = parts.filter(Boolean).join("\n\n---\n\n");
@@ -151,9 +166,10 @@ async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: bo
       prompt: "Return JSON with totalScore (0-100), scores (bca, pa, usp, it, cd, nf, fs each 1-5), dimensionReasoning array with dim, score, reasoning, and recommendations array with dim, score, gap, consequence, action.",
       rubricLoaded: false,
       rubricSource: "docs_fetched_but_empty",
+      debug,
     };
   }
-  return { prompt: combined, rubricLoaded: true, rubricSource: sources.join("+") };
+  return { prompt: combined, rubricLoaded: true, rubricSource: sources.join("+"), debug };
 }
 
 function parseJsonFromResponse(text: string): EvaluateResponse | null {
@@ -216,7 +232,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ICP text must be at least 50 characters." }, { status: 400 });
   }
 
-  const { prompt: skillsPrompt, rubricLoaded, rubricSource } = await loadSkillsFromDrive();
+  const { prompt: skillsPrompt, rubricLoaded, rubricSource, debug: rubricDebug } = await loadSkillsFromDrive();
   const systemPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Use the following rubric and dimensions. Reply with only valid JSON, no markdown or extra text.
 
 Your JSON response MUST include a "dimensionReasoning" array with an entry for each of the 7 dimensions (bca, pa, usp, it, cd, nf, fs). Each entry must have:
@@ -258,7 +274,7 @@ ${skillsPrompt}`;
       (DIMENSION_KEYS.reduce((sum, k) => sum + (result.scores[k] ?? 3) * (WEIGHTS[k] ?? 0), 0) / 5) * 100;
     result.totalScore = Math.round(weightedTotal);
 
-    return NextResponse.json({ ...result, rubricLoaded, rubricSource });
+    return NextResponse.json({ ...result, rubricLoaded, rubricSource, rubricDebug });
   } catch (err) {
     console.error("evaluate-icp error", err);
     const message = err instanceof Error ? err.message : String(err);
