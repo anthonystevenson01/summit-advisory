@@ -275,7 +275,9 @@ export async function POST(req: NextRequest) {
 Your JSON response MUST include a "dimensionReasoning" array with an entry for each of the 7 dimensions (bca, pa, usp, it, cd, nf, fs). Each entry must have:
 - "dim": the dimension key
 - "score": the score you assigned (1-5)
-- "reasoning": 2-3 sentences explaining exactly what evidence you found (or didn't find) in the ICP text that justified this score. Quote specific phrases from the input where possible. Be critical — a missing dimension should score 1, not 3.
+- "reasoning": 2-3 sentences explaining exactly what evidence you found (or didn't find) in the ICP text that justified this score. Quote specific phrases from the input where possible. Score accurately — a missing dimension should score 1, not 3.
+
+TONE: Use a constructive, advisory tone throughout. The score communicates severity — your text should focus on what to improve and how, not on criticising what is missing. Avoid harsh language like "fails to", "weak", "poor", "needs more work", "inadequate". Instead frame gaps as opportunities: "could be strengthened by", "consider adding", "an opportunity to deepen". You are a helpful advisor, not a critic.
 
 Example structure:
 {
