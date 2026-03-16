@@ -773,6 +773,8 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   Evaluated using Summit Strategy Advisory&apos;s ICP Quality Framework for Constrained-Universe Enterprise Selling.
                 </p>
               </>
+            )}
+              </>
             ) : null}
           </div>
         </section>
