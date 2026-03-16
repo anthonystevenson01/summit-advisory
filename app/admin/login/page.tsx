@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const BRAND = {
@@ -22,6 +22,14 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense>
+      <AdminLoginInner />
+    </Suspense>
+  );
+}
+
+function AdminLoginInner() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
