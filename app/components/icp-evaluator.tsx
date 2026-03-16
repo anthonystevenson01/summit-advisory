@@ -229,52 +229,90 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
-  return (
-    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "'DM Sans', sans-serif" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }`}</style>
-
-      {/* Back button */}
-      <div style={{ padding: "16px 32px 0", maxWidth: 900, margin: "0 auto" }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "none",
-            border: "none",
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13,
-            fontWeight: 600,
-            color: BRAND.teal,
-            cursor: "pointer",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 7H2M6 3L2 7l4 4" />
-          </svg>
-          Resources
-        </button>
-      </div>
-
-      {/* HERO */}
-      <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
-        <div style={{ maxWidth: 660, margin: "0 auto" }}>
-          <div
+  const renderResultsInner = () => {
+    if (evalError) {
+      return (
+        <div style={{ textAlign: "center", padding: "24px 0" }}>
+          <p style={{ fontSize: 15, color: BRAND.red, marginBottom: 16 }}>{evalError}</p>
+          <button
+            type="button"
+            onClick={() => { setScoreRevealed(false); setEvalError(null); }}
             style={{
-              display: "inline-block",
-              padding: "4px 14px",
-              borderRadius: 20,
-              background: "rgba(49,154,101,0.25)",
-              border: "1px solid rgba(49,154,101,0.4)",
-              marginBottom: 24,
+              padding: "10px 20px",
+              borderRadius: 6,
+              border: `1px solid ${BRAND.teal}`,
+              background: BRAND.white,
+              color: BRAND.teal,
+              fontFamily: "'Oswald', sans-serif",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
             }}
           >
+            Try again
+          </button>
+        </div>
+      );
+    }
+    if (!evalResult) return null;
+    return (
+      <>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <ScoreGauge score={evalResult.totalScore} size={200} />
+          <p style={{ fontSize: 14, color: BRAND.mid, marginTop: 12, lineHeight: 1.5, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>{getGrade(evalResult.totalScore).desc}</p>
+        </div>
+
+        <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
+          <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
+          {DIMENSIONS.map((dim) => (
+            <DimensionBar key={dim.key} dim={dim} score={evalResult.scores[dim.key] ?? 0} locked={!unlocked} />
+          ))}
+        </div>
+
+        <ICPEvaluatorResultsContent
+                evalResult={evalResult}
+                unlocked={unlocked}
+                name={name}
+                email={email}
+                company={company}
+                setName={setName}
+                setEmail={setEmail}
+                setCompany={setCompany}
+                handleUnlock={handleUnlock}
+                onBookCall={onBookCall}
+                showCRM={showCRM}
+                setShowCRM={setShowCRM}
+                formRef={formRef}
+              />
+      </>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "'DM Sans', sans-serif" }}>
+      {onBack && (
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "24px 24px 0" }}>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              background: "none",
+              border: "none",
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 14,
+              color: BRAND.teal,
+              cursor: "pointer",
+              padding: "8px 0",
+            }}
+          >
+            ← Back to Resources
+          </button>
+        </div>
+      )}
+
+      <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "72px 32px 56px", textAlign: "center" }}>
+        <div style={{ maxWidth: 660, margin: "0 auto" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: 20, background: "rgba(49,154,101,0.25)", border: "1px solid rgba(49,154,101,0.4)", marginBottom: 24 }}>
             <span style={{ color: BRAND.brandGreen, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Free Tool — Resources</span>
           </div>
           <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
@@ -286,7 +324,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         </div>
       </section>
 
-      {/* INTRO NARRATIVE */}
       <section style={{ maxWidth: 640, margin: "0 auto", padding: "48px 24px 16px" }}>
         <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "0 0 16px" }}>
           GTM is getting automated. The machines are only as good as their inputs.
@@ -297,7 +334,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           This matters exponentially more when you&apos;re a small team selling to enterprise.
         </p>
-
         <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
           The constrained-universe problem
         </h2>
@@ -307,7 +343,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           In this world, a burned account isn&apos;t a lost lead — it&apos;s a lost percentage of your entire addressable market. Approach the wrong person, misread the buying committee, or pitch against an incumbent you didn&apos;t know existed, and that account may be closed to you for 12–18 months. With a finite universe, there&apos;s no volume to hide behind.
         </p>
-
         <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
           Most ICP frameworks weren&apos;t built for this
         </h2>
@@ -317,7 +352,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           This evaluator is built for that reality. It scores your ICP across seven dimensions — weighted for the dynamics of constrained-universe enterprise selling — and gives you specific, actionable recommendations for every gap it finds.
         </p>
-
         <div style={{ margin: "28px 0 24px", padding: "20px 24px", background: BRAND.lightBg, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
           <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
@@ -337,13 +371,11 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             ))}
           </div>
         </div>
-
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 6px" }}>
           Paste your ICP below. Be as detailed as you can — the more you give us, the more specific the evaluation.
         </p>
       </section>
 
-      {/* INPUT */}
       <section style={{ maxWidth: 680, margin: "0 auto", padding: "8px 24px" }}>
         <div style={{ marginBottom: 8 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen, letterSpacing: "0.02em" }}>Your ICP Description</label>
@@ -351,14 +383,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         <textarea
           value={icpText}
           onChange={(e) => setIcpText(e.target.value)}
-          placeholder={`Paste your ICP description here. Include as much detail as you have:
-
-• Who you target (industry, size, geography)
-• What problems they face
-• How they typically buy (roles, process)
-• What you're displacing (competitor, internal process)
-• Who you don't sell to
-• How many target accounts exist`}
+          placeholder={"Paste your ICP description here. Include as much detail as you have:\n\n• Who you target (industry, size, geography)\n• What problems they face\n• How they typically buy (roles, process)\n• What you're displacing (competitor, internal process)\n• Who you don't sell to\n• How many target accounts exist"}
           style={{
             width: "100%",
             minHeight: 200,
@@ -372,10 +397,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             resize: "vertical",
             outline: "none",
             boxSizing: "border-box",
-            transition: "border-color 0.2s",
           }}
-          onFocus={(e) => (e.target.style.borderColor = BRAND.teal)}
-          onBlur={(e) => (e.target.style.borderColor = BRAND.border)}
           disabled={scoreRevealed}
         />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
@@ -398,7 +420,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 fontSize: 15,
                 letterSpacing: "0.04em",
                 cursor: charCount < 50 ? "not-allowed" : "pointer",
-                transition: "all 0.2s",
                 opacity: isScoring ? 0.7 : 1,
               }}
             >
@@ -406,7 +427,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             </button>
           )}
         </div>
-
         {isScoring && (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
@@ -418,56 +438,60 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                     height: 10,
                     borderRadius: "50%",
                     background: BRAND.brandGreen,
-                    animation: "pulse 1.2s ease-in-out infinite",
+                    animation: "icp-pulse 1.2s ease-in-out infinite",
                     animationDelay: `${i * 0.2}s`,
                   }}
                 />
               ))}
             </div>
             <p style={{ color: BRAND.teal, fontSize: 14, fontWeight: 500 }}>Scoring across 7 dimensions...</p>
+            <style>{`@keyframes icp-pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }`}</style>
           </div>
         )}
       </section>
 
-      {/* RESULTS */}
       {scoreRevealed && (
         <section ref={resultsRef} style={{ maxWidth: 680, margin: "0 auto", padding: "0 24px 48px" }}>
           <div style={{ background: BRAND.lightBg, borderRadius: 12, padding: "32px 28px", border: `1px solid ${BRAND.border}` }}>
-            {evalError ? (
-              <div style={{ textAlign: "center", padding: "24px 0" }}>
-                <p style={{ fontSize: 15, color: BRAND.red, marginBottom: 16 }}>{evalError}</p>
-                <button
-                  type="button"
-                  onClick={() => { setScoreRevealed(false); setEvalError(null); }}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: 6,
-                    border: `1px solid ${BRAND.teal}`,
-                    background: BRAND.white,
-                    color: BRAND.teal,
-                    fontFamily: "'Oswald', sans-serif",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    cursor: "pointer",
-                  }}
-                >
-                  Try again
-                </button>
-              </div>
-            ) : evalResult ? (
-              <>
-                <div style={{ textAlign: "center", marginBottom: 28 }}>
-                  <ScoreGauge score={evalResult.totalScore} size={200} />
-                  <p style={{ fontSize: 14, color: BRAND.mid, marginTop: 12, lineHeight: 1.5, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>{getGrade(evalResult.totalScore).desc}</p>
-                </div>
+            {renderResultsInner()}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
 
-                <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
-                  {DIMENSIONS.map((dim) => (
-                    <DimensionBar key={dim.key} dim={dim} score={evalResult.scores[dim.key] ?? 0} locked={!unlocked} />
-                  ))}
-                </div>
-
+function ICPEvaluatorResultsContent({
+  evalResult,
+  unlocked,
+  name,
+  email,
+  company,
+  setName,
+  setEmail,
+  setCompany,
+  handleUnlock,
+  onBookCall,
+  showCRM,
+  setShowCRM,
+  formRef,
+}: {
+  evalResult: EvaluationResult;
+  unlocked: boolean;
+  name: string;
+  email: string;
+  company: string;
+  setName: (v: string) => void;
+  setEmail: (v: string) => void;
+  setCompany: (v: string) => void;
+  handleUnlock: () => void;
+  onBookCall: () => void;
+  showCRM: boolean;
+  setShowCRM: (v: boolean) => void;
+  formRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <>
             {!unlocked ? (
               <div ref={formRef} style={{ marginTop: 24, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
                 <div style={{ background: BRAND.white, borderRadius: 8, padding: 24, border: `1px solid ${BRAND.teal}30` }}>
@@ -746,10 +770,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   Evaluated using Summit Strategy Advisory&apos;s ICP Quality Framework for Constrained-Universe Enterprise Selling.
                 </p>
               </>
-            ) : null}
-          </div>
-        </section>
-      )}
-    </div>
-  );
+            )}
+          </>
+        );
 }
