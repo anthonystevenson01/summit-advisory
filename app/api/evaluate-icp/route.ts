@@ -34,18 +34,52 @@ type EvaluateResponse = {
   }>;
 };
 
+function extractParagraphText(para: Record<string, unknown>): string {
+  const elements = para.elements as Array<Record<string, unknown>> | undefined;
+  if (!elements) return "";
+  const texts: string[] = [];
+  for (const el of elements) {
+    const tr = el.textRun as Record<string, unknown> | undefined;
+    if (tr && typeof tr.content === "string") texts.push(tr.content);
+  }
+  return texts.join("");
+}
+
 function extractTextFromDocBody(content: unknown[]): string {
   const parts: string[] = [];
   for (const node of content) {
     if (!node || typeof node !== "object") continue;
     const n = node as Record<string, unknown>;
+
+    // Paragraphs (including list items)
     if (n.paragraph) {
-      const para = n.paragraph as Record<string, unknown>;
-      const elements = para.elements as Array<Record<string, unknown>> | undefined;
-      if (elements) {
-        for (const el of elements) {
-          const tr = el.textRun as Record<string, unknown> | undefined;
-          if (tr && typeof tr.content === "string") parts.push(tr.content);
+      const text = extractParagraphText(n.paragraph as Record<string, unknown>);
+      if (text) parts.push(text);
+    }
+
+    // Tables
+    if (n.table) {
+      const table = n.table as Record<string, unknown>;
+      const rows = table.tableRows as Array<Record<string, unknown>> | undefined;
+      if (rows) {
+        for (const row of rows) {
+          const cells = row.tableCells as Array<Record<string, unknown>> | undefined;
+          if (!cells) continue;
+          const cellTexts: string[] = [];
+          for (const cell of cells) {
+            const cellContent = cell.content as unknown[] | undefined;
+            if (cellContent) {
+              for (const cellNode of cellContent) {
+                if (!cellNode || typeof cellNode !== "object") continue;
+                const cn = cellNode as Record<string, unknown>;
+                if (cn.paragraph) {
+                  const t = extractParagraphText(cn.paragraph as Record<string, unknown>);
+                  if (t.trim()) cellTexts.push(t.trim());
+                }
+              }
+            }
+          }
+          if (cellTexts.length) parts.push(cellTexts.join(" | ") + "\n");
         }
       }
     }
@@ -60,10 +94,20 @@ async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
     const t = await res.text();
     throw new Error(`Google Docs API: ${res.status} ${t.slice(0, 200)}`);
   }
-  const data = (await res.json()) as { body?: { content?: unknown[] } };
+  const data = (await res.json()) as { title?: string; body?: { content?: unknown[] } };
   const content = data.body?.content;
-  if (!Array.isArray(content)) return "";
-  return extractTextFromDocBody(content);
+  if (!Array.isArray(content)) {
+    console.error(`Google Doc ${docId}: no body.content array. Title: "${data.title ?? "unknown"}". Keys: ${Object.keys(data).join(", ")}`);
+    return "";
+  }
+  const nodeTypes = content.map((n) => (n && typeof n === "object" ? Object.keys(n as Record<string, unknown>).join(",") : "null"));
+  const text = extractTextFromDocBody(content);
+  if (!text) {
+    console.error(`Google Doc ${docId}: body.content has ${content.length} nodes (types: ${nodeTypes.slice(0, 10).join("; ")}), but extracted text is empty. Title: "${data.title ?? "unknown"}"`);
+  } else {
+    console.log(`Google Doc ${docId}: extracted ${text.length} chars from ${content.length} nodes. Title: "${data.title ?? "unknown"}"`);
+  }
+  return text;
 }
 
 async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: boolean; rubricSource: string }> {
