@@ -189,6 +189,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [showCRM, setShowCRM] = useState(false);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const charCount = icpText.length;
@@ -218,6 +219,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         return;
       }
       setEvalResult(data as EvaluationResult);
+      if (data.id) setSubmissionId(data.id as string);
       setScoreRevealed(true);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch {
@@ -233,6 +235,12 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
     if (!name || !email || !company) return;
     setUnlocked(true);
     setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    // Persist unlock data (fire-and-forget)
+    fetch("/api/icp-unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: submissionId, name, email, company }),
+    }).catch(() => {});
   };
 
   return (
@@ -296,7 +304,8 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
+                const shareUrl = `${window.location.origin}?tool=icp-evaluator`;
+                navigator.clipboard.writeText(shareUrl);
                 setShareCopied(true);
                 setTimeout(() => setShareCopied(false), 2000);
               }}
@@ -326,7 +335,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
               <button
                 type="button"
                 onClick={() => {
-                  navigator.share({ title: "ICP Evaluator — Summit Strategy Advisory", url: window.location.href }).catch(() => {});
+                  navigator.share({ title: "ICP Evaluator — Summit Strategy Advisory", url: `${window.location.origin}?tool=icp-evaluator` }).catch(() => {});
                 }}
                 style={{
                   display: "inline-flex",

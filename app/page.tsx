@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
 import ICPEvaluator from "./components/icp-evaluator";
 
@@ -854,6 +854,15 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
 // ── Main App ──
 export default function Summit() {
   const [page, setPage] = useState("home");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tool = params.get("tool");
+    if (tool) setPage(tool);
+    // Track page visit
+    fetch("/api/track-visit", { method: "POST" }).catch(() => {});
+  }, []);
+
   const nav = (p: string) => {
     setPage(p);
     window.scrollTo(0, 0);
