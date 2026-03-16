@@ -338,13 +338,13 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { dim: "BCA", tip: "Full buying committee mapped with roles, influence levels, access paths, and internal champions identified per account." },
-                { dim: "PA", tip: "Pain quantified in business terms, segmented by persona, with evidence of how it manifests differently across account tiers." },
-                { dim: "USP", tip: "Named accounts ranked into pursuit tiers with intelligence standards defined for each tier." },
-                { dim: "IT", tip: "Specific, observable triggers mapped to outreach timing — not just broad market trends." },
-                { dim: "CD", tip: "Incumbent solutions mapped per account with displacement strategies and competitive positioning documented." },
-                { dim: "NF", tip: "Validated exclusion criteria that protect your pipeline from accounts that look right but won't close." },
-                { dim: "FS", tip: "Precise firmographic boundaries that narrow without over-constraining your finite universe." },
+                { dim: "Buying Committee & Access", tip: "Full buying committee mapped with roles, influence levels, access paths, and internal champions identified per account." },
+                { dim: "Pain Articulation", tip: "Pain quantified in business terms, segmented by persona, with evidence of how it manifests differently across account tiers." },
+                { dim: "Universe Sizing", tip: "Named accounts ranked into pursuit tiers with intelligence standards defined for each tier." },
+                { dim: "Intent & Triggers", tip: "Specific, observable triggers mapped to outreach timing — not just broad market trends." },
+                { dim: "Competitive Displacement", tip: "Incumbent solutions mapped per account with displacement strategies and competitive positioning documented." },
+                { dim: "Negative Filters", tip: "Validated exclusion criteria that protect your pipeline from accounts that look right but won't close." },
+                { dim: "Firmographics", tip: "Precise firmographic boundaries that narrow without over-constraining your finite universe." },
               ].map((t) => (
                 <div key={t.dim} style={{ fontSize: 12, color: BRAND.mid, lineHeight: 1.55 }}>
                   <span style={{ fontWeight: 600, color: BRAND.darkGreen }}>{t.dim}:</span> {t.tip}
