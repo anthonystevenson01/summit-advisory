@@ -46,10 +46,10 @@ const LEVEL_LABELS: Record<string, Record<number, string>> = {
 
 function getGrade(score: number) {
   if (score >= 85) return { label: "Elite ICP", color: "#27ae60", desc: "Every account pursuit is deliberate and evidence-based." };
-  if (score >= 70) return { label: "Strong ICP", color: "#2ecc71", desc: "Solid targeting. 1–2 dimensions need depth before scaling outbound." };
-  if (score >= 50) return { label: "Developing ICP", color: BRAND.amber, desc: "Structural gaps that will burn limited accounts. Fix before outreach." };
-  if (score >= 30) return { label: "Weak ICP", color: "#e67e22", desc: "Targeting by instinct, not evidence. High risk of wasting your finite universe." };
-  return { label: "No Functional ICP", color: BRAND.red, desc: "Rebuild from scratch before any enterprise outreach." };
+  if (score >= 70) return { label: "Strong ICP", color: "#2ecc71", desc: "Solid foundation with 1-2 dimensions to deepen before scaling outbound." };
+  if (score >= 50) return { label: "Developing ICP", color: BRAND.amber, desc: "Good starting point with clear opportunities to strengthen before outreach." };
+  if (score >= 30) return { label: "Early-Stage ICP", color: "#e67e22", desc: "The foundations are here — focus on the priority dimensions to build confidence in your targeting." };
+  return { label: "Starting Point", color: BRAND.red, desc: "Significant gaps to address before enterprise outreach — the recommendations below will guide you." };
 }
 
 function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
@@ -165,9 +165,6 @@ function DimensionBar({
           }}
         />
       </div>
-      <div style={{ textAlign: "right", marginTop: 2 }}>
-        <span style={{ fontSize: 10, color: BRAND.mid, fontFamily: "'DM Sans', sans-serif" }}>Weight: {Math.round(dim.weight * 100)}%</span>
-      </div>
     </div>
   );
 }
@@ -238,10 +235,13 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }`}</style>
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+        @media (max-width: 700px) { .icp-eval-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
 
       {/* Back button */}
-      <div style={{ padding: "16px 32px 0", maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ padding: "16px 32px 0", maxWidth: 1060, margin: "0 auto" }}>
         <button
           type="button"
           onClick={onBack}
@@ -267,7 +267,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
 
       {/* HERO */}
       <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
-        <div style={{ maxWidth: 660, margin: "0 auto" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <div
             style={{
               display: "inline-block",
@@ -290,7 +290,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
       </section>
 
       {/* INTRO NARRATIVE */}
-      <section style={{ maxWidth: 640, margin: "0 auto", padding: "48px 24px 16px" }}>
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "48px 24px 16px" }}>
         <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "0 0 16px" }}>
           GTM is getting automated. The machines are only as good as their inputs.
         </h2>
@@ -305,39 +305,52 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
           The constrained-universe problem
         </h2>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          If you sell to enterprise, your total addressable market isn&apos;t thousands of companies — it&apos;s probably 50 to 500. You know most of them by name. The challenge isn&apos;t finding accounts. It&apos;s choosing which to pursue, knowing how to get in, understanding what you&apos;re displacing, and making every single touch count.
+          If you sell to enterprise, your total addressable market isn&apos;t thousands of companies — it&apos;s probably 50 to 500. You know most of them by name. The challenge isn&apos;t finding accounts. It&apos;s choosing which 30 to pursue first, knowing how to get access, understanding what you&apos;re displacing, and making every single touch count.
         </p>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          In this world, a burned account isn&apos;t a lost lead — it&apos;s a lost percentage of your entire addressable market. Approach the wrong person, misread the buying committee, or pitch against an incumbent you didn&apos;t know existed, and that account may be closed to you for 12–18 months. With a finite universe, there&apos;s no volume to hide behind.
-        </p>
-
-        <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
-          Most ICP frameworks weren&apos;t built for this
-        </h2>
-        <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          Standard ICP advice tells you to define firmographics, identify pain, and narrow your targeting. That&apos;s fine when your market is 10,000 accounts and the goal is to cut it to 1,000. It&apos;s inadequate when your market is 200 accounts and the question isn&apos;t &quot;who do I cut?&quot; but &quot;which 30 do I pursue first, how do I get access, and what am I replacing?&quot;
+          In this world, a burned account isn&apos;t a lost lead — it&apos;s a lost percentage of your entire addressable market. Approach the wrong person, misread the buying committee, or pitch against an incumbent you didn&apos;t know existed, and that account may be closed to you for 12–18 months. Standard ICP advice — define firmographics, identify pain, narrow your targeting — is fine when your market is 10,000 accounts and the goal is to cut it to 1,000. It falls short when you have a finite universe and no volume to hide behind.
         </p>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           This evaluator is built for that reality. It scores your ICP across seven dimensions — weighted for the dynamics of constrained-universe enterprise selling — and gives you specific, actionable recommendations for every gap it finds.
         </p>
 
-        <div style={{ margin: "28px 0 24px", padding: "20px 24px", background: BRAND.lightBg, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
-          <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
-            {[
-              { name: "Buying Committee & Access Mapping", w: "25%" },
-              { name: "Pain Articulation Depth", w: "18%" },
-              { name: "Universe Sizing & Account Intelligence", w: "15%" },
-              { name: "Intent / Trigger Definition", w: "15%" },
-              { name: "Competitive Displacement Awareness", w: "12%" },
-              { name: "Negative Filters", w: "10%" },
-              { name: "Firmographic Specificity", w: "5%" },
-            ].map((d) => (
-              <div key={d.name} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 13, fontWeight: 600, color: BRAND.brandGreen, minWidth: 32 }}>{d.w}</span>
-                <span style={{ fontSize: 13, color: BRAND.dark, lineHeight: 1.4 }}>{d.name}</span>
-              </div>
-            ))}
+        <div className="icp-eval-grid" style={{ margin: "28px 0 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div style={{ padding: "20px 24px", background: BRAND.lightBg, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
+            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                "Buying Committee & Access Mapping",
+                "Pain Articulation Depth",
+                "Universe Sizing & Account Intelligence",
+                "Intent / Trigger Definition",
+                "Competitive Displacement Awareness",
+                "Negative Filters",
+                "Firmographic Specificity",
+              ].map((name) => (
+                <div key={name} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: BRAND.brandGreen, flexShrink: 0, marginTop: 4 }} />
+                  <span style={{ fontSize: 13, color: BRAND.dark, lineHeight: 1.4 }}>{name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ padding: "20px 24px", background: BRAND.white, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
+            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { dim: "BCA", tip: "Full buying committee mapped with roles, influence levels, access paths, and internal champions identified per account." },
+                { dim: "PA", tip: "Pain quantified in business terms, segmented by persona, with evidence of how it manifests differently across account tiers." },
+                { dim: "USP", tip: "Named accounts ranked into pursuit tiers with intelligence standards defined for each tier." },
+                { dim: "IT", tip: "Specific, observable triggers mapped to outreach timing — not just broad market trends." },
+                { dim: "CD", tip: "Incumbent solutions mapped per account with displacement strategies and competitive positioning documented." },
+                { dim: "NF", tip: "Validated exclusion criteria that protect your pipeline from accounts that look right but won't close." },
+                { dim: "FS", tip: "Precise firmographic boundaries that narrow without over-constraining your finite universe." },
+              ].map((t) => (
+                <div key={t.dim} style={{ fontSize: 12, color: BRAND.mid, lineHeight: 1.55 }}>
+                  <span style={{ fontWeight: 600, color: BRAND.darkGreen }}>{t.dim}:</span> {t.tip}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -347,7 +360,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
       </section>
 
       {/* INPUT */}
-      <section style={{ maxWidth: 680, margin: "0 auto", padding: "8px 24px" }}>
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "8px 24px" }}>
         <div style={{ marginBottom: 8 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen, letterSpacing: "0.02em" }}>Your ICP Description</label>
         </div>
@@ -434,7 +447,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
 
       {/* RESULTS */}
       {scoreRevealed && (
-        <section ref={resultsRef} style={{ maxWidth: 680, margin: "0 auto", padding: "0 24px 48px" }}>
+        <section ref={resultsRef} style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 48px" }}>
           <div style={{ background: BRAND.lightBg, borderRadius: 12, padding: "32px 28px", border: `1px solid ${BRAND.border}` }}>
             {evalError ? (
               <div style={{ textAlign: "center", padding: "24px 0" }}>
@@ -622,7 +635,22 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                     </em>
                   </p>
                   <p style={{ fontSize: 13, color: BRAND.mid, lineHeight: 1.6, margin: "10px 0 0" }}>
-                    Your ICP currently falls short. You have no account prioritisation framework, no competitive displacement context, and no access strategy for reaching decision-makers. Before any enterprise outreach, build a tiered account list with intelligence standards for each tier.
+                    {(() => {
+                      const scores = evalResult.scores;
+                      const strong = DIMENSIONS.filter((d) => (scores[d.key] ?? 0) >= 4).map((d) => d.name.toLowerCase());
+                      const gaps = DIMENSIONS.filter((d) => (scores[d.key] ?? 0) <= 2).map((d) => d.name.toLowerCase());
+                      const total = evalResult.totalScore;
+                      if (total >= 85) {
+                        return "Your ICP is well-equipped for constrained-universe selling. You have the depth to prioritise accounts confidently, approach decision-makers with context, and differentiate against incumbents. Focus on keeping it current as your market evolves.";
+                      }
+                      if (total >= 70) {
+                        return `Your ICP covers most of what you need. Your strengths — ${strong.slice(0, 2).join(" and ") || "several areas"} — give you a solid foundation. To move from strong to elite, deepen ${gaps.length > 0 ? gaps.slice(0, 2).join(" and ") : "the dimensions that scored lowest"}.`;
+                      }
+                      if (total >= 50) {
+                        return `Your ICP has a foundation to build on${strong.length > 0 ? `, particularly in ${strong[0]}` : ""}. The areas to prioritise are ${gaps.length > 0 ? gaps.slice(0, 3).join(", ") : "the lower-scoring dimensions"} — strengthening these will give you the clarity to allocate your limited accounts with confidence.`;
+                      }
+                      return `Your ICP has significant gaps that would make it difficult to pursue a focused 30-account strategy. Start by addressing ${gaps.length > 0 ? gaps.slice(0, 3).join(", ") : "the lowest-scoring dimensions"} — these are the foundations that every other dimension builds on.`;
+                    })()}
                   </p>
                 </div>
 
