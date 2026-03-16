@@ -705,33 +705,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   ))}
                 </div>
 
-                <div style={{ marginTop: 24, background: `${BRAND.teal}08`, borderRadius: 8, padding: 20, border: `1px solid ${BRAND.teal}25` }}>
-                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, marginTop: 0, marginBottom: 8 }}>The Constrained-Universe Test</h3>
-                  <p style={{ fontSize: 13, color: BRAND.dark, lineHeight: 1.6, margin: 0 }}>
-                    <em>
-                      &quot;If you could only pursue 30 accounts this year, does your ICP give you enough information to choose the right 30, know exactly how to approach each one, understand what you&apos;re displacing, and identify who in your network can open the door?&quot;
-                    </em>
-                  </p>
-                  <p style={{ fontSize: 13, color: BRAND.mid, lineHeight: 1.6, margin: "10px 0 0" }}>
-                    {(() => {
-                      const scores = evalResult.scores;
-                      const strong = DIMENSIONS.filter((d) => (scores[d.key] ?? 0) >= 4).map((d) => d.name.toLowerCase());
-                      const gaps = DIMENSIONS.filter((d) => (scores[d.key] ?? 0) <= 2).map((d) => d.name.toLowerCase());
-                      const total = evalResult.totalScore;
-                      if (total >= 85) {
-                        return "Your ICP is well-equipped for constrained-universe selling. You have the depth to prioritise accounts confidently, approach decision-makers with context, and differentiate against incumbents. Focus on keeping it current as your market evolves.";
-                      }
-                      if (total >= 70) {
-                        return `Your ICP covers most of what you need. Your strengths — ${strong.slice(0, 2).join(" and ") || "several areas"} — give you a solid foundation. To move from strong to elite, deepen ${gaps.length > 0 ? gaps.slice(0, 2).join(" and ") : "the dimensions that scored lowest"}.`;
-                      }
-                      if (total >= 50) {
-                        return `Your ICP has a foundation to build on${strong.length > 0 ? `, particularly in ${strong[0]}` : ""}. The areas to prioritise are ${gaps.length > 0 ? gaps.slice(0, 3).join(", ") : "the lower-scoring dimensions"} — strengthening these will give you the clarity to allocate your limited accounts with confidence.`;
-                      }
-                      return `Your ICP has significant gaps that would make it difficult to pursue a focused 30-account strategy. Start by addressing ${gaps.length > 0 ? gaps.slice(0, 3).join(", ") : "the lowest-scoring dimensions"} — these are the foundations that every other dimension builds on.`;
-                    })()}
-                  </p>
-                </div>
-
                 {!showCRM ? (
                   <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24, textAlign: "center" }}>
                     <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px" }}>Want to know if your ICP matches reality?</h3>

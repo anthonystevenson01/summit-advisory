@@ -148,7 +148,14 @@ async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
   throw new Error(`All fetch methods failed for doc ${docId}: ${errors.join(" | ")}`);
 }
 
+// In-memory rubric cache — survives across requests in the same serverless instance
+let rubricCache: { prompt: string; rubricLoaded: boolean; rubricSource: string; debug?: Record<string, unknown>; cachedAt: number } | null = null;
+const RUBRIC_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: boolean; rubricSource: string; debug?: Record<string, unknown> }> {
+  if (rubricCache && Date.now() - rubricCache.cachedAt < RUBRIC_CACHE_TTL) {
+    return rubricCache;
+  }
   const apiKey = process.env.GOOGLE_API_KEY;
   const skillId = process.env.SKILL_DOC_ID;
   const recId = process.env.RECOMMENDATIONS_DOC_ID;
@@ -200,14 +207,18 @@ async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: bo
   }
   const combined = parts.filter(Boolean).join("\n\n---\n\n");
   if (!combined) {
-    return {
+    const result = {
       prompt: "Return JSON with totalScore (0-100), scores (bca, pa, usp, it, cd, nf, fs each 1-5), dimensionReasoning array with dim, score, reasoning, and recommendations array with dim, score, gap, consequence, action.",
       rubricLoaded: false,
       rubricSource: "docs_fetched_but_empty",
       debug,
     };
+    // Don't cache failures
+    return result;
   }
-  return { prompt: combined, rubricLoaded: true, rubricSource: sources.join("+"), debug };
+  const result = { prompt: combined, rubricLoaded: true, rubricSource: sources.join("+"), debug };
+  rubricCache = { ...result, cachedAt: Date.now() };
+  return result;
 }
 
 function parseJsonFromResponse(text: string): EvaluateResponse | null {
@@ -308,8 +319,8 @@ ${skillsPrompt}`;
   try {
     const anthropic = new Anthropic({ apiKey });
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 1500,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
