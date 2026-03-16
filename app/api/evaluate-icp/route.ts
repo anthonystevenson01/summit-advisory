@@ -300,7 +300,7 @@ Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 
   try {
     const anthropic = new Anthropic({ apiKey });
     const message = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
       system: scoringPrompt,
       messages: [{ role: "user", content: `Score this ICP. Return JSON only.\n\n---\n\n${icpText}` }],
