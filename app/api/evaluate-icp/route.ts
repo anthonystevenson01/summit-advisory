@@ -263,6 +263,7 @@ function parseJsonFromResponse(text: string): EvaluateResponse | null {
   }
 }
 
+// Phase 1: Fast scores-only endpoint — uses Haiku for speed (~2-3s)
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -281,64 +282,55 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ICP text must be at least 50 characters." }, { status: 400 });
   }
 
-  const { prompt: skillsPrompt, rubricLoaded, rubricSource, debug: rubricDebug } = await loadSkillsFromDrive();
-  const systemPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Use the following rubric and dimensions. Reply with only valid JSON, no markdown or extra text.
+  const scoringPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Reply with only valid JSON, no markdown or extra text.
 
-Your JSON response MUST include a "dimensionReasoning" array with an entry for each of the 7 dimensions (bca, pa, usp, it, cd, nf, fs). Each entry must have:
-- "dim": the dimension key
-- "score": the score you assigned (1-5)
-- "reasoning": 2-3 sentences explaining exactly what evidence you found (or didn't find) in the ICP text that justified this score. Quote specific phrases from the input where possible. Score accurately — a missing dimension should score 1, not 3.
+Score the ICP across these 7 dimensions, each 1-5:
+- bca: Buying Committee & Access Mapping (weight 25%)
+- pa: Pain Articulation Depth (weight 18%)
+- usp: Universe Sizing & Account Intelligence (weight 15%)
+- it: Intent / Trigger Definition (weight 15%)
+- cd: Competitive Displacement Awareness (weight 12%)
+- nf: Negative Filters (weight 10%)
+- fs: Firmographic Specificity (weight 5%)
 
-TONE: Use a constructive, advisory tone throughout. The score communicates severity — your text should focus on what to improve and how, not on criticising what is missing. Avoid harsh language like "fails to", "weak", "poor", "needs more work", "inadequate". Instead frame gaps as opportunities: "could be strengthened by", "consider adding", "an opportunity to deepen". You are a helpful advisor, not a critic.
+Score accurately — a missing dimension should score 1, not 3. A vague mention scores 2. Specific detail scores 3-4. Comprehensive with evidence scores 5.
 
-Your JSON response MUST also include a "recommendations" array. Each entry must have:
-- "dim": the full dimension name (e.g. "Buying Committee & Access Mapping")
-- "score": the score you assigned (1-5)
-- "gap": 1-2 sentences describing the specific gap found in THIS ICP — reference concrete details from the input, not generic advice
-- "consequence": 1 sentence explaining what this gap means for their enterprise outreach specifically
-- "action": 1 concrete, specific next step they can take to close this gap — tailor it to their industry/market if mentioned
-
-Only include recommendations for dimensions scoring 3 or below. If a dimension scores 4 or 5, omit it from recommendations.
-
-Example structure:
-{
-  "totalScore": 45,
-  "scores": { "bca": 2, "pa": 3, ... },
-  "dimensionReasoning": [
-    { "dim": "bca", "score": 2, "reasoning": "The ICP mentions 'VP of Engineering' as a buyer but does not map the full buying committee, access paths, or internal champions. No mention of procurement or legal involvement." },
-    ...
-  ],
-  "recommendations": [
-    { "dim": "Buying Committee & Access Mapping", "score": 2, "gap": "Your ICP identifies the VP of Engineering as the buyer but doesn't map other stakeholders like procurement, legal, or the CFO who typically approve deals of this size.", "consequence": "Without a full committee map, your reps will get blocked late in the cycle by stakeholders they didn't anticipate.", "action": "Interview your last 3 closed-won customers to map every person involved in their buying process, then add those roles to your ICP." }
-  ]
-}
-
-${skillsPrompt}`;
-  const userPrompt = `Evaluate this ICP document and return the JSON object only.\n\n---\n\n${icpText}`;
+Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 3, "fs": 4 } }`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
-    // Stream for faster time-to-first-token, collect full response server-side
-    const stream = anthropic.messages.stream({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
+    const message = await anthropic.messages.create({
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 200,
+      system: scoringPrompt,
+      messages: [{ role: "user", content: `Score this ICP. Return JSON only.\n\n---\n\n${icpText}` }],
     });
-    const message = await stream.finalMessage();
 
     const textBlock = message.content.find((b) => b.type === "text");
     const text = textBlock && "text" in textBlock ? textBlock.text : "";
-    const result = parseJsonFromResponse(text);
-    if (!result) {
-      return NextResponse.json({ error: "Could not parse evaluation response." }, { status: 502 });
+
+    const trimmed = text.trim();
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}") + 1;
+    if (start === -1 || end <= start) {
+      return NextResponse.json({ error: "Could not parse scoring response." }, { status: 502 });
+    }
+    const parsed = JSON.parse(trimmed.slice(start, end)) as { scores?: Record<string, number> };
+    if (!parsed.scores || typeof parsed.scores !== "object") {
+      return NextResponse.json({ error: "Invalid scoring response." }, { status: 502 });
+    }
+
+    const scores: Record<string, number> = {};
+    for (const k of DIMENSION_KEYS) {
+      const v = parsed.scores[k];
+      scores[k] = typeof v === "number" && v >= 1 && v <= 5 ? Math.round(v) : 3;
     }
 
     const weightedTotal =
-      (DIMENSION_KEYS.reduce((sum, k) => sum + (result.scores[k] ?? 3) * (WEIGHTS[k] ?? 0), 0) / 5) * 100;
-    result.totalScore = Math.round(weightedTotal);
+      (DIMENSION_KEYS.reduce((sum, k) => sum + (scores[k] ?? 3) * (WEIGHTS[k] ?? 0), 0) / 5) * 100;
+    const totalScore = Math.round(weightedTotal);
 
-    // Persist to Redis
+    // Persist scores to Redis; store ICP text for later details call
     const submissionId = crypto.randomUUID();
     try {
       const redis = getRedis();
@@ -347,22 +339,24 @@ ${skillsPrompt}`;
         JSON.stringify({
           id: submissionId,
           icpText: icpText.slice(0, 5000),
-          totalScore: result.totalScore,
-          scores: result.scores,
-          dimensionReasoning: result.dimensionReasoning,
-          recommendations: result.recommendations,
-          rubricLoaded,
+          totalScore,
+          scores,
+          dimensionReasoning: [],
+          recommendations: [],
+          rubricLoaded: false,
           submittedAt: new Date().toISOString(),
         })
       );
+      // Store ICP text for the details endpoint (24h TTL)
+      await redis.set(`icp-text:${submissionId}`, icpText.slice(0, 5000), { ex: 86400 });
     } catch (redisErr) {
       console.error("ICP submission: Redis persist failed", redisErr);
     }
 
-    return NextResponse.json({ ...result, id: submissionId, rubricLoaded, rubricSource, rubricDebug });
+    return NextResponse.json({ totalScore, scores, dimensionReasoning: [], recommendations: [], id: submissionId, rubricLoaded: false, rubricSource: "scores_only" });
   } catch (err) {
     console.error("evaluate-icp error", err);
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: "Evaluation failed.", debug: message }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "Evaluation failed.", debug: msg }, { status: 500 });
   }
 }
