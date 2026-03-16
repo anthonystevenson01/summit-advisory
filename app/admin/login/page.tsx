@@ -24,10 +24,11 @@ export default function AdminLoginPage() {
 function AdminLoginInner() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [clientError, setClientError] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
   const searchParams = useSearchParams();
-  const serverError = searchParams.get("error");
+  const urlError = searchParams.get("error");
 
   useEffect(() => {
     fetch("/api/admin/setup")
@@ -36,22 +37,62 @@ function AdminLoginInner() {
       .catch(() => setIsSetup(false));
   }, []);
 
-  const error = clientError || serverError || "";
+  const displayError = error || urlError || "";
 
-  // Client-side validation before form submit for setup
-  const handleSetupSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    setClientError("");
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = (await res.json()) as { ok?: boolean; token?: string; error?: string };
+      if (res.ok && data.token) {
+        // Redirect to activate endpoint which sets the cookie via GET redirect
+        window.location.href = `/api/admin/activate?token=${data.token}`;
+      } else {
+        setError(data.error || "Login failed");
+      }
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
     if (password.length < 8) {
-      e.preventDefault();
-      setClientError("Password must be at least 8 characters");
+      setError("Password must be at least 8 characters");
       return;
     }
     if (password !== confirmPassword) {
-      e.preventDefault();
-      setClientError("Passwords don't match");
+      setError("Passwords don't match");
       return;
     }
-    // Let the form submit natively
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = (await res.json()) as { ok?: boolean; token?: string; error?: string };
+      if (res.ok && data.token) {
+        // Redirect to activate endpoint which sets the cookie via GET redirect
+        window.location.href = `/api/admin/activate?token=${data.token}`;
+      } else {
+        setError(data.error || "Setup failed");
+      }
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (isSetup === null) {
@@ -106,7 +147,7 @@ function AdminLoginInner() {
           {isSetup ? "Set up your password to get started" : "Summit Strategy Advisory"}
         </p>
 
-        {error && (
+        {displayError && (
           <div
             style={{
               background: "#FFEBEE",
@@ -118,19 +159,17 @@ function AdminLoginInner() {
               color: BRAND.red,
             }}
           >
-            {error}
+            {displayError}
           </div>
         )}
 
         {isSetup ? (
-          /* Native form POST — browser handles the redirect + cookie */
-          <form method="POST" action="/api/admin/setup" onSubmit={handleSetupSubmit}>
+          <form onSubmit={handleSetup}>
             <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>
               Password
             </label>
             <input
               type="password"
-              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Choose a password (min 8 characters)"
@@ -168,7 +207,7 @@ function AdminLoginInner() {
             />
             <button
               type="submit"
-              disabled={!password || !confirmPassword}
+              disabled={!password || !confirmPassword || loading}
               style={{
                 width: "100%",
                 padding: "11px",
@@ -183,19 +222,17 @@ function AdminLoginInner() {
                 letterSpacing: "0.03em",
               }}
             >
-              Create Account
+              {loading ? "Setting up..." : "Create Account"}
             </button>
           </form>
         ) : (
           <>
-            {/* Native form POST — browser handles the redirect + cookie */}
-            <form method="POST" action="/api/admin/login">
+            <form onSubmit={handleLogin}>
               <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>
                 Password
               </label>
               <input
                 type="password"
-                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin password"
@@ -213,7 +250,7 @@ function AdminLoginInner() {
               />
               <button
                 type="submit"
-                disabled={!password}
+                disabled={!password || loading}
                 style={{
                   width: "100%",
                   padding: "11px",
@@ -228,18 +265,11 @@ function AdminLoginInner() {
                   letterSpacing: "0.03em",
                 }}
               >
-                Sign In
+                {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                margin: "24px 0",
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
               <div style={{ flex: 1, height: 1, background: BRAND.border }} />
               <span style={{ fontSize: 11, color: BRAND.mid, textTransform: "uppercase", letterSpacing: "0.08em" }}>or</span>
               <div style={{ flex: 1, height: 1, background: BRAND.border }} />

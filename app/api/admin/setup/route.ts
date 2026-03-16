@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setupAdmin, createSessionToken, sessionCookieOptions, adminExists } from "@/app/lib/auth";
+import { setupAdmin, createSessionToken, adminExists } from "@/app/lib/auth";
 
 export async function GET() {
   try {
@@ -11,41 +11,21 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const contentType = req.headers.get("content-type") || "";
-
   try {
     const exists = await adminExists();
     if (exists) {
-      return NextResponse.redirect(new URL("/admin/login?error=" + encodeURIComponent("Admin account already exists. Please log in."), req.url));
+      return NextResponse.json({ error: "Admin account already exists. Please log in." }, { status: 400 });
     }
 
-    let password: string | undefined;
-
-    if (contentType.includes("application/x-www-form-urlencoded")) {
-      const formData = await req.formData();
-      password = formData.get("password") as string | undefined;
-    } else {
-      const body = (await req.json()) as { password?: string };
-      password = body.password;
-    }
-
+    const { password } = (await req.json()) as { password?: string };
     if (!password || password.length < 8) {
-      return NextResponse.redirect(new URL("/admin/login?error=" + encodeURIComponent("Password must be at least 8 characters"), req.url));
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
     await setupAdmin(password);
     const token = await createSessionToken();
-    const opts = sessionCookieOptions();
-    const response = NextResponse.redirect(new URL("/admin", req.url));
-    response.cookies.set(opts.name, token, {
-      httpOnly: opts.httpOnly,
-      secure: opts.secure,
-      sameSite: opts.sameSite,
-      path: opts.path,
-      maxAge: opts.maxAge,
-    });
-    return response;
+    return NextResponse.json({ ok: true, token });
   } catch {
-    return NextResponse.redirect(new URL("/admin/login?error=" + encodeURIComponent("Setup failed"), req.url));
+    return NextResponse.json({ error: "Setup failed" }, { status: 500 });
   }
 }
