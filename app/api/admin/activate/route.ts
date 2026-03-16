@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   // Verify the token exists in Redis
   const redis = getRedis();
   const exists = await redis.get(`admin:session:${token}`);
-  if (exists !== "1") {
+  if (!exists) {
     return NextResponse.redirect(new URL("/admin/login?error=Invalid+session", req.url));
   }
 

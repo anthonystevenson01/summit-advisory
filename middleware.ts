@@ -27,7 +27,7 @@ export async function middleware(req: NextRequest) {
     }
     const redis = new Redis({ url, token: redisToken });
     const exists = await redis.get(`admin:session:${token}`);
-    if (exists !== "1") {
+    if (!exists) {
       const response = NextResponse.redirect(new URL("/admin/login", req.url));
       response.cookies.delete("admin_session");
       return response;

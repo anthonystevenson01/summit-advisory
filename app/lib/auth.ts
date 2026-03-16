@@ -52,7 +52,7 @@ export async function validateSession(): Promise<boolean> {
   if (!token) return false;
   const redis = getRedis();
   const exists = await redis.get(`admin:session:${token}`);
-  return exists === "1";
+  return !!exists;
 }
 
 export async function destroySession(): Promise<void> {
