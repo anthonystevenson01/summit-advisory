@@ -53,9 +53,11 @@ function AdminLoginInner() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
+        await new Promise((r) => setTimeout(r, 100));
         window.location.href = "/admin";
       } else {
         const data = (await res.json()) as { error?: string };
@@ -84,9 +86,11 @@ function AdminLoginInner() {
       const res = await fetch("/api/admin/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
+        await new Promise((r) => setTimeout(r, 100));
         window.location.href = "/admin";
       } else {
         const data = (await res.json()) as { error?: string };
