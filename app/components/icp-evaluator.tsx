@@ -189,6 +189,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [showCRM, setShowCRM] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const charCount = icpText.length;
   const resultsRef = useRef<HTMLElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
@@ -240,8 +241,8 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         @media (max-width: 700px) { .icp-eval-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
-      {/* Back button */}
-      <div style={{ padding: "16px 32px 0", maxWidth: 1060, margin: "0 auto" }}>
+      {/* Back button + Share */}
+      <div style={{ padding: "16px 32px 0", maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button
           type="button"
           onClick={onBack}
@@ -262,6 +263,42 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             <path d="M12 7H2M6 3L2 7l4 4" />
           </svg>
           Resources
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({ title: "ICP Evaluator — Summit Strategy Advisory", url: window.location.href }).catch(() => {});
+            } else {
+              navigator.clipboard.writeText(window.location.href);
+              setShareCopied(true);
+              setTimeout(() => setShareCopied(false), 2000);
+            }
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 14px",
+            borderRadius: 6,
+            border: `1px solid ${BRAND.border}`,
+            background: BRAND.white,
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: 600,
+            color: BRAND.teal,
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          {shareCopied ? "Link copied!" : "Share"}
         </button>
       </div>
 
