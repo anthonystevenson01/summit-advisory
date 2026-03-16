@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
 import fs from "node:fs/promises";
 import nodemailer from "nodemailer";
-import { Redis } from "@upstash/redis";
+import { getRedis } from "@/app/lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,18 +74,12 @@ export async function POST(req: NextRequest) {
       receivedAt: new Date().toISOString(),
     };
 
-    // Persistent storage: Upstash Redis (support both direct Upstash and Vercel KV env names)
-    const redisUrl =
-      process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
-    const redisToken =
-      process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
-    if (redisUrl && redisToken) {
-      try {
-        const redis = new Redis({ url: redisUrl, token: redisToken });
-        await redis.rpush("ai-studio-requests", JSON.stringify(record));
-      } catch (redisErr) {
-        console.error("AI Studio request: Redis persist failed", redisErr);
-      }
+    // Persistent storage: Upstash Redis
+    try {
+      const redis = getRedis();
+      await redis.rpush("ai-studio-requests", JSON.stringify(record));
+    } catch (redisErr) {
+      console.error("AI Studio request: Redis persist failed", redisErr);
     }
 
     // Local/dev only: JSONL file (skip on Vercel – read-only fs)

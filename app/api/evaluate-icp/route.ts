@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getRedis } from "@/app/lib/redis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -324,7 +325,28 @@ ${skillsPrompt}`;
       (DIMENSION_KEYS.reduce((sum, k) => sum + (result.scores[k] ?? 3) * (WEIGHTS[k] ?? 0), 0) / 5) * 100;
     result.totalScore = Math.round(weightedTotal);
 
-    return NextResponse.json({ ...result, rubricLoaded, rubricSource, rubricDebug });
+    // Persist to Redis
+    const submissionId = crypto.randomUUID();
+    try {
+      const redis = getRedis();
+      await redis.rpush(
+        "icp-submissions",
+        JSON.stringify({
+          id: submissionId,
+          icpText: icpText.slice(0, 5000),
+          totalScore: result.totalScore,
+          scores: result.scores,
+          dimensionReasoning: result.dimensionReasoning,
+          recommendations: result.recommendations,
+          rubricLoaded,
+          submittedAt: new Date().toISOString(),
+        })
+      );
+    } catch (redisErr) {
+      console.error("ICP submission: Redis persist failed", redisErr);
+    }
+
+    return NextResponse.json({ ...result, id: submissionId, rubricLoaded, rubricSource, rubricDebug });
   } catch (err) {
     console.error("evaluate-icp error", err);
     const message = err instanceof Error ? err.message : String(err);
