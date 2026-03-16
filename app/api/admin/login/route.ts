@@ -2,20 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPassword, createSessionToken, sessionCookieOptions } from "@/app/lib/auth";
 
 export async function POST(req: NextRequest) {
+  const contentType = req.headers.get("content-type") || "";
+
   try {
-    const { password } = (await req.json()) as { password?: string };
+    let password: string | undefined;
+
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      const formData = await req.formData();
+      password = formData.get("password") as string | undefined;
+    } else {
+      const body = (await req.json()) as { password?: string };
+      password = body.password;
+    }
+
     if (!password) {
-      return NextResponse.json({ error: "Password required" }, { status: 400 });
+      return redirectWithError(req, "Password required");
     }
 
     const valid = await verifyPassword(password);
     if (!valid) {
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+      return redirectWithError(req, "Invalid password");
     }
 
     const token = await createSessionToken();
     const opts = sessionCookieOptions();
-    const response = NextResponse.json({ ok: true });
+    const response = NextResponse.redirect(new URL("/admin", req.url));
     response.cookies.set(opts.name, token, {
       httpOnly: opts.httpOnly,
       secure: opts.secure,
@@ -25,6 +36,10 @@ export async function POST(req: NextRequest) {
     });
     return response;
   } catch {
-    return NextResponse.json({ error: "Login failed" }, { status: 500 });
+    return redirectWithError(req, "Login failed");
   }
+}
+
+function redirectWithError(req: NextRequest, error: string) {
+  return NextResponse.redirect(new URL(`/admin/login?error=${encodeURIComponent(error)}`, req.url));
 }
