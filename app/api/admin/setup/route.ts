@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setupAdmin, createSession, adminExists } from "@/app/lib/auth";
+import { setupAdmin, createSessionToken, sessionCookieOptions, adminExists } from "@/app/lib/auth";
 
 export async function GET() {
   try {
@@ -23,8 +23,17 @@ export async function POST(req: NextRequest) {
     }
 
     await setupAdmin(password);
-    await createSession();
-    return NextResponse.json({ ok: true });
+    const token = await createSessionToken();
+    const opts = sessionCookieOptions();
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(opts.name, token, {
+      httpOnly: opts.httpOnly,
+      secure: opts.secure,
+      sameSite: opts.sameSite,
+      path: opts.path,
+      maxAge: opts.maxAge,
+    });
+    return response;
   } catch {
     return NextResponse.json({ error: "Setup failed" }, { status: 500 });
   }
