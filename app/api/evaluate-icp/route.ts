@@ -88,21 +88,63 @@ function extractTextFromDocBody(content: unknown[]): string {
 }
 
 async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
-  // Use Google Drive API export (supports API keys for public docs)
-  // instead of Google Docs API (which requires OAuth2)
-  const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain&key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Google Drive export API: ${res.status} ${t.slice(0, 200)}`);
+  const errors: string[] = [];
+
+  // Method 1: Drive API alt=media (works for uploaded files like .docx shared publicly)
+  try {
+    const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}?alt=media&key=${encodeURIComponent(apiKey)}`;
+    const driveRes = await fetch(driveUrl);
+    if (driveRes.ok) {
+      const text = (await driveRes.text()).trim();
+      if (text) {
+        console.log(`Google Doc ${docId}: downloaded ${text.length} chars via Drive alt=media`);
+        return text;
+      }
+    } else {
+      const t = await driveRes.text();
+      errors.push(`Drive alt=media: ${driveRes.status} ${t.slice(0, 150)}`);
+    }
+  } catch (e) {
+    errors.push(`Drive alt=media: ${e instanceof Error ? e.message : String(e)}`);
   }
-  const text = (await res.text()).trim();
-  if (!text) {
-    console.error(`Google Doc ${docId}: Drive export returned empty text`);
-  } else {
-    console.log(`Google Doc ${docId}: exported ${text.length} chars via Drive API`);
+
+  // Method 2: Drive API export as text (works for native Google Docs)
+  try {
+    const exportUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=text/plain&key=${encodeURIComponent(apiKey)}`;
+    const exportRes = await fetch(exportUrl);
+    if (exportRes.ok) {
+      const text = (await exportRes.text()).trim();
+      if (text) {
+        console.log(`Google Doc ${docId}: exported ${text.length} chars via Drive export`);
+        return text;
+      }
+    } else {
+      const t = await exportRes.text();
+      errors.push(`Drive export: ${exportRes.status} ${t.slice(0, 150)}`);
+    }
+  } catch (e) {
+    errors.push(`Drive export: ${e instanceof Error ? e.message : String(e)}`);
   }
-  return text;
+
+  // Method 3: Public Google Docs export URL (no API key, native docs only)
+  try {
+    const pubUrl = `https://docs.google.com/document/d/${encodeURIComponent(docId)}/export?format=txt`;
+    const pubRes = await fetch(pubUrl, { redirect: "follow" });
+    if (pubRes.ok) {
+      const text = (await pubRes.text()).trim();
+      if (text) {
+        console.log(`Google Doc ${docId}: exported ${text.length} chars via public URL`);
+        return text;
+      }
+    } else {
+      const t = await pubRes.text();
+      errors.push(`Public export: ${pubRes.status} ${t.slice(0, 150)}`);
+    }
+  } catch (e) {
+    errors.push(`Public export: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  throw new Error(`All fetch methods failed for doc ${docId}: ${errors.join(" | ")}`);
 }
 
 async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: boolean; rubricSource: string; debug?: Record<string, unknown> }> {
