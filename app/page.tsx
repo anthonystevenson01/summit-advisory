@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
+import ICPEvaluator from "./components/icp-evaluator";
 
 const BOOK_CALL_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
@@ -587,7 +588,7 @@ function PracticePage({ id, onBack, onContact }: { id: string; onBack: () => voi
 }
 
 // ── Resources Page ──
-function ResourcesPage({ onBack }: { onBack: () => void }) {
+function ResourcesPage({ onBack, onOpenTool }: { onBack: () => void; onOpenTool: (tool: string) => void }) {
   return (
     <div className="inner">
       <div className="inner-hero">
@@ -598,6 +599,16 @@ function ResourcesPage({ onBack }: { onBack: () => void }) {
       </div>
       <div className="inner-body">
         <div className="resources">
+          <button
+            type="button"
+            className="resource resource-tool"
+            onClick={() => onOpenTool("icp-evaluator")}
+          >
+            <span className="resource-tag">Free Tool</span>
+            <div className="resource-title">ICP Quality Evaluator</div>
+            <p className="resource-desc">Score your Ideal Customer Profile across seven dimensions. Find gaps, get recommendations, and fix them before they cost you accounts.</p>
+            <span className="resource-cta">Open tool →</span>
+          </button>
           {resources.map((r, i) => (
             <div className="resource" key={i}>
               <span className="resource-tag">{r.tag}</span>
@@ -881,7 +892,8 @@ export default function Summit() {
         {page === "ai" && <AIStudioPage onBack={() => nav("home")} />}
         {page === "retail" && <RetailAdvisoryPage onBack={() => nav("home")} onBook={goToBooking} />}
         {page === "sme" && <PracticePage id="sme" onBack={() => nav("home")} onContact={goToBooking} />}
-        {page === "resources" && <ResourcesPage onBack={() => nav("home")} />}
+        {page === "resources" && <ResourcesPage onBack={() => nav("home")} onOpenTool={(tool) => nav(tool)} />}
+        {page === "icp-evaluator" && <ICPEvaluator onBack={() => nav("resources")} onBookCall={goToBooking} />}
         {page === "blog" && <BlogPage onBack={() => nav("home")} />}
         {page === "careers" && <CareersPage onBack={() => nav("home")} onContact={goToBooking} />}
         {page === "contact" && <ContactPage onBack={() => nav("home")} />}

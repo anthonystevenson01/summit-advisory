@@ -109,7 +109,15 @@ export async function POST(req: NextRequest) {
       NOTIFY_EMAIL,
     } = process.env;
 
-    if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && NOTIFY_EMAIL) {
+    const smtpConfigured =
+      SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && NOTIFY_EMAIL;
+    if (!smtpConfigured) {
+      console.warn(
+        "AI Studio: email skipped – set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, NOTIFY_EMAIL in Vercel env"
+      );
+    }
+
+    if (smtpConfigured) {
       try {
         const transporter = nodemailer.createTransport({
           host: SMTP_HOST,

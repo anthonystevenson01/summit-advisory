@@ -484,6 +484,27 @@ body {
   line-height: 1.7;
 }
 
+.resource-tool {
+  border: none;
+  text-align: left;
+  font: inherit;
+  width: 100%;
+  display: block;
+  border-top-color: var(--teal);
+}
+.resource-tool:hover { background: var(--light); }
+
+.resource-cta {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
 /* ─── CONTACT ─── */
 .contact-grid {
   display: grid;

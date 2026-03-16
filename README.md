@@ -41,6 +41,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
   `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`  
   Submissions are appended to the Redis list `ai-studio-requests` (each item is a JSON string). You can read them via the Upstash console or a small admin script.
 
+- **ICP Evaluator (Claude + Google Drive skills)**  
+  For the Resources → ICP Quality Evaluator tool to run real evaluations, set in `.env.local` and in Vercel:  
+  `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `SKILL_DOC_ID`, `RECOMMENDATIONS_DOC_ID`  
+  The two Doc IDs are Google Docs document IDs (from the doc URL: `.../d/DOC_ID/...`). The API fetches those docs and uses their content as the rubric/skills in the Claude prompt. Share both docs with “Anyone with the link can view” so the Google Docs API can read them with an API key.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# avoid committing env/keys in RTF or similar
+*env*.rtf
+APIClaudefile.env.rtf
 
 # vercel
 .vercel
