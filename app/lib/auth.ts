@@ -3,6 +3,29 @@ import { getRedis } from "./redis";
 
 const SESSION_COOKIE = "admin_session";
 const SESSION_TTL = 86400; // 24 hours
+const ADMIN_PASSWORD_KEY = "admin:password";
+
+async function hashPassword(password: string): Promise<string> {
+  const encoded = new TextEncoder().encode(password);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function adminExists(): Promise<boolean> {
+  const redis = getRedis();
+  const hash = await redis.get(ADMIN_PASSWORD_KEY);
+  return !!hash;
+}
+
+export async function setupAdmin(password: string): Promise<void> {
+  const redis = getRedis();
+  const exists = await redis.get(ADMIN_PASSWORD_KEY);
+  if (exists) throw new Error("Admin account already exists");
+  const hash = await hashPassword(password);
+  await redis.set(ADMIN_PASSWORD_KEY, hash);
+}
 
 export async function createSession(): Promise<string> {
   const token = crypto.randomUUID();
@@ -40,12 +63,9 @@ export async function destroySession(): Promise<void> {
 }
 
 export async function verifyPassword(password: string): Promise<boolean> {
-  const hash = process.env.ADMIN_PASSWORD_HASH;
-  if (!hash) return false;
-  const encoded = new TextEncoder().encode(password);
-  const digest = await crypto.subtle.digest("SHA-256", encoded);
-  const hexDigest = Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return hexDigest === hash.toLowerCase();
+  const redis = getRedis();
+  const storedHash = await redis.get(ADMIN_PASSWORD_KEY);
+  if (!storedHash || typeof storedHash !== "string") return false;
+  const inputHash = await hashPassword(password);
+  return inputHash === storedHash.toLowerCase();
 }
