@@ -264,6 +264,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 dimensionReasoning: details.dimensionReasoning || [],
                 recommendations: details.recommendations || [],
                 rubricLoaded: details.rubricLoaded ?? prev.rubricLoaded,
+                rubricSource: details.rubricLoaded ? "rubric_loaded" : prev.rubricSource,
               }
             : prev
         );
@@ -587,13 +588,14 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   <p style={{ fontSize: 14, color: BRAND.mid, marginTop: 12, lineHeight: 1.5, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>{getGrade(evalResult.totalScore).desc}</p>
                 </div>
 
-                {!evalResult.rubricLoaded && (
+                {/* Only show rubric warning after details have loaded and rubric still wasn't available */}
+                {unlocked && !loadingDetails && !evalResult.rubricLoaded && evalResult.rubricSource !== "scores_only" && (
                   <div style={{ background: "#FFF8E1", border: `1px solid ${BRAND.amber}40`, borderRadius: 8, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span style={{ fontSize: 16, lineHeight: 1 }}>&#9888;</span>
                     <div>
                       <p style={{ fontSize: 13, fontWeight: 600, color: BRAND.dark, margin: "0 0 4px" }}>Scoring rubric not loaded</p>
                       <p style={{ fontSize: 12, color: BRAND.mid, margin: 0, lineHeight: 1.5 }}>
-                        The detailed scoring rubric from Google Docs could not be loaded ({evalResult.rubricSource}). Scores were generated using a minimal fallback prompt, which may produce inaccurate results.
+                        The detailed scoring rubric from Google Docs could not be loaded. Scores were generated using a standard prompt.
                       </p>
                     </div>
                   </div>
