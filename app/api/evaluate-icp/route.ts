@@ -284,7 +284,10 @@ export async function POST(req: NextRequest) {
 
   try {
     // Start rubric fetch + Anthropic client init in parallel
-    const rubricPromise = loadSkillsFromDrive();
+    const rubricPromise = loadSkillsFromDrive().catch((e) => {
+      console.error("Rubric fetch failed, proceeding without:", e);
+      return { prompt: "", rubricLoaded: false, rubricSource: "fetch_error" } as const;
+    });
     const anthropic = new Anthropic({ apiKey });
 
     // Wait for rubric, then fire the scoring call
@@ -307,7 +310,7 @@ ${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.promp
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 200,
+      max_tokens: 300,
       system: scoringPrompt,
       messages: [{ role: "user", content: `Score this ICP. Return JSON only.\n\n---\n\n${icpText}` }],
     });
@@ -366,6 +369,7 @@ ${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.promp
   } catch (err) {
     console.error("evaluate-icp error", err);
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: "Evaluation failed.", debug: msg }, { status: 500 });
+    const stack = err instanceof Error ? err.stack?.slice(0, 300) : undefined;
+    return NextResponse.json({ error: "Evaluation failed.", debug: msg, stack }, { status: 500 });
   }
 }
