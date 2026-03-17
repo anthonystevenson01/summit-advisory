@@ -406,13 +406,13 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
           If you&apos;re a small team selling to enterprise, you already know the dynamics are different. But most ICP frameworks are built for companies with 10,000 accounts and an SDR army. Yours has maybe 150 accounts. Three things make selling in this world fundamentally different, and your ICP needs to address all of them.
         </p>
         <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
-          The Math Is Different When Every Account Is a Named Account
+          There&apos;s No Volume to Hide Behind
         </h2>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           Your universe is finite. The challenge isn&apos;t finding accounts — it&apos;s choosing which 30 to pursue first, knowing how to get access, and making every touch count. When you burn an account — wrong person, wrong timing, wrong message — that account is closed to you for 12–18 months. There&apos;s no volume to hide behind. Your real competitor isn&apos;t the other vendor — it&apos;s &ldquo;do nothing.&rdquo; Enterprise organisations have enormous inertia, and most of your target accounts are defaulting to the status quo right now. Your ICP needs to distinguish between accounts that have an active reason to change and accounts that are sitting comfortably — because pursuing the comfortable ones with the same intensity burns your limited capacity on deals that will stall. And you carry a trust tax that incumbents don&apos;t. Every enterprise buyer evaluating a small vendor is doing a private risk calculation that has nothing to do with your product — and your ICP needs to account for which accounts have champions willing to take that bet.
         </p>
         <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
-          As Machines Run Playbooks, Inputs Matter a Lot More
+          The Machines Are Only as Smart as What You Feed Them
         </h2>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           This is why your ICP is an important document in your GTM stack. And it&apos;s becoming more critical, not less — sequencing tools, intent platforms, and agentic SDRs can reach more accounts faster than ever. But every one of those machines takes its direction from the same source. A weak ICP fed into a powerful automation stack just produces high-velocity waste aimed at the wrong accounts, with the wrong message, at the wrong time.
