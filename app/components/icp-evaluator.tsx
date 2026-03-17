@@ -328,10 +328,10 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             <span style={{ color: BRAND.brandGreen, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Free Tool — Resources</span>
           </div>
           <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
-            Your ICP Is the Most Important Document in Your GTM Stack
+            ICP Evaluator for Enterprise Scale-Ups
           </h1>
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: "0 0 24px" }}>
-            Score it. Find the gaps. Fix them before they cost you accounts you can&apos;t replace.
+            Score your ICP across seven dimensions weighted for your situation. Find the gaps. Fix them before they cost you accounts you can&apos;t replace.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
             <button
@@ -402,27 +402,17 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
 
       {/* INTRO NARRATIVE */}
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "48px 24px 16px" }}>
-        <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "0 0 16px" }}>
-          GTM is getting automated. The machines are only as good as their inputs.
-        </h2>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          Sequencing tools, intent platforms, outbound automation, and now agentic SDRs — today&apos;s go-to-market stack can reach more accounts faster than ever. But every one of those tools takes its direction from the same source: your Ideal Customer Profile. A weak ICP fed into a powerful machine just produces high-velocity waste.
+          If you&apos;re a small team selling to enterprise, you already know the dynamics are different. But most ICP frameworks are built for companies with 10,000 accounts and an SDR army. Yours has maybe 150 accounts. Three things make selling in this world fundamentally different, and your ICP needs to address all of them.
         </p>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          This matters exponentially more when you&apos;re a small team selling to enterprise.
-        </p>
-
-        <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
-          The constrained-universe problem
-        </h2>
-        <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          If you sell to enterprise, your total addressable market isn&apos;t thousands of companies — it&apos;s probably 50 to 500. You know most of them by name. The challenge isn&apos;t finding accounts. It&apos;s choosing which 30 to pursue first, knowing how to get access, understanding what you&apos;re displacing, and making every single touch count.
+          Your universe is finite. The challenge isn&apos;t finding accounts — it&apos;s choosing which 30 to pursue first, knowing how to get access, and making every touch count. When you burn an account — wrong person, wrong timing, wrong message — that account is closed to you for 12–18 months. There&apos;s no volume to hide behind. Your real competitor isn&apos;t the other vendor — it&apos;s &ldquo;do nothing.&rdquo; Enterprise organisations have enormous inertia, and most of your target accounts are defaulting to the status quo right now. Your ICP needs to distinguish between accounts that have an active reason to change and accounts that are sitting comfortably — because pursuing the comfortable ones with the same intensity burns your limited capacity on deals that will stall. And you carry a trust tax that incumbents don&apos;t. Every enterprise buyer evaluating a small vendor is doing a private risk calculation that has nothing to do with your product — and your ICP needs to account for which accounts have champions willing to take that bet.
         </p>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          In this world, a burned account isn&apos;t a lost lead — it&apos;s a lost percentage of your entire addressable market. Approach the wrong person, misread the buying committee, or pitch against an incumbent you didn&apos;t know existed, and that account may be closed to you for 12–18 months. Standard ICP advice — define firmographics, identify pain, narrow your targeting — is fine when your market is 10,000 accounts and the goal is to cut it to 1,000. It falls short when you have a finite universe and no volume to hide behind.
+          This is why your ICP is an important document in your GTM stack. And it&apos;s becoming more critical, not less — sequencing tools, intent platforms, and agentic SDRs can reach more accounts faster than ever. But every one of those machines takes its direction from the same source. A weak ICP fed into a powerful automation stack just produces high-velocity waste aimed at the wrong accounts, with the wrong message, at the wrong time.
         </p>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
-          This evaluator is built for that reality. It scores your ICP across seven dimensions — weighted for the dynamics of constrained-universe enterprise selling — and gives you specific, actionable recommendations for every gap it finds.
+          This evaluator is built for these dynamics — and gives you specific, actionable recommendations for every gap it finds.
         </p>
 
         <div className="icp-eval-grid" style={{ margin: "28px 0 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
