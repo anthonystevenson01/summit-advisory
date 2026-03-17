@@ -75,14 +75,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "id and scores are required." }, { status: 400 });
   }
 
-  // Retrieve stored ICP text
+  // Retrieve ICP text + rubric in parallel
   const redis = getRedis();
-  const icpText = await redis.get(`icp-text:${submissionId}`);
+  const [icpText, rubricPrompt] = await Promise.all([
+    redis.get(`icp-text:${submissionId}`),
+    loadRubric(),
+  ]);
   if (!icpText || typeof icpText !== "string") {
     return NextResponse.json({ error: "ICP text not found. It may have expired." }, { status: 404 });
   }
-
-  const rubricPrompt = await loadRubric();
 
   const systemPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Reply with only valid JSON, no markdown or extra text.
 
@@ -151,21 +152,15 @@ ${rubricPrompt}`;
         )
       : [];
 
-    // Update the Redis submission with details
+    // Store details separately by submission ID (fast, no list scan)
     try {
-      const allSubmissions = await redis.lrange("icp-submissions", 0, -1);
-      for (let i = 0; i < allSubmissions.length; i++) {
-        const entry = typeof allSubmissions[i] === "string" ? JSON.parse(allSubmissions[i] as string) : allSubmissions[i];
-        if (entry && entry.id === submissionId) {
-          entry.dimensionReasoning = dimensionReasoning;
-          entry.recommendations = recommendations;
-          entry.rubricLoaded = !!rubricPrompt;
-          await redis.lset("icp-submissions", i, JSON.stringify(entry));
-          break;
-        }
-      }
+      await redis.set(
+        `icp-details:${submissionId}`,
+        JSON.stringify({ dimensionReasoning, recommendations, rubricLoaded: !!rubricPrompt }),
+        { ex: 86400 }
+      );
     } catch (redisErr) {
-      console.error("ICP details: Redis update failed", redisErr);
+      console.error("ICP details: Redis persist failed", redisErr);
     }
 
     return NextResponse.json({ dimensionReasoning, recommendations, rubricLoaded: !!rubricPrompt });
