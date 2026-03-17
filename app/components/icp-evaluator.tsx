@@ -589,7 +589,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 </div>
 
                 {/* Only show rubric warning after details have loaded and rubric still wasn't available */}
-                {unlocked && !loadingDetails && !evalResult.rubricLoaded && evalResult.rubricSource !== "scores_only" && (
+                {unlocked && !loadingDetails && evalResult.dimensionReasoning.length > 0 && !evalResult.rubricLoaded && (
                   <div style={{ background: "#FFF8E1", border: `1px solid ${BRAND.amber}40`, borderRadius: 8, padding: "12px 16px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span style={{ fontSize: 16, lineHeight: 1 }}>&#9888;</span>
                     <div>

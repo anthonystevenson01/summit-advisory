@@ -282,10 +282,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ICP text must be at least 50 characters." }, { status: 400 });
   }
 
-  // Load rubric from Google Docs (cached in memory for 10 min)
-  const rubric = await loadSkillsFromDrive();
+  try {
+    // Start rubric fetch + Anthropic client init in parallel
+    const rubricPromise = loadSkillsFromDrive();
+    const anthropic = new Anthropic({ apiKey });
 
-  const scoringPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Reply with only valid JSON, no markdown or extra text.
+    // Wait for rubric, then fire the scoring call
+    const rubric = await rubricPromise;
+
+    const scoringPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Reply with only valid JSON, no markdown or extra text.
 
 Score the ICP across these 7 dimensions, each 1-5:
 - bca: Buying Committee & Access Mapping (weight 25%)
@@ -300,8 +305,6 @@ Score accurately — a missing dimension should score 1, not 3. A vague mention 
 
 ${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.prompt}\n\n` : ""}Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 3, "fs": 4 } }`;
 
-  try {
-    const anthropic = new Anthropic({ apiKey });
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 200,
@@ -333,26 +336,28 @@ ${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.promp
       (DIMENSION_KEYS.reduce((sum, k) => sum + (scores[k] ?? 3) * (WEIGHTS[k] ?? 0), 0) / 5) * 100;
     const totalScore = Math.round(weightedTotal);
 
-    // Persist scores to Redis; store ICP text for later details call
+    // Persist scores to Redis; store ICP text for later details call (parallel)
     const submissionId = crypto.randomUUID();
     try {
       const redis = getRedis();
-      await redis.rpush(
-        "icp-submissions",
-        JSON.stringify({
-          id: submissionId,
-          icpText: icpText.slice(0, 5000),
-          totalScore,
-          scores,
-          dimensionReasoning: [],
-          recommendations: [],
-          rubricLoaded: rubric.rubricLoaded,
-          rubricSource: rubric.rubricSource,
-          submittedAt: new Date().toISOString(),
-        })
-      );
-      // Store ICP text for the details endpoint (24h TTL)
-      await redis.set(`icp-text:${submissionId}`, icpText.slice(0, 5000), { ex: 86400 });
+      const icpSlice = icpText.slice(0, 5000);
+      await Promise.all([
+        redis.rpush(
+          "icp-submissions",
+          JSON.stringify({
+            id: submissionId,
+            icpText: icpSlice,
+            totalScore,
+            scores,
+            dimensionReasoning: [],
+            recommendations: [],
+            rubricLoaded: rubric.rubricLoaded,
+            rubricSource: rubric.rubricSource,
+            submittedAt: new Date().toISOString(),
+          })
+        ),
+        redis.set(`icp-text:${submissionId}`, icpSlice, { ex: 86400 }),
+      ]);
     } catch (redisErr) {
       console.error("ICP submission: Redis persist failed", redisErr);
     }
