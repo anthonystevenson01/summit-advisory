@@ -293,7 +293,16 @@ export async function POST(req: NextRequest) {
     // Wait for rubric, then fire the scoring call
     const rubric = await rubricPromise;
 
-    const scoringPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales. Reply with only valid JSON, no markdown or extra text.
+    // For Phase 1, only include scoring criteria from rubric (not recommendations)
+    // to keep the prompt focused and output small
+    let rubricScoring = "";
+    if (rubric.rubricLoaded && rubric.prompt) {
+      // Extract just the scoring section (before any recommendations rubric)
+      const recSplit = rubric.prompt.indexOf("--- Recommendations rubric ---");
+      rubricScoring = recSplit > 0 ? rubric.prompt.slice(0, recSplit).trim() : rubric.prompt.slice(0, 3000);
+    }
+
+    const scoringPrompt = `You are an expert at evaluating Ideal Customer Profiles for B2B enterprise sales.
 
 Score the ICP across these 7 dimensions, each 1-5:
 - bca: Buying Committee & Access Mapping (weight 25%)
@@ -306,7 +315,7 @@ Score the ICP across these 7 dimensions, each 1-5:
 
 Score accurately — a missing dimension should score 1, not 3. A vague mention scores 2. Specific detail scores 3-4. Comprehensive with evidence scores 5.
 
-${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.prompt}\n\n` : ""}Return ONLY: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 3, "fs": 4 } }`;
+${rubricScoring ? `Use these scoring criteria:\n\n${rubricScoring}\n\n` : ""}Reply with ONLY this JSON format, nothing else: { "scores": { "bca": 2, "pa": 3, "usp": 1, "it": 2, "cd": 1, "nf": 3, "fs": 4 } }`;
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
@@ -319,14 +328,26 @@ ${rubric.rubricLoaded ? `Use this detailed rubric for scoring:\n\n${rubric.promp
     const text = textBlock && "text" in textBlock ? textBlock.text : "";
 
     const trimmed = text.trim();
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}") + 1;
-    if (start === -1 || end <= start) {
-      return NextResponse.json({ error: "Could not parse scoring response." }, { status: 502 });
+
+    // Try to parse full JSON first; if that fails, extract just the scores object
+    let parsed: { scores?: Record<string, number> } | null = null;
+    try {
+      const start = trimmed.indexOf("{");
+      const end = trimmed.lastIndexOf("}") + 1;
+      if (start !== -1 && end > start) {
+        parsed = JSON.parse(trimmed.slice(start, end)) as { scores?: Record<string, number> };
+      }
+    } catch {
+      // Full parse failed — try to extract just {"scores": {...}} via regex
+      const scoresMatch = trimmed.match(/"scores"\s*:\s*\{([^}]+)\}/);
+      if (scoresMatch) {
+        try {
+          parsed = JSON.parse(`{"scores":{${scoresMatch[1]}}}`);
+        } catch { /* give up */ }
+      }
     }
-    const parsed = JSON.parse(trimmed.slice(start, end)) as { scores?: Record<string, number> };
-    if (!parsed.scores || typeof parsed.scores !== "object") {
-      return NextResponse.json({ error: "Invalid scoring response." }, { status: 502 });
+    if (!parsed?.scores || typeof parsed.scores !== "object") {
+      return NextResponse.json({ error: "Could not parse scoring response.", raw: trimmed.slice(0, 500) }, { status: 502 });
     }
 
     const scores: Record<string, number> = {};
