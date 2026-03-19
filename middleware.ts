@@ -8,8 +8,8 @@ export const config = {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow login page and auth API routes through
-  if (pathname === "/admin/login" || pathname.startsWith("/api/admin/")) {
+  // Allow login, reset page and auth API routes through
+  if (pathname === "/admin/login" || pathname === "/admin/reset" || pathname.startsWith("/api/admin/")) {
     return NextResponse.next();
   }
 
