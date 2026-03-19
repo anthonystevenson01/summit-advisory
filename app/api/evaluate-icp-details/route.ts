@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getRedis } from "@/app/lib/redis";
+import { getDetailsLimiter, getClientIp } from "@/app/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +74,16 @@ export async function POST(req: NextRequest) {
   const scores = body.scores;
   if (!submissionId || !scores) {
     return NextResponse.json({ error: "id and scores are required." }, { status: 400 });
+  }
+
+  // Rate limiting — 10 unlocks per IP per hour
+  const limiter = getDetailsLimiter();
+  if (limiter) {
+    const ip = getClientIp(req);
+    const { success } = await limiter.limit(ip);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
   }
 
   // Retrieve ICP text + rubric in parallel

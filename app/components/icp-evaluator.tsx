@@ -196,7 +196,9 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
+  const [honeypot, setHoneypot] = useState(""); // bot trap
   const charCount = icpText.length;
+  const MAX_CHARS = 8000;
   const resultsRef = useRef<HTMLElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -205,7 +207,8 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   }, []);
 
   const handleEvaluate = async () => {
-    if (charCount < 50) return;
+    if (charCount < 50 || charCount > MAX_CHARS) return;
+    if (honeypot) return; // silently reject bots
     setIsScoring(true);
     setEvalError(null);
     setEvalResult(null);
@@ -471,9 +474,20 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         <div style={{ marginBottom: 8 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen, letterSpacing: "0.02em" }}>Your ICP Description</label>
         </div>
+        {/* Honeypot — hidden from real users, bots fill it in */}
+        <input
+          type="text"
+          name="website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          tabIndex={-1}
+          aria-hidden="true"
+          style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+          autoComplete="off"
+        />
         <textarea
           value={icpText}
-          onChange={(e) => setIcpText(e.target.value)}
+          onChange={(e) => setIcpText(e.target.value.slice(0, MAX_CHARS))}
           placeholder={`Paste your ICP description here. Include as much detail as you have:
 
 • Who you target (industry, size, geography)
@@ -502,25 +516,27 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
           disabled={scoreRevealed}
         />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-          <span style={{ fontSize: 12, color: charCount < 50 ? BRAND.red : BRAND.mid }}>
-            {charCount} / 10,000 characters {charCount < 50 && "(minimum 50)"}
+          <span style={{ fontSize: 12, color: charCount < 50 ? BRAND.red : charCount > MAX_CHARS * 0.9 ? BRAND.amber : BRAND.mid }}>
+            {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()} characters
+            {charCount < 50 && " (minimum 50)"}
+            {charCount >= MAX_CHARS && " — limit reached"}
           </span>
           {!scoreRevealed && (
             <button
               type="button"
               onClick={handleEvaluate}
-              disabled={charCount < 50 || isScoring}
+              disabled={charCount < 50 || charCount > MAX_CHARS || isScoring}
               style={{
                 padding: "12px 28px",
                 borderRadius: 6,
                 border: "none",
-                background: charCount < 50 ? BRAND.border : BRAND.brandGreen,
+                background: charCount < 50 || charCount > MAX_CHARS ? BRAND.border : BRAND.brandGreen,
                 color: BRAND.white,
                 fontFamily: "'Oswald', sans-serif",
                 fontWeight: 600,
                 fontSize: 15,
                 letterSpacing: "0.04em",
-                cursor: charCount < 50 ? "not-allowed" : "pointer",
+                cursor: charCount < 50 || charCount > MAX_CHARS ? "not-allowed" : "pointer",
                 transition: "all 0.2s",
                 opacity: isScoring ? 0.7 : 1,
               }}
@@ -689,7 +705,10 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   >
                     Unlock Full Report
                   </button>
-                  <p style={{ fontSize: 11, color: BRAND.mid, textAlign: "center", marginTop: 10, marginBottom: 0 }}>We respect your inbox. No spam. Unsubscribe anytime.</p>
+                  <p style={{ fontSize: 11, color: BRAND.mid, textAlign: "center", marginTop: 10, marginBottom: 0 }}>
+                    We store your details securely and use them only to deliver this report. No spam, no third-party sharing. You can request deletion at any time by emailing{" "}
+                    <a href="mailto:privacy@summitstrategyadvisory.com" style={{ color: BRAND.teal, textDecoration: "none" }}>privacy@summitstrategyadvisory.com</a>.
+                  </p>
                 </div>
               </div>
             ) : (
