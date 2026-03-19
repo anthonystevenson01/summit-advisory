@@ -27,6 +27,10 @@ function AdminLoginInner() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSetup, setIsSetup] = useState<boolean | null>(null);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
@@ -38,6 +42,23 @@ function AdminLoginInner() {
   }, []);
 
   const displayError = error || urlError || "";
+
+  const handleResetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    try {
+      await fetch("/api/admin/reset-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      setResetSent(true);
+    } catch {
+      setResetSent(true); // Always show success to avoid leaking info
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,6 +289,55 @@ function AdminLoginInner() {
                 {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
+
+            {/* Forgot password */}
+            {!showReset ? (
+              <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: BRAND.mid }}>
+                <button
+                  type="button"
+                  onClick={() => setShowReset(true)}
+                  style={{ background: "none", border: "none", color: BRAND.teal, cursor: "pointer", fontSize: 13, padding: 0, textDecoration: "underline" }}
+                >
+                  Forgot password?
+                </button>
+              </p>
+            ) : resetSent ? (
+              <div style={{ marginTop: 16, padding: "12px 14px", background: "#E8F5E9", border: "1px solid #A5D6A7", borderRadius: 6, fontSize: 13, color: "#2E7D32", textAlign: "center" }}>
+                If that email matches the admin account, a reset link has been sent.
+              </div>
+            ) : (
+              <form onSubmit={handleResetRequest} style={{ marginTop: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+                  <span style={{ fontSize: 11, color: BRAND.mid, textTransform: "uppercase", letterSpacing: "0.08em" }}>Reset</span>
+                  <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+                </div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>Your email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="Enter your admin email"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 10 }}
+                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowReset(false)}
+                    style={{ flex: 1, padding: "10px", borderRadius: 6, border: `1px solid ${BRAND.border}`, background: BRAND.white, color: BRAND.mid, fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!resetEmail || resetLoading}
+                    style={{ flex: 2, padding: "10px", borderRadius: 6, border: "none", background: !resetEmail ? BRAND.border : BRAND.teal, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, cursor: !resetEmail ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}
+                  >
+                    {resetLoading ? "Sending..." : "Send Reset Link"}
+                  </button>
+                </div>
+              </form>
+            )}
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
               <div style={{ flex: 1, height: 1, background: BRAND.border }} />
