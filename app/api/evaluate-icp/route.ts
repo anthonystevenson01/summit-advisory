@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getRedis } from "@/app/lib/redis";
+import { getEvaluateLimiter, getClientIp } from "@/app/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -281,6 +282,22 @@ export async function POST(req: NextRequest) {
   if (icpText.length < 50) {
     return NextResponse.json({ error: "ICP text must be at least 50 characters." }, { status: 400 });
   }
+  if (icpText.length > 8000) {
+    return NextResponse.json({ error: "ICP text must be under 8,000 characters. Please trim your submission." }, { status: 400 });
+  }
+
+  // Rate limiting — 5 evaluations per IP per hour
+  const limiter = getEvaluateLimiter();
+  if (limiter) {
+    const ip = getClientIp(req);
+    const { success, limit, remaining } = await limiter.limit(ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: `Too many evaluations. You've used ${limit} of ${limit} allowed per hour. Please try again later.` },
+        { status: 429, headers: { "Retry-After": "3600", "X-RateLimit-Remaining": String(remaining) } }
+      );
+    }
+  }
 
   try {
     // Start rubric fetch + Anthropic client init in parallel
@@ -380,7 +397,7 @@ ${rubricScoring ? `Use these scoring criteria:\n\n${rubricScoring}\n\n` : ""}Rep
             submittedAt: new Date().toISOString(),
           })
         ),
-        redis.set(`icp-text:${submissionId}`, icpSlice, { ex: 86400 }),
+        redis.set(`icp-text:${submissionId}`, icpSlice, { ex: 21600 }), // 6h TTL
       ]);
     } catch (redisErr) {
       console.error("ICP submission: Redis persist failed", redisErr);
