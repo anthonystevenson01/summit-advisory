@@ -78,7 +78,7 @@ ${rubric ? `Use these scoring criteria:\n\n${rubric}\n\n` : ""}Reply with ONLY t
       model: "claude-haiku-4-5-20251001",
       max_tokens: 300,
       system: scoringPrompt,
-      messages: [{ role: "user", content: `Score this positioning statement. Return JSON only.\n\n---\n\n${inputText}` }],
+      messages: [{ role: "user", content: `Score this positioning statement. Return JSON only.\n\n<user_input>\n${inputText}\n</user_input>` }],
     });
 
     const textBlock = message.content.find((b) => b.type === "text");

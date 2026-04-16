@@ -338,7 +338,7 @@ ${rubricScoring ? `Use these scoring criteria:\n\n${rubricScoring}\n\n` : ""}Rep
       model: "claude-haiku-4-5-20251001",
       max_tokens: 300,
       system: scoringPrompt,
-      messages: [{ role: "user", content: `Score this ICP. Return JSON only.\n\n---\n\n${icpText}` }],
+      messages: [{ role: "user", content: `Score this ICP. Return JSON only.\n\n<user_input>\n${icpText}\n</user_input>` }],
     });
 
     const textBlock = message.content.find((b) => b.type === "text");

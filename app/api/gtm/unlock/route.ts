@@ -20,8 +20,12 @@ export async function POST(req: NextRequest) {
     const email = body.email?.trim();
     const company = body.company?.trim();
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!name || !email || !company) {
       return NextResponse.json({ error: "Name, email, and company are required." }, { status: 400 });
+    }
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
     }
 
     const redis = getRedis();
