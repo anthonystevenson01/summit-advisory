@@ -304,7 +304,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.45;
+  opacity: 0.12;
   background-image: url("/brand-icons/pattern-alt.png");
   background-size: cover;
   background-position: center;

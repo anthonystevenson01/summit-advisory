@@ -105,8 +105,8 @@ export default function NewsletterReader({ issueId }: Props) {
         aria-label="Issue navigation"
         style={{
           position: "sticky",
-          top: 0,
-          zIndex: 100,
+          top: 64,
+          zIndex: 200,
           background: "var(--forest)",
           display: "flex",
           alignItems: "center",
