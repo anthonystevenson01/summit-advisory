@@ -6,10 +6,6 @@ import NewsletterCapture from "../shared/NewsletterCapture";
 import Loader from "../shared/Loader";
 import ErrMsg from "../shared/ErrMsg";
 
-const SURFACE = "#fafaf7";
-const ACCENT = "#fbbf24";
-const FG = "#053030";
-
 const TAM_OPTIONS = [
   "Under 500 accounts",
   "500-1000 accounts",
@@ -82,153 +78,196 @@ export default function ProblemTool({ systemPrompt }: Props) {
     setResult(null); setError(null);
   }
 
-  const verdictColor = result ? (VERDICT_COLORS[result.verdict] ?? ACCENT) : ACCENT;
+  const verdictColor = result ? (VERDICT_COLORS[result.verdict] ?? "#fbbf24") : "#fbbf24";
 
   return (
-    <div className="tk-tool-surface" style={{ background: SURFACE, color: FG }}>
-      <button className="tk-back-btn" onClick={reset} style={{ color: FG }} aria-label="Back to toolkit hub">
-        ← All Tools
-      </button>
-
+    <div className="inner">
       {!result && !loading && (
-        <form onSubmit={handleSubmit} className="tk-form">
-          <h2 style={{ fontFamily: "Oswald, sans-serif", fontSize: 28, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 8, color: FG }}>
-            Market Problem Validator
-          </h2>
-          <p style={{ fontSize: 14, color: "rgba(5,48,48,0.6)", marginBottom: 32, lineHeight: 1.7 }}>
-            Describe the market problem you&rsquo;re solving. Get a verdict, a score, and honest feedback on whether it&rsquo;s worth building against.
-          </p>
-
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="prob-problem" style={{ color: "rgba(5,48,48,0.6)" }}>
-              Problem Description *
-            </label>
-            <textarea
-              id="prob-problem"
-              className="tk-textarea tk-input"
-              rows={5}
-              value={problem}
-              onChange={(e) => setProblem(e.target.value)}
-              placeholder="Describe the problem your target customer faces. Be specific — who has it, how often, what the cost is."
-              required
-              maxLength={4000}
-              style={{ background: "#fff", border: "1px solid rgba(5,48,48,0.15)", color: FG }}
-            />
+        <>
+          <div className="inner-hero">
+            <div className="inner-eyebrow">GTM Toolkit</div>
+            <h1 className="inner-title">Market Problem Validator</h1>
+            <p className="inner-lead">
+              Describe the market problem you&rsquo;re solving. Get a verdict, a score, and honest feedback on whether it&rsquo;s worth building against.
+            </p>
           </div>
 
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="prob-evidence" style={{ color: "rgba(5,48,48,0.6)" }}>
-              Evidence / Signals (optional)
-            </label>
-            <textarea
-              id="prob-evidence"
-              className="tk-textarea tk-input"
-              rows={3}
-              value={evidence}
-              onChange={(e) => setEvidence(e.target.value)}
-              placeholder="Customer interviews, lost deal patterns, NPS complaints, market research…"
-              maxLength={2000}
-              style={{ background: "#fff", border: "1px solid rgba(5,48,48,0.15)", color: FG }}
-            />
-          </div>
+          <div className="inner-body">
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="prob-problem">
+                  Problem Description *
+                </label>
+                <textarea
+                  id="prob-problem"
+                  className="form-textarea"
+                  rows={5}
+                  value={problem}
+                  onChange={(e) => setProblem(e.target.value)}
+                  placeholder="Describe the problem your target customer faces. Be specific — who has it, how often, what the cost is."
+                  required
+                  maxLength={4000}
+                />
+              </div>
 
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="prob-tam" style={{ color: "rgba(5,48,48,0.6)" }}>
-              TAM Size
-            </label>
-            <select
-              id="prob-tam"
-              className="tk-select tk-input"
-              value={tamSize}
-              onChange={(e) => setTamSize(e.target.value)}
-              style={{ background: "#fff", border: "1px solid rgba(5,48,48,0.15)", color: FG }}
-            >
-              {TAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="prob-evidence">
+                  Evidence / Signals (optional)
+                </label>
+                <textarea
+                  id="prob-evidence"
+                  className="form-textarea"
+                  rows={3}
+                  value={evidence}
+                  onChange={(e) => setEvidence(e.target.value)}
+                  placeholder="Customer interviews, lost deal patterns, NPS complaints, market research…"
+                  maxLength={2000}
+                />
+              </div>
 
-          <button
-            type="submit"
-            className="tk-btn-primary"
-            disabled={!problem.trim()}
-            style={{ background: ACCENT, color: FG, marginTop: 8 }}
-          >
-            Validate This Problem
-          </button>
-        </form>
+              <div className="form-group">
+                <label className="form-label" htmlFor="prob-tam">
+                  TAM Size
+                </label>
+                <select
+                  id="prob-tam"
+                  className="form-select"
+                  value={tamSize}
+                  onChange={(e) => setTamSize(e.target.value)}
+                >
+                  {TAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={!problem.trim()}
+              >
+                Validate This Problem
+              </button>
+            </form>
+          </div>
+        </>
       )}
 
-      {loading && <Loader dark={false} label="Validating problem…" sub="Analysing six dimensions" />}
+      {loading && <div className="inner-body"><Loader dark={false} label="Validating problem…" sub="Analysing six dimensions" /></div>}
 
       {error && !loading && (
-        <ErrMsg msg={error} retry={() => setError(null)} dark={false} />
+        <div className="inner-body">
+          <ErrMsg msg={error} retry={() => setError(null)} dark={false} />
+        </div>
       )}
 
       {result && !loading && (
-        <div className="tk-results">
-          {/* Verdict card */}
-          <div className="tk-verdict-card" style={{ background: "#fff", borderLeft: `4px solid ${verdictColor}` }}>
-            <div className="tk-verdict-label" style={{ color: "rgba(5,48,48,0.5)" }}>Verdict</div>
-            <div className="tk-verdict-score" style={{ color: verdictColor }}>{result.score}</div>
-            <span className="tk-verdict-chip" style={{ background: verdictColor + "22", color: verdictColor }}>
+        <>
+          <div className="inner-hero">
+            <div className="inner-eyebrow">Problem Validator — Results</div>
+            <h1 className="inner-title" style={{ color: "var(--white)" }}>
               {result.verdict}
-            </span>
-            <p className="tk-verdict-reasoning" style={{ color: FG, marginTop: 12 }}>{result.verdict_reasoning}</p>
+            </h1>
+            <p className="inner-lead">{result.verdict_reasoning}</p>
           </div>
 
-          {/* Fatal flaw */}
-          {result.fatal_flaw && (
-            <div className="tk-panel" style={{ background: "#fef2f2", borderLeft: "4px solid #ef4444" }}>
-              <div className="tk-panel-label" style={{ color: "#ef4444" }}>Fatal Flaw</div>
-              <p className="tk-panel-text" style={{ color: FG }}>{result.fatal_flaw}</p>
-            </div>
-          )}
-
-          {/* Strongest signal */}
-          <div className="tk-panel" style={{ background: "#f0fdf4", borderLeft: "4px solid #22c55e" }}>
-            <div className="tk-panel-label" style={{ color: "#22c55e" }}>Strongest Signal</div>
-            <p className="tk-panel-text" style={{ color: FG }}>{result.strongest_signal}</p>
-          </div>
-
-          {/* Dimensions */}
-          <div className="tk-dim-rows">
-            {result.dimensions.map((d) => (
-              <DimRow key={d.name} dimension={d} dark={false} />
-            ))}
-          </div>
-
-          {/* Next validation moves */}
-          {result.next_validation_moves.length > 0 && (
-            <div className="tk-numbered-list" style={{ background: "#fff" }}>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(5,48,48,0.5)", marginBottom: 16 }}>
-                Next Validation Moves
+          <div className="inner-body">
+            {/* Score badge */}
+            <div style={{ marginBottom: 32 }}>
+              <div className="section-label">Overall Score</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 12 }}>
+                <span style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 56,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color: verdictColor,
+                }}>
+                  {result.score}
+                </span>
+                <span style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  padding: "6px 14px",
+                  background: verdictColor + "22",
+                  color: verdictColor,
+                  border: `1px solid ${verdictColor}44`,
+                }}>
+                  {result.verdict}
+                </span>
               </div>
-              {result.next_validation_moves.map((move, i) => (
-                <div className="tk-numbered-item" key={i}>
-                  <span className="tk-numbered-item-num" style={{ color: ACCENT }}>{i + 1}</span>
-                  <span className="tk-numbered-item-text" style={{ color: FG }}>{move}</span>
-                </div>
+            </div>
+
+            {/* Fatal flaw */}
+            {result.fatal_flaw && (
+              <div className="feature" style={{ borderLeftColor: "#ef4444", marginBottom: 32 }}>
+                <div className="feature-title" style={{ color: "#ef4444" }}>Fatal Flaw</div>
+                <p className="feature-body">{result.fatal_flaw}</p>
+              </div>
+            )}
+
+            {/* Strongest signal */}
+            <div className="feature" style={{ borderLeftColor: "#22c55e", marginBottom: 32 }}>
+              <div className="feature-title" style={{ color: "#22c55e" }}>Strongest Signal</div>
+              <p className="feature-body">{result.strongest_signal}</p>
+            </div>
+
+            {/* Dimensions */}
+            <div className="section-label" style={{ marginBottom: 16 }}>Dimension Detail</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 40 }}>
+              {result.dimensions.map((d) => (
+                <DimRow key={d.name} dimension={d} dark={false} />
               ))}
             </div>
-          )}
 
-          {/* Question you're avoiding */}
-          <div className="tk-panel" style={{ background: "#005A66" }}>
-            <div className="tk-panel-label" style={{ color: "rgba(255,255,255,0.55)" }}>The Question You&rsquo;re Avoiding</div>
-            <p className="tk-panel-text" style={{ color: "#fff", fontStyle: "italic" }}>{result.question_youre_avoiding}</p>
+            {/* Next validation moves */}
+            {result.next_validation_moves.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <div className="section-label">Next Validation Moves</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 16 }}>
+                  {result.next_validation_moves.map((move, i) => (
+                    <div
+                      key={i}
+                      className="feature"
+                      style={{ display: "flex", gap: 16, alignItems: "flex-start" }}
+                    >
+                      <span style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontSize: 20,
+                        fontWeight: 900,
+                        color: "var(--sage)",
+                        lineHeight: 1,
+                        flexShrink: 0,
+                        width: 24,
+                      }}>
+                        {i + 1}
+                      </span>
+                      <p className="feature-body" style={{ margin: 0 }}>{move}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Question you're avoiding */}
+            <div className="feature" style={{ borderLeftColor: "var(--teal)", marginBottom: 32 }}>
+              <div className="feature-title" style={{ color: "var(--teal)" }}>The Question You&rsquo;re Avoiding</div>
+              <p className="feature-body" style={{ fontStyle: "italic" }}>{result.question_youre_avoiding}</p>
+            </div>
+
+            <NewsletterCapture dark={false} />
+
+            <button
+              className="submit-btn"
+              onClick={reset}
+              style={{ marginTop: 24 }}
+              aria-label="Validate another problem"
+            >
+              Validate Another
+            </button>
           </div>
-
-          <NewsletterCapture dark={false} />
-
-          <button
-            className="tk-btn-ghost"
-            onClick={reset}
-            style={{ color: FG, borderColor: "rgba(5,48,48,0.3)", marginTop: 24 }}
-            aria-label="Validate another problem"
-          >
-            Validate Another
-          </button>
-        </div>
+        </>
       )}
     </div>
   );

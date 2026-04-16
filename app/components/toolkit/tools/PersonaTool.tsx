@@ -6,10 +6,6 @@ import NewsletterCapture from "../shared/NewsletterCapture";
 import Loader from "../shared/Loader";
 import ErrMsg from "../shared/ErrMsg";
 
-const SURFACE = "#F5F9F6";
-const ACCENT = "#319A65";
-const FG = "#053030";
-
 const TAM_OPTIONS = [
   "Under 500 accounts",
   "500-1000 accounts",
@@ -75,122 +71,144 @@ export default function PersonaTool({ systemPrompt }: Props) {
 
   function gradeColor(grade: string): string {
     const map: Record<string, string> = { A: "#22c55e", B: "#319A65", C: "#fbbf24", D: "#f97316", F: "#ef4444" };
-    return map[grade] ?? ACCENT;
+    return map[grade] ?? "#319A65";
   }
 
   return (
-    <div className="tk-tool-surface" style={{ background: SURFACE, color: FG }}>
-      <button className="tk-back-btn" onClick={reset} style={{ color: FG }} aria-label="Back to toolkit hub">
-        ← All Tools
-      </button>
-
+    <div className="inner">
       {!result && !loading && (
-        <form onSubmit={handleSubmit} className="tk-form">
-          <h2 style={{ fontFamily: "Oswald, sans-serif", fontSize: 28, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 8, color: FG }}>
-            Persona Quality Check
-          </h2>
-          <p style={{ fontSize: 14, color: "rgba(5,48,48,0.6)", marginBottom: 32, lineHeight: 1.7 }}>
-            Paste your buyer persona definition. Get a grade and six dimensions showing exactly what&rsquo;s missing.
-          </p>
-
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="persona-def" style={{ color: "rgba(5,48,48,0.6)" }}>
-              Persona Definition *
-            </label>
-            <textarea
-              id="persona-def"
-              className="tk-textarea tk-input"
-              rows={9}
-              value={persona}
-              onChange={(e) => setPersona(e.target.value)}
-              placeholder="Paste your full persona definition here — include job title, seniority, company type, pain points, goals, decision-making role, etc."
-              required
-              maxLength={6000}
-              style={{ background: "#fff", border: "1px solid rgba(5,48,48,0.15)", color: FG }}
-            />
+        <>
+          <div className="inner-hero">
+            <div className="inner-eyebrow">GTM Toolkit</div>
+            <h1 className="inner-title">Persona Quality Check</h1>
+            <p className="inner-lead">
+              Paste your buyer persona definition. Get a grade and six dimensions showing exactly what&rsquo;s missing.
+            </p>
           </div>
 
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="persona-tam" style={{ color: "rgba(5,48,48,0.6)" }}>
-              TAM Size (optional)
-            </label>
-            <select
-              id="persona-tam"
-              className="tk-select tk-input"
-              value={tamSize}
-              onChange={(e) => setTamSize(e.target.value)}
-              style={{ background: "#fff", border: "1px solid rgba(5,48,48,0.15)", color: FG }}
-            >
-              {TAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
+          <div className="inner-body">
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="persona-def">
+                  Persona Definition *
+                </label>
+                <textarea
+                  id="persona-def"
+                  className="form-textarea"
+                  rows={9}
+                  value={persona}
+                  onChange={(e) => setPersona(e.target.value)}
+                  placeholder="Paste your full persona definition here — include job title, seniority, company type, pain points, goals, decision-making role, etc."
+                  required
+                  maxLength={6000}
+                />
+              </div>
 
-          <button
-            type="submit"
-            className="tk-btn-primary"
-            disabled={!persona.trim()}
-            style={{ background: ACCENT, color: "#fff", marginTop: 8 }}
-          >
-            Check This Persona
-          </button>
-        </form>
+              <div className="form-group">
+                <label className="form-label" htmlFor="persona-tam">
+                  TAM Size (optional)
+                </label>
+                <select
+                  id="persona-tam"
+                  className="form-select"
+                  value={tamSize}
+                  onChange={(e) => setTamSize(e.target.value)}
+                >
+                  {TAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={!persona.trim()}
+              >
+                Check This Persona
+              </button>
+            </form>
+          </div>
+        </>
       )}
 
-      {loading && <Loader dark={false} label="Checking persona quality…" sub="Evaluating six dimensions" />}
+      {loading && <div className="inner-body"><Loader dark={false} label="Checking persona quality…" sub="Evaluating six dimensions" /></div>}
 
       {error && !loading && (
-        <ErrMsg msg={error} retry={() => setError(null)} dark={false} />
+        <div className="inner-body">
+          <ErrMsg msg={error} retry={() => setError(null)} dark={false} />
+        </div>
       )}
 
       {result && !loading && (
-        <div className="tk-results">
-          {/* Grade card */}
-          <div className="tk-grade-card" style={{ background: "#053030", marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 8 }}>
-              <span className="tk-grade-letter" style={{ color: gradeColor(result.grade) }}>{result.grade}</span>
-              <span className="tk-grade-score" style={{ color: "rgba(255,255,255,0.55)" }}>{result.overall_score}/100</span>
+        <>
+          <div className="inner-hero">
+            <div className="inner-eyebrow">Persona Quality Check — Results</div>
+            <h1 className="inner-title" style={{ color: gradeColor(result.grade) }}>
+              {result.grade} &mdash; {result.overall_score}/100
+            </h1>
+            <p className="inner-lead">{result.summary}</p>
+          </div>
+
+          <div className="inner-body">
+            {/* Mini score bars */}
+            {result.dimensions.length > 0 && (
+              <div style={{ marginBottom: 40 }}>
+                <div className="section-label">Dimension Scores</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+                  {result.dimensions.map((d) => (
+                    <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ghost)", width: 140, flexShrink: 0 }}>
+                        {d.label || d.name}
+                      </span>
+                      <div style={{ flex: 1, height: 6, background: "var(--border)" }}>
+                        <div style={{ width: `${d.score * 10}%`, height: "100%", background: "var(--sage)" }} />
+                      </div>
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, fontWeight: 700, color: "var(--sage)", width: 32, textAlign: "right" }}>
+                        {d.score}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* What's Working / Biggest Gap */}
+            <div className="features" style={{ marginBottom: 32 }}>
+              <div className="feature">
+                <div className="feature-title">What&rsquo;s Working</div>
+                <p className="feature-body">{result.best_thing}</p>
+              </div>
+              <div className="feature" style={{ borderLeftColor: "#f97316" }}>
+                <div className="feature-title" style={{ color: "#f97316" }}>Biggest Gap</div>
+                <p className="feature-body">{result.biggest_gap}</p>
+              </div>
             </div>
-            <p className="tk-grade-summary" style={{ color: "rgba(255,255,255,0.8)", marginBottom: 12 }}>{result.summary}</p>
-            <div style={{ fontFamily: "Oswald, sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>Best Thing</div>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 1.65 }}>{result.best_thing}</p>
-          </div>
 
-          {/* Dimensions */}
-          <div className="tk-dim-rows">
-            {result.dimensions.map((d) => (
-              <DimRow key={d.name} dimension={d} dark={false} accent={ACCENT} />
-            ))}
-          </div>
-
-          {/* What's Working / Biggest Gap */}
-          <div className="tk-two-col">
-            <div className="tk-info-card" style={{ background: "#fff", borderLeft: `3px solid ${ACCENT}` }}>
-              <div className="tk-info-card-label" style={{ color: ACCENT }}>What&rsquo;s Working</div>
-              <p className="tk-info-card-text" style={{ color: FG }}>{result.best_thing}</p>
+            {/* Dimensions */}
+            <div className="section-label" style={{ marginBottom: 16 }}>Dimension Detail</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 40 }}>
+              {result.dimensions.map((d) => (
+                <DimRow key={d.name} dimension={d} dark={false} />
+              ))}
             </div>
-            <div className="tk-info-card" style={{ background: "#fff", borderLeft: "3px solid #f97316" }}>
-              <div className="tk-info-card-label" style={{ color: "#f97316" }}>Biggest Gap</div>
-              <p className="tk-info-card-text" style={{ color: FG }}>{result.biggest_gap}</p>
+
+            {/* Question to answer */}
+            <div className="feature" style={{ borderLeftColor: "var(--teal)", marginBottom: 32 }}>
+              <div className="feature-title" style={{ color: "var(--teal)" }}>The Question You Need to Answer</div>
+              <p className="feature-body" style={{ fontStyle: "italic" }}>{result.question_to_answer}</p>
             </div>
+
+            <NewsletterCapture dark={false} />
+
+            <button
+              className="submit-btn"
+              onClick={reset}
+              style={{ marginTop: 24 }}
+              aria-label="Check another persona"
+            >
+              Check Another
+            </button>
           </div>
-
-          {/* Question to answer */}
-          <div className="tk-panel" style={{ background: "#005A66" }}>
-            <div className="tk-panel-label" style={{ color: "rgba(255,255,255,0.55)" }}>The Question You Need to Answer</div>
-            <p className="tk-panel-text" style={{ color: "#fff", fontStyle: "italic" }}>{result.question_to_answer}</p>
-          </div>
-
-          <NewsletterCapture dark={false} />
-
-          <button
-            className="tk-btn-ghost"
-            onClick={reset}
-            style={{ color: FG, borderColor: "rgba(5,48,48,0.3)", marginTop: 24 }}
-            aria-label="Check another persona"
-          >
-            Check Another
-          </button>
-        </div>
+        </>
       )}
     </div>
   );

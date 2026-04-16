@@ -11,16 +11,53 @@ interface Props {
 
 function BlockRenderer({ block }: { block: BodyBlock }) {
   if (block.type === "p") {
-    return <p className="tk-nl-block-p">{block.text}</p>;
+    return (
+      <p style={{ fontSize: 16, color: "var(--ink)", lineHeight: 1.85, marginBottom: 20 }}>
+        {block.text}
+      </p>
+    );
   }
   if (block.type === "h2") {
-    return <h2 className="tk-nl-block-h2">{block.text}</h2>;
+    return (
+      <h2 style={{
+        fontFamily: "'Barlow Condensed', sans-serif",
+        fontSize: 24,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.04em",
+        color: "var(--forest)",
+        marginTop: 36,
+        marginBottom: 14,
+      }}>
+        {block.text}
+      </h2>
+    );
   }
   if (block.type === "pullquote") {
-    return <blockquote className="tk-nl-block-pullquote">{block.text}</blockquote>;
+    return (
+      <blockquote style={{
+        borderLeft: "4px solid var(--sage)",
+        margin: "28px 0",
+        padding: "16px 24px",
+        background: "var(--off)",
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: 17,
+        fontStyle: "italic",
+        color: "var(--forest)",
+        lineHeight: 1.7,
+      }}>
+        {block.text}
+      </blockquote>
+    );
   }
   if (block.type === "rule") {
-    return <hr className="tk-nl-block-rule" />;
+    return (
+      <hr style={{
+        border: "none",
+        borderTop: "2px solid var(--border)",
+        margin: "36px 0",
+      }} />
+    );
   }
   return null;
 }
@@ -35,10 +72,25 @@ export default function NewsletterReader({ issueId }: Props) {
 
   if (!issue) {
     return (
-      <div className="tk-nl-page">
-        <div style={{ padding: "80px 40px", textAlign: "center" }}>
-          <p style={{ fontFamily: "Oswald, sans-serif", fontSize: 18, color: "#0e1a10" }}>Issue not found.</p>
-          <Link href="/newsletter" style={{ fontFamily: "Oswald, sans-serif", fontSize: 13, color: "#005A66", textDecoration: "none", display: "inline-block", marginTop: 16 }}>
+      <div className="inner">
+        <div className="inner-body" style={{ textAlign: "center", paddingTop: 80 }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, color: "var(--forest)" }}>
+            Issue not found.
+          </p>
+          <Link
+            href="/newsletter"
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: 13,
+              color: "var(--teal)",
+              textDecoration: "none",
+              display: "inline-block",
+              marginTop: 16,
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
             ← All Issues
           </Link>
         </div>
@@ -47,93 +99,171 @@ export default function NewsletterReader({ issueId }: Props) {
   }
 
   return (
-    <div className="tk-nl-page">
+    <div className="inner">
       {/* Sticky reading nav */}
-      <nav className="tk-nl-reader-nav" aria-label="Issue navigation">
-        <Link href="/newsletter" className="tk-nl-reader-back" aria-label="Back to all issues">
+      <nav
+        aria-label="Issue navigation"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          background: "var(--forest)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 48px",
+          height: 48,
+          borderBottom: "2px solid var(--teal)",
+        }}
+      >
+        <Link
+          href="/newsletter"
+          style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.5)",
+            textDecoration: "none",
+          }}
+          aria-label="Back to all issues"
+        >
           ← All Issues
         </Link>
-        <span className="tk-nl-reader-pub">The Scale-Up Letter</span>
-        <div className="tk-nl-reader-nav-btns">
+        <span style={{
+          fontFamily: "'Barlow Condensed', sans-serif",
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.35)",
+        }}>
+          The Scale-Up Letter
+        </span>
+        <div style={{ display: "flex", gap: 8 }}>
           <button
-            className="tk-nl-nav-btn"
             onClick={() => { if (prevIssue) setCurrentIndex(currentIndex + 1); }}
             disabled={!prevIssue}
             aria-label="Previous issue"
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              background: "none",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: prevIssue ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)",
+              padding: "6px 14px",
+              cursor: prevIssue ? "pointer" : "default",
+            }}
           >
             ← Prev
           </button>
           <button
-            className="tk-nl-nav-btn"
             onClick={() => { if (nextIssue) setCurrentIndex(currentIndex - 1); }}
             disabled={!nextIssue}
             aria-label="Next issue"
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              background: "none",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: nextIssue ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)",
+              padding: "6px 14px",
+              cursor: nextIssue ? "pointer" : "default",
+            }}
           >
             Next →
           </button>
         </div>
       </nav>
 
-      {/* Article */}
-      <article className="tk-nl-article">
-        <div className="tk-nl-article-meta" aria-label="Issue metadata">
-          <span>{issue.num}</span>
-          <span>·</span>
-          <span>{issue.date}</span>
-          <span>·</span>
-          <span>{issue.readTime}</span>
-          <span className="tk-nl-meta-tag">{issue.tag}</span>
+      {/* Article hero */}
+      <div className="inner-hero">
+        <div className="inner-eyebrow">{issue.tag} · {issue.num} · {issue.date}</div>
+        <h1 className="inner-title">{issue.title}</h1>
+        <p className="inner-lead">{issue.subtitle}</p>
+        <div style={{ marginTop: 16 }}>
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
+            {issue.readTime}
+          </span>
         </div>
-        <h1 className="tk-nl-article-h1">{issue.title}</h1>
-        <p className="tk-nl-article-dek">{issue.subtitle}</p>
-        <div className="tk-nl-article-body">
+      </div>
+
+      {/* Article body */}
+      <div className="inner-body" style={{ maxWidth: 720 }}>
+        <article>
           {issue.body.map((block, i) => (
             <BlockRenderer key={i} block={block} />
           ))}
-        </div>
-      </article>
+        </article>
+      </div>
 
       {/* Issue footer */}
-      <div className="tk-nl-issue-footer">
-        <div className="tk-nl-issue-footer-title">Forward this issue</div>
-        <p className="tk-nl-issue-footer-sub">
-          If this was useful, share it with a GTM leader on your team. And if you&rsquo;re not already subscribed, join below.
-        </p>
-        <div className="tk-nl-issue-footer-form">
+      <div className="inner-body" style={{ paddingTop: 0, maxWidth: 720 }}>
+        <div style={{ borderTop: "2px solid var(--border)", paddingTop: 40, marginBottom: 40 }}>
+          <div className="section-label">Forward this issue</div>
+          <p className="section-intro">
+            If this was useful, share it with a GTM leader on your team. And if you&rsquo;re not already subscribed, join below.
+          </p>
           <NewsletterCapture dark={false} label="Subscribe to The Scale-Up Letter" />
         </div>
       </div>
 
       {/* Prev / Next */}
-      <nav className="tk-nl-prev-next" aria-label="Adjacent issues">
+      <div style={{ borderTop: "3px solid var(--border)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
         <button
-          className="tk-nl-pn-btn"
           onClick={() => { if (prevIssue) setCurrentIndex(currentIndex + 1); }}
           disabled={!prevIssue}
           aria-label={prevIssue ? `Previous issue: ${prevIssue.title}` : "No previous issue"}
+          style={{
+            background: prevIssue ? "var(--off)" : "transparent",
+            border: "none",
+            padding: prevIssue ? "28px 32px" : 0,
+            textAlign: "left",
+            cursor: prevIssue ? "pointer" : "default",
+          }}
         >
           {prevIssue && (
             <>
-              <div className="tk-nl-pn-label">← Previous</div>
-              <div className="tk-nl-pn-title">{prevIssue.title}</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ghost)", marginBottom: 8 }}>
+                ← Previous
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--forest)", lineHeight: 1.15 }}>
+                {prevIssue.title}
+              </div>
             </>
           )}
         </button>
         <button
-          className="tk-nl-pn-btn"
-          style={{ textAlign: "right" }}
           onClick={() => { if (nextIssue) setCurrentIndex(currentIndex - 1); }}
           disabled={!nextIssue}
           aria-label={nextIssue ? `Next issue: ${nextIssue.title}` : "No next issue"}
+          style={{
+            background: nextIssue ? "var(--off)" : "transparent",
+            border: "none",
+            padding: nextIssue ? "28px 32px" : 0,
+            textAlign: "right",
+            cursor: nextIssue ? "pointer" : "default",
+          }}
         >
           {nextIssue && (
             <>
-              <div className="tk-nl-pn-label">Next →</div>
-              <div className="tk-nl-pn-title">{nextIssue.title}</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ghost)", marginBottom: 8 }}>
+                Next →
+              </div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--forest)", lineHeight: 1.15 }}>
+                {nextIssue.title}
+              </div>
             </>
           )}
         </button>
-      </nav>
+      </div>
     </div>
   );
 }
