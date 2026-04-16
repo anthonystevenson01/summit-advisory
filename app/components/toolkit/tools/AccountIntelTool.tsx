@@ -6,10 +6,6 @@ import NewsletterCapture from "../shared/NewsletterCapture";
 import CyclingLoader from "../shared/CyclingLoader";
 import ErrMsg from "../shared/ErrMsg";
 
-const SURFACE = "#00252e";
-const ACCENT = "#67e8f9";
-const FG = "#fff";
-
 const CYCLING_MESSAGES = [
   "Searching company news…",
   "Looking for leadership signals…",
@@ -107,233 +103,267 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
     setResult(null); setError(null); setShowContext(false);
   }
 
-  const timingColor = result ? (TIMING_COLORS[result.timing] ?? ACCENT) : ACCENT;
+  const timingColor = result ? (TIMING_COLORS[result.timing] ?? "var(--sage)") : "var(--sage)";
 
   return (
-    <div className="tk-tool-surface" style={{ background: SURFACE, color: FG }}>
-      <button className="tk-back-btn" onClick={reset} style={{ color: ACCENT }} aria-label="Back to toolkit hub">
-        ← All Tools
-      </button>
-
+    <div className="inner">
       {!result && !loading && (
-        <form onSubmit={handleSubmit} className="tk-form">
-          <h2 style={{ fontFamily: "Oswald, sans-serif", fontSize: 28, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 8, color: FG }}>
-            Account Intelligence
-          </h2>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginBottom: 32, lineHeight: 1.7 }}>
-            Enter a target account name. Get a full sales brief — ICP fit, timing, key contacts, and live market signals.
-          </p>
-
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="acct-name" style={{ color: "rgba(255,255,255,0.55)" }}>
-              Target Account Name *
-            </label>
-            <input
-              id="acct-name"
-              className="tk-input"
-              type="text"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              placeholder="e.g. Tesco PLC"
-              required
-              maxLength={200}
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: FG }}
-            />
+        <>
+          <div className="inner-hero">
+            <div className="inner-eyebrow">GTM Toolkit</div>
+            <h1 className="inner-title">Account Intelligence</h1>
+            <p className="inner-lead">
+              Enter a target account name. Get a full sales brief — ICP fit, timing, key contacts, and live market signals.
+            </p>
           </div>
 
-          <div className="tk-form-group">
-            <label className="tk-label" htmlFor="acct-website" style={{ color: "rgba(255,255,255,0.55)" }}>
-              Company Website (optional)
-            </label>
-            <input
-              id="acct-website"
-              className="tk-input"
-              type="text"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://www.example.com"
-              maxLength={300}
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: FG }}
-            />
+          <div className="inner-body">
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="acct-name">
+                  Target Account Name *
+                </label>
+                <input
+                  id="acct-name"
+                  className="form-input"
+                  type="text"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="e.g. Tesco PLC"
+                  required
+                  maxLength={200}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="acct-website">
+                  Company Website (optional)
+                </label>
+                <input
+                  id="acct-website"
+                  className="form-input"
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://www.example.com"
+                  maxLength={300}
+                />
+              </div>
+
+              {/* Collapsible context */}
+              <button
+                type="button"
+                onClick={() => setShowContext((v) => !v)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--forest)",
+                  background: "none",
+                  border: "1px solid var(--border)",
+                  padding: "10px 16px",
+                  cursor: "pointer",
+                  marginBottom: 16,
+                }}
+                aria-expanded={showContext}
+                aria-controls="acct-context-fields"
+              >
+                <span>{showContext ? "▲" : "▼"}</span>
+                <span>Add ICP &amp; Persona Context (optional)</span>
+              </button>
+
+              {showContext && (
+                <div id="acct-context-fields">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="acct-icp">
+                      ICP Context
+                    </label>
+                    <textarea
+                      id="acct-icp"
+                      className="form-textarea"
+                      rows={3}
+                      value={icpContext}
+                      onChange={(e) => setIcpContext(e.target.value)}
+                      placeholder="Describe your Ideal Customer Profile — industry, size, tech stack, pain points…"
+                      maxLength={2000}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="acct-persona">
+                      Persona Context
+                    </label>
+                    <textarea
+                      id="acct-persona"
+                      className="form-textarea"
+                      rows={3}
+                      value={personaContext}
+                      onChange={(e) => setPersonaContext(e.target.value)}
+                      placeholder="Who you typically sell to — title, seniority, department, priorities…"
+                      maxLength={2000}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={!accountName.trim()}
+              >
+                Build Account Brief
+              </button>
+            </form>
           </div>
-
-          {/* Collapsible context */}
-          <button
-            type="button"
-            className="tk-context-toggle"
-            onClick={() => setShowContext((v) => !v)}
-            style={{ color: ACCENT, borderColor: ACCENT + "44" }}
-            aria-expanded={showContext}
-            aria-controls="acct-context-fields"
-          >
-            <span>{showContext ? "▲" : "▼"}</span>
-            <span>Add ICP &amp; Persona Context (optional)</span>
-          </button>
-
-          {showContext && (
-            <div id="acct-context-fields">
-              <div className="tk-form-group">
-                <label className="tk-label" htmlFor="acct-icp" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  ICP Context
-                </label>
-                <textarea
-                  id="acct-icp"
-                  className="tk-textarea tk-input"
-                  rows={3}
-                  value={icpContext}
-                  onChange={(e) => setIcpContext(e.target.value)}
-                  placeholder="Describe your Ideal Customer Profile — industry, size, tech stack, pain points…"
-                  maxLength={2000}
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: FG }}
-                />
-              </div>
-              <div className="tk-form-group">
-                <label className="tk-label" htmlFor="acct-persona" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  Persona Context
-                </label>
-                <textarea
-                  id="acct-persona"
-                  className="tk-textarea tk-input"
-                  rows={3}
-                  value={personaContext}
-                  onChange={(e) => setPersonaContext(e.target.value)}
-                  placeholder="Who you typically sell to — title, seniority, department, priorities…"
-                  maxLength={2000}
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: FG }}
-                />
-              </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="tk-btn-primary"
-            disabled={!accountName.trim()}
-            style={{ background: ACCENT, color: SURFACE, marginTop: 8 }}
-          >
-            Build Account Brief
-          </button>
-        </form>
+        </>
       )}
 
-      {loading && <CyclingLoader dark messages={CYCLING_MESSAGES} />}
+      {loading && <div className="inner-body"><CyclingLoader dark={false} messages={CYCLING_MESSAGES} /></div>}
 
       {error && !loading && (
-        <ErrMsg msg={error} retry={() => setError(null)} dark />
+        <div className="inner-body">
+          <ErrMsg msg={error} retry={() => setError(null)} dark={false} />
+        </div>
       )}
 
       {result && !loading && (
-        <div className="tk-results">
-          {/* Account header */}
-          <div style={{ marginBottom: 24 }}>
-            <h2 style={{ fontFamily: "Oswald, sans-serif", fontSize: 32, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: FG, marginBottom: 8 }}>
-              {result.account_name}
-            </h2>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.7, marginBottom: 10 }}>{result.description}</p>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.65, fontStyle: "italic" }}>{result.strategic_context}</p>
+        <>
+          <div className="inner-hero">
+            <div className="inner-eyebrow">Account Intelligence — Brief</div>
+            <h1 className="inner-title">{result.account_name}</h1>
+            <p className="inner-lead">{result.description}</p>
           </div>
 
-          {/* ICP Fit + Timing */}
-          <div className="tk-two-col" style={{ marginBottom: 20 }}>
-            <div className="tk-fit-card" style={{ background: "rgba(255,255,255,0.05)" }}>
-              <div className="tk-fit-label" style={{ color: "rgba(255,255,255,0.45)" }}>ICP Fit</div>
-              <div className="tk-fit-rating" style={{ color: ACCENT }}>{result.icp_fit.rating}</div>
-              <div className="tk-fit-score" style={{ color: ACCENT }}>{result.icp_fit.score}</div>
-            </div>
-            <div className="tk-timing-card" style={{ background: "rgba(255,255,255,0.05)", flexDirection: "column", alignItems: "flex-start" }}>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontSize: 11, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", marginBottom: 8 }}>Timing</div>
-              <div className="tk-timing-badge" style={{ color: timingColor }}>{result.timing}</div>
-            </div>
-          </div>
+          <div className="inner-body">
+            {/* Strategic context */}
+            <p style={{ fontSize: 14, color: "var(--ghost)", lineHeight: 1.75, fontStyle: "italic", marginBottom: 32 }}>
+              {result.strategic_context}
+            </p>
 
-          {/* Fit reasoning */}
-          <div className="tk-panel" style={{ background: "rgba(255,255,255,0.04)" }}>
-            <div className="tk-panel-label" style={{ color: "rgba(255,255,255,0.45)" }}>Fit Reasoning</div>
-            <p className="tk-panel-text" style={{ color: FG }}>{result.fit_reasoning}</p>
-          </div>
-
-          {/* Key contacts */}
-          {result.contacts.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontSize: 16, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: ACCENT, marginBottom: 12 }}>
-                Key Contacts
+            {/* ICP Fit + Timing */}
+            <div className="features" style={{ marginBottom: 32 }}>
+              <div className="feature">
+                <div className="feature-title">ICP Fit</div>
+                <p style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 32,
+                  fontWeight: 900,
+                  color: "var(--sage)",
+                  lineHeight: 1,
+                  marginBottom: 4,
+                }}>
+                  {result.icp_fit.rating}
+                </p>
+                <p style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: "var(--ghost)",
+                }}>
+                  {result.icp_fit.score}/100
+                </p>
               </div>
-              {result.contacts.map((c, i) => (
-                <div className="tk-contact-row" key={i} style={{ background: "rgba(255,255,255,0.04)", marginBottom: 3 }}>
-                  <div className="tk-contact-role" style={{ color: FG }}>{c.role}</div>
-                  <p className="tk-contact-why" style={{ color: "rgba(255,255,255,0.75)" }}>{c.why_relevant}</p>
-                  {c.signal && <p className="tk-contact-signal" style={{ color: ACCENT }}>{c.signal}</p>}
-                  {c.title_variants.length > 0 && (
-                    <div className="tk-contact-variants">
-                      {c.title_variants.map((tv) => (
-                        <Tag key={tv} color={ACCENT}>{tv}</Tag>
-                      ))}
+              <div className="feature" style={{ borderLeftColor: timingColor }}>
+                <div className="feature-title" style={{ color: timingColor }}>Timing</div>
+                <p style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: 32,
+                  fontWeight: 900,
+                  color: timingColor,
+                  lineHeight: 1,
+                }}>
+                  {result.timing}
+                </p>
+              </div>
+            </div>
+
+            {/* Fit reasoning */}
+            <div className="feature" style={{ marginBottom: 32 }}>
+              <div className="feature-title">Fit Reasoning</div>
+              <p className="feature-body">{result.fit_reasoning}</p>
+            </div>
+
+            {/* Key contacts */}
+            {result.contacts.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <div className="section-label">Key Contacts</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 16 }}>
+                  {result.contacts.map((c, i) => (
+                    <div key={i} className="feature">
+                      <div className="feature-title">{c.role}</div>
+                      <p className="feature-body">{c.why_relevant}</p>
+                      {c.signal && (
+                        <p style={{ fontSize: 13, color: "var(--sage)", marginTop: 8, fontStyle: "italic" }}>{c.signal}</p>
+                      )}
+                      {c.title_variants.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                          {c.title_variants.map((tv) => (
+                            <Tag key={tv} color="var(--teal)">{tv}</Tag>
+                          ))}
+                        </div>
+                      )}
+                      <p style={{ fontSize: 12, color: "var(--ghost)", marginTop: 8, fontFamily: "'DM Mono', monospace" }}>
+                        {c.linkedin_search}
+                      </p>
                     </div>
-                  )}
-                  <div className="tk-contact-linkedin" style={{ color: "rgba(255,255,255,0.6)" }}>
-                    {c.linkedin_search}
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Market signals */}
-          {result.signals.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontFamily: "Oswald, sans-serif", fontSize: 16, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: ACCENT, marginBottom: 12 }}>
-                Market Signals
               </div>
-              {result.signals.map((s, i) => {
-                const tagColor = SIGNAL_COLORS[s.type] ?? ACCENT;
-                return (
-                  <div className="tk-signal-row" key={i} style={{ background: "rgba(255,255,255,0.04)", marginBottom: 3 }}>
-                    <div className="tk-signal-left">
-                      <Tag color={tagColor}>{s.type}</Tag>
-                    </div>
-                    <div className="tk-signal-right">
-                      <p className="tk-signal-finding" style={{ color: FG }}>{s.finding}</p>
-                      <p className="tk-signal-implication" style={{ color: "rgba(255,255,255,0.6)" }}>Why it matters: {s.implication}</p>
-                    </div>
-                  </div>
-                );
-              })}
+            )}
+
+            {/* Market signals */}
+            {result.signals.length > 0 && (
+              <div style={{ marginBottom: 32 }}>
+                <div className="section-label">Market Signals</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 16 }}>
+                  {result.signals.map((s, i) => {
+                    const tagColor = SIGNAL_COLORS[s.type] ?? "var(--sage)";
+                    return (
+                      <div key={i} className="feature" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                        <div style={{ flexShrink: 0, paddingTop: 2 }}>
+                          <Tag color={tagColor}>{s.type}</Tag>
+                        </div>
+                        <div>
+                          <p className="feature-body" style={{ marginBottom: 6 }}>{s.finding}</p>
+                          <p style={{ fontSize: 13, color: "var(--ghost)", lineHeight: 1.65 }}>
+                            Why it matters: {s.implication}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Recommended opening */}
+            <div className="feature" style={{ borderLeftColor: "var(--sage)", marginBottom: 16 }}>
+              <div className="feature-title">Recommended Opening</div>
+              <p className="feature-body">{result.recommended_opening}</p>
             </div>
-          )}
 
-          {/* Recommended opening */}
-          <div className="tk-panel" style={{ background: "rgba(52,211,153,0.08)", borderLeft: `4px solid ${ACCENT}` }}>
-            <div className="tk-panel-label" style={{ color: ACCENT }}>Recommended Opening</div>
-            <p className="tk-panel-text" style={{ color: FG }}>{result.recommended_opening}</p>
-          </div>
+            {/* Timing verdict */}
+            <div className="feature" style={{ borderLeftColor: timingColor, marginBottom: 32 }}>
+              <div className="feature-title" style={{ color: timingColor }}>Timing Verdict</div>
+              <p className="feature-body">{result.timing_verdict}</p>
+            </div>
 
-          {/* Timing verdict */}
-          <div className="tk-panel" style={{ background: timingColor + "11", borderLeft: `4px solid ${timingColor}` }}>
-            <div className="tk-panel-label" style={{ color: timingColor }}>Timing Verdict</div>
-            <p className="tk-panel-text" style={{ color: FG }}>{result.timing_verdict}</p>
-          </div>
+            <NewsletterCapture dark={false} />
 
-          {/* CTA */}
-          <div style={{ padding: "20px 0", marginBottom: 24 }}>
-            <a
-              href="#"
-              style={{ fontFamily: "Oswald, sans-serif", fontSize: 15, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: ACCENT, textDecoration: "none" }}
+            <button
+              className="submit-btn"
+              onClick={reset}
+              style={{ marginTop: 24 }}
+              aria-label="Research another account"
             >
-              Get the full brief with email drafts →
-            </a>
+              Research Another Account
+            </button>
           </div>
-
-          <NewsletterCapture dark />
-
-          <button
-            className="tk-btn-ghost"
-            onClick={reset}
-            style={{ color: ACCENT, borderColor: ACCENT + "66", marginTop: 24 }}
-            aria-label="Research another account"
-          >
-            Research Another Account
-          </button>
-        </div>
+        </>
       )}
     </div>
   );
