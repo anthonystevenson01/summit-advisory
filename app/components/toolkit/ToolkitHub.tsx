@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { TOOLS } from "./data/toolConfig";
 import { usePrompts } from "./hooks/usePrompts";
+import { useRubrics } from "./hooks/useRubrics";
 import PositioningTool from "./tools/PositioningTool";
 import ProblemTool from "./tools/ProblemTool";
 import PersonaTool from "./tools/PersonaTool";
@@ -34,6 +35,7 @@ export default function ToolkitHub() {
     return tool && valid.includes(tool) ? tool : null;
   });
   const { prompts } = usePrompts();
+  const { rubrics } = useRubrics();
 
   function selectTool(id: ToolId) {
     setActiveTool(id);
@@ -92,10 +94,10 @@ export default function ToolkitHub() {
       <>
         <Nav toolLabel={toolLabels[activeTool]} />
         <div className="page">
-          {activeTool === "positioning" && <PositioningTool systemPrompt={prompts.positioning} />}
-          {activeTool === "problem"     && <ProblemTool     systemPrompt={prompts.problem} />}
-          {activeTool === "persona"     && <PersonaTool     systemPrompt={prompts.persona} />}
-          {activeTool === "moat"        && <MoatTool        systemPrompt={prompts.moat} />}
+          {activeTool === "positioning" && <PositioningTool systemPrompt={prompts.positioning} rubric={rubrics.positioning} />}
+          {activeTool === "problem"     && <ProblemTool     systemPrompt={prompts.problem}     rubric={rubrics.problem} />}
+          {activeTool === "persona"     && <PersonaTool     systemPrompt={prompts.persona}      rubric={rubrics.persona} />}
+          {activeTool === "moat"        && <MoatTool        systemPrompt={prompts.moat}         rubric={rubrics.moat} />}
           {activeTool === "account"     && <AccountIntelTool systemPrompt={prompts.account} />}
           <Footer />
         </div>

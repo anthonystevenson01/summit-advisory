@@ -1,273 +1,503 @@
 "use client";
 
-import { useState } from "react";
-import DimRow from "../shared/DimRow";
-import NewsletterCapture from "../shared/NewsletterCapture";
-import Loader from "../shared/Loader";
-import ErrMsg from "../shared/ErrMsg";
+import { useState, useEffect, useRef } from "react";
+import ScoreGauge from "../shared/ScoreGauge";
+import GtmDimensionBar from "../shared/GtmDimensionBar";
+import { TOOL_DIMENSIONS, getGrade } from "../data/dimensionConfig";
+
+const BRAND = {
+  darkGreen: "#053030",
+  teal: "#005A66",
+  brandGreen: "#319A65",
+  lightBg: "#F0F7F4",
+  white: "#FFFFFF",
+  dark: "#1A1A1A",
+  mid: "#666666",
+  border: "#D0D5D2",
+  red: "#C0392B",
+  amber: "#D4A017",
+};
+
+const DIMS = TOOL_DIMENSIONS["problem"];
 
 const TAM_OPTIONS = [
   "Under 500 accounts",
-  "500-1000 accounts",
-  "1000-5000 accounts",
+  "500–1000 accounts",
+  "1000–5000 accounts",
   "5000+ accounts",
   "Unknown",
 ];
 
-const VERDICT_COLORS: Record<string, string> = {
-  "Worth Building Against": "#22c55e",
-  "Validate Further": "#fbbf24",
-  "Not Yet": "#f97316",
-  "Abandon This Problem": "#ef4444",
-};
-
-interface Dimension {
-  name: string;
-  label: string;
-  score: number;
-  observation: string;
-  fix?: string;
-}
-
-interface ProblemResult {
-  verdict: string;
-  score: number;
-  verdict_reasoning: string;
-  fatal_flaw?: string;
-  strongest_signal: string;
-  question_youre_avoiding: string;
-  next_validation_moves: string[];
-  dimensions: Dimension[];
-}
-
 interface Props {
   systemPrompt: string;
+  rubric: string;
 }
 
-export default function ProblemTool({ systemPrompt }: Props) {
+type Phase = "input" | "scoring" | "scored" | "unlocked";
+
+type ScoreResult = {
+  totalScore: number;
+  scores: Record<string, number>;
+  id: string;
+};
+
+type DetailsResult = {
+  dimensionReasoning: Array<{ dim: string; score: number; reasoning: string }>;
+  recommendations: Array<{ dim: string; score: number; gap: string; consequence: string; action: string }>;
+};
+
+export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Props) {
+  const [phase, setPhase] = useState<Phase>("input");
   const [problem, setProblem] = useState("");
   const [evidence, setEvidence] = useState("");
-  const [tamSize, setTamSize] = useState("Unknown");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ProblemResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [tamSize, setTamSize] = useState("");
+  const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
+  const [detailsResult, setDetailsResult] = useState<DetailsResult | null>(null);
+  const [evalError, setEvalError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
+  const resultsRef = useRef<HTMLElement>(null);
+  const MAX_PROBLEM = 4000;
+  const MAX_EVIDENCE = 2000;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    setResult(null);
+  useEffect(() => {
+    if (phase === "scored" || phase === "unlocked") {
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [phase]);
+
+  const buildInputText = () => {
+    const parts: string[] = [];
+    if (problem.trim()) parts.push(`Problem:\n${problem.trim()}`);
+    if (evidence.trim()) parts.push(`Evidence:\n${evidence.trim()}`);
+    if (tamSize) parts.push(`TAM Size: ${tamSize}`);
+    return parts.join("\n\n");
+  };
+
+  const handleEvaluate = async () => {
+    if (honeypot) return;
+    const inputText = buildInputText();
+    if (inputText.length < 50) return;
+    setPhase("scoring");
+    setEvalError(null);
+    setScoreResult(null);
+    setDetailsResult(null);
     try {
-      const res = await fetch("/api/gtm/problem", {
+      const res = await fetch("/api/gtm/problem/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problem, evidence, tam_size: tamSize, systemPrompt }),
+        body: JSON.stringify({ inputText, rubric }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Analysis failed.");
-      setResult(data as ProblemResult);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
+      const data = await res.json() as ScoreResult & { error?: string };
+      if (!res.ok) {
+        setEvalError(data.error || "Evaluation failed. Please try again.");
+        setPhase("scored");
+        return;
+      }
+      setScoreResult(data);
+      setPhase("scored");
+    } catch {
+      setEvalError("Something went wrong. Please try again.");
+      setPhase("scored");
     }
-  }
+  };
 
-  function reset() {
-    setProblem(""); setEvidence(""); setTamSize("Unknown");
-    setResult(null); setError(null);
-  }
+  const handleUnlock = async () => {
+    if (!name || !email || !company || !scoreResult) return;
+    setPhase("unlocked");
+    setLoadingDetails(true);
 
-  const verdictColor = result ? (VERDICT_COLORS[result.verdict] ?? "#fbbf24") : "#fbbf24";
+    fetch("/api/gtm/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: scoreResult.id, tool: "problem", name, email, company }),
+    }).catch(() => {});
+
+    try {
+      const res = await fetch("/api/gtm/problem/details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: scoreResult.id, scores: scoreResult.scores, rubric }),
+      });
+      if (res.ok) {
+        const details = await res.json() as DetailsResult;
+        setDetailsResult(details);
+      }
+    } catch {
+      // Details failed — user still sees scores
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const unlocked = phase === "unlocked";
+  const scoreRevealed = phase === "scored" || phase === "unlocked";
 
   return (
-    <div className="inner">
-      {!result && !loading && (
-        <>
-          <div className="inner-hero">
-            <div className="inner-eyebrow">GTM Toolkit</div>
-            <h1 className="inner-title">Market Problem Validator</h1>
-            <p className="inner-lead">
-              Describe the market problem you&rsquo;re solving. Get a verdict, a score, and honest feedback on whether it&rsquo;s worth building against.
-            </p>
+    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "'DM Sans', sans-serif" }}>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+        @media (max-width: 700px) { .gtm-tool-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
+
+      {/* HERO */}
+      <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: 20, background: "rgba(49,154,101,0.25)", border: "1px solid rgba(49,154,101,0.4)", marginBottom: 24 }}>
+            <span style={{ color: BRAND.brandGreen, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Tool 03 — GTM Toolkit</span>
           </div>
-
-          <div className="inner-body">
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="prob-problem">
-                  Problem Description *
-                </label>
-                <textarea
-                  id="prob-problem"
-                  className="form-textarea"
-                  rows={5}
-                  value={problem}
-                  onChange={(e) => setProblem(e.target.value)}
-                  placeholder="Describe the problem your target customer faces. Be specific — who has it, how often, what the cost is."
-                  required
-                  maxLength={4000}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="prob-evidence">
-                  Evidence / Signals (optional)
-                </label>
-                <textarea
-                  id="prob-evidence"
-                  className="form-textarea"
-                  rows={3}
-                  value={evidence}
-                  onChange={(e) => setEvidence(e.target.value)}
-                  placeholder="Customer interviews, lost deal patterns, NPS complaints, market research…"
-                  maxLength={2000}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="prob-tam">
-                  TAM Size
-                </label>
-                <select
-                  id="prob-tam"
-                  className="form-select"
-                  value={tamSize}
-                  onChange={(e) => setTamSize(e.target.value)}
-                >
-                  {TAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                className="submit-btn"
-                disabled={!problem.trim()}
-              >
-                Validate This Problem
-              </button>
-            </form>
-          </div>
-        </>
-      )}
-
-      {loading && <div className="inner-body"><Loader dark={false} label="Validating problem…" sub="Analysing six dimensions" /></div>}
-
-      {error && !loading && (
-        <div className="inner-body">
-          <ErrMsg msg={error} retry={() => setError(null)} dark={false} />
+          <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
+            Market Problem Validator
+          </h1>
+          <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
+            Score your market problem across six dimensions. Find out if the problem you&apos;re solving is worth building a company around.
+          </p>
         </div>
-      )}
+      </section>
 
-      {result && !loading && (
-        <>
-          <div className="inner-hero">
-            <div className="inner-eyebrow">Problem Validator — Results</div>
-            <h1 className="inner-title" style={{ color: "var(--white)" }}>
-              {result.verdict}
-            </h1>
-            <p className="inner-lead">{result.verdict_reasoning}</p>
-          </div>
-
-          <div className="inner-body">
-            {/* Score badge */}
-            <div style={{ marginBottom: 32 }}>
-              <div className="section-label">Overall Score</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 12 }}>
-                <span style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 56,
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  color: verdictColor,
-                }}>
-                  {result.score}
-                </span>
-                <span style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  padding: "6px 14px",
-                  background: verdictColor + "22",
-                  color: verdictColor,
-                  border: `1px solid ${verdictColor}44`,
-                }}>
-                  {result.verdict}
-                </span>
-              </div>
-            </div>
-
-            {/* Fatal flaw */}
-            {result.fatal_flaw && (
-              <div className="feature" style={{ borderLeftColor: "#ef4444", marginBottom: 32 }}>
-                <div className="feature-title" style={{ color: "#ef4444" }}>Fatal Flaw</div>
-                <p className="feature-body">{result.fatal_flaw}</p>
-              </div>
-            )}
-
-            {/* Strongest signal */}
-            <div className="feature" style={{ borderLeftColor: "#22c55e", marginBottom: 32 }}>
-              <div className="feature-title" style={{ color: "#22c55e" }}>Strongest Signal</div>
-              <p className="feature-body">{result.strongest_signal}</p>
-            </div>
-
-            {/* Dimensions */}
-            <div className="section-label" style={{ marginBottom: 16 }}>Dimension Detail</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 40 }}>
-              {result.dimensions.map((d) => (
-                <DimRow key={d.name} dimension={d} dark={false} />
+      {/* INTRO */}
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "48px 24px 16px" }}>
+        <div className="gtm-tool-grid" style={{ margin: "0 0 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div style={{ padding: "20px 24px", background: BRAND.lightBg, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
+            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {DIMS.map((d) => (
+                <div key={d.key} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: BRAND.brandGreen, flexShrink: 0, marginTop: 4 }} />
+                  <span style={{ fontSize: 13, color: BRAND.dark, lineHeight: 1.4 }}>{d.name}</span>
+                </div>
               ))}
             </div>
-
-            {/* Next validation moves */}
-            {result.next_validation_moves.length > 0 && (
-              <div style={{ marginBottom: 32 }}>
-                <div className="section-label">Next Validation Moves</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 16 }}>
-                  {result.next_validation_moves.map((move, i) => (
-                    <div
-                      key={i}
-                      className="feature"
-                      style={{ display: "flex", gap: 16, alignItems: "flex-start" }}
-                    >
-                      <span style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontSize: 20,
-                        fontWeight: 900,
-                        color: "var(--sage)",
-                        lineHeight: 1,
-                        flexShrink: 0,
-                        width: 24,
-                      }}>
-                        {i + 1}
-                      </span>
-                      <p className="feature-body" style={{ margin: 0 }}>{move}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Question you're avoiding */}
-            <div className="feature" style={{ borderLeftColor: "var(--teal)", marginBottom: 32 }}>
-              <div className="feature-title" style={{ color: "var(--teal)" }}>The Question You&rsquo;re Avoiding</div>
-              <p className="feature-body" style={{ fontStyle: "italic" }}>{result.question_youre_avoiding}</p>
-            </div>
-
-            <NewsletterCapture dark={false} />
-
-            <button
-              className="submit-btn"
-              onClick={reset}
-              style={{ marginTop: 24 }}
-              aria-label="Validate another problem"
-            >
-              Validate Another
-            </button>
           </div>
-        </>
+          <div style={{ padding: "20px 24px", background: BRAND.white, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
+            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { dim: "Problem Acuity", tip: "The problem is named precisely — who has it, how often, what it costs — with no room for interpretation." },
+                { dim: "Market Evidence", tip: "Multiple verified data points: customer interviews, deal loss patterns, industry research, analyst reports." },
+                { dim: "Urgency", tip: "There is a documented reason why this problem needs solving now, not in 18 months." },
+                { dim: "Addressability", tip: "The problem has a defined solution space — it&apos;s not a symptom of something deeper that can&apos;t be fixed." },
+                { dim: "Competitive Gap", tip: "Existing solutions are specifically named and their failure modes are evidenced, not just implied." },
+                { dim: "Monetisation Signal", tip: "Someone has already paid money (or equivalent) to solve this — proof that budget exists for a solution." },
+              ].map((t) => (
+                <div key={t.dim} style={{ fontSize: 12, color: BRAND.mid, lineHeight: 1.55 }}>
+                  <span style={{ fontWeight: 600, color: BRAND.darkGreen }}>{t.dim}:</span> {t.tip}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 6px" }}>
+          Describe the problem your target customer faces below. Be specific — who has it, how often, what the cost is.
+        </p>
+      </section>
+
+      {/* INPUT */}
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "8px 24px" }}>
+        {/* Honeypot */}
+        <input
+          type="text"
+          name="website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          tabIndex={-1}
+          aria-hidden="true"
+          style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+          autoComplete="off"
+        />
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6, letterSpacing: "0.02em" }}>
+            Problem Description <span style={{ color: BRAND.red }}>*</span>
+          </label>
+          <textarea
+            value={problem}
+            onChange={(e) => setProblem(e.target.value.slice(0, MAX_PROBLEM))}
+            placeholder="Describe the problem your target customer faces. Be specific — who has it, how often, what the cost is."
+            style={{
+              width: "100%",
+              minHeight: 160,
+              padding: 16,
+              borderRadius: 8,
+              border: `1px solid ${BRAND.border}`,
+              fontSize: 14,
+              fontFamily: "'DM Sans', sans-serif",
+              color: BRAND.dark,
+              lineHeight: 1.6,
+              resize: "vertical",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.2s",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = BRAND.teal)}
+            onBlur={(e) => (e.target.style.borderColor = BRAND.border)}
+            disabled={scoreRevealed}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+            <span style={{ fontSize: 12, color: problem.length > MAX_PROBLEM * 0.9 ? BRAND.amber : BRAND.mid }}>
+              {problem.length.toLocaleString()} / {MAX_PROBLEM.toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6, letterSpacing: "0.02em" }}>
+            Supporting Evidence <span style={{ color: BRAND.mid, fontWeight: 400 }}>(optional)</span>
+          </label>
+          <textarea
+            value={evidence}
+            onChange={(e) => setEvidence(e.target.value.slice(0, MAX_EVIDENCE))}
+            placeholder="Customer interviews, lost deal patterns, NPS complaints, market research…"
+            style={{
+              width: "100%",
+              minHeight: 100,
+              padding: 16,
+              borderRadius: 8,
+              border: `1px solid ${BRAND.border}`,
+              fontSize: 14,
+              fontFamily: "'DM Sans', sans-serif",
+              color: BRAND.dark,
+              lineHeight: 1.6,
+              resize: "vertical",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.2s",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = BRAND.teal)}
+            onBlur={(e) => (e.target.style.borderColor = BRAND.border)}
+            disabled={scoreRevealed}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+            <span style={{ fontSize: 12, color: evidence.length > MAX_EVIDENCE * 0.9 ? BRAND.amber : BRAND.mid }}>
+              {evidence.length.toLocaleString()} / {MAX_EVIDENCE.toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6, letterSpacing: "0.02em" }}>
+            Approximate TAM Size <span style={{ color: BRAND.mid, fontWeight: 400 }}>(optional)</span>
+          </label>
+          <select
+            value={tamSize}
+            onChange={(e) => setTamSize(e.target.value)}
+            disabled={scoreRevealed}
+            style={{
+              width: "100%",
+              maxWidth: 320,
+              padding: "10px 14px",
+              borderRadius: 6,
+              border: `1px solid ${BRAND.border}`,
+              fontSize: 14,
+              fontFamily: "'DM Sans', sans-serif",
+              color: tamSize ? BRAND.dark : BRAND.mid,
+              background: BRAND.white,
+              outline: "none",
+              cursor: scoreRevealed ? "not-allowed" : "pointer",
+            }}
+          >
+            <option value="">Select TAM size…</option>
+            {TAM_OPTIONS.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          {!scoreRevealed && (
+            <button
+              type="button"
+              onClick={handleEvaluate}
+              disabled={buildInputText().length < 50 || phase === "scoring"}
+              style={{
+                padding: "12px 28px",
+                borderRadius: 6,
+                border: "none",
+                background: buildInputText().length < 50 ? BRAND.border : BRAND.brandGreen,
+                color: BRAND.white,
+                fontFamily: "'Oswald', sans-serif",
+                fontWeight: 600,
+                fontSize: 15,
+                letterSpacing: "0.04em",
+                cursor: buildInputText().length < 50 ? "not-allowed" : "pointer",
+                transition: "all 0.2s",
+                opacity: phase === "scoring" ? 0.7 : 1,
+              }}
+            >
+              {phase === "scoring" ? "Scoring…" : "Validate My Problem"}
+            </button>
+          )}
+        </div>
+
+        {phase === "scoring" && (
+          <div style={{ textAlign: "center", padding: "48px 0" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: BRAND.brandGreen, animation: "pulse 1.2s ease-in-out infinite", animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </div>
+            <p style={{ color: BRAND.teal, fontSize: 14, fontWeight: 500 }}>Scoring across {DIMS.length} dimensions…</p>
+          </div>
+        )}
+      </section>
+
+      {/* RESULTS */}
+      {scoreRevealed && (
+        <section ref={resultsRef} style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 48px" }}>
+          <div style={{ background: BRAND.lightBg, borderRadius: 12, padding: "32px 28px", border: `1px solid ${BRAND.border}` }}>
+            {evalError ? (
+              <div style={{ textAlign: "center", padding: "24px 0" }}>
+                <p style={{ fontSize: 15, color: BRAND.red, marginBottom: 16 }}>{evalError}</p>
+                <button
+                  type="button"
+                  onClick={() => { setPhase("input"); setEvalError(null); }}
+                  style={{ padding: "10px 20px", borderRadius: 6, border: `1px solid ${BRAND.teal}`, background: BRAND.white, color: BRAND.teal, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : scoreResult ? (
+              <>
+                <div style={{ textAlign: "center", marginBottom: 28 }}>
+                  <ScoreGauge score={scoreResult.totalScore} size={200} />
+                  <p style={{ fontSize: 14, color: BRAND.mid, marginTop: 12, lineHeight: 1.5, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+                    {getGrade(scoreResult.totalScore).desc}
+                  </p>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
+                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
+                  {DIMS.map((dim) => {
+                    const reasoning = detailsResult?.dimensionReasoning?.find((r) => r.dim === dim.key);
+                    return (
+                      <div key={dim.key}>
+                        <GtmDimensionBar
+                          name={dim.name}
+                          score={scoreResult.scores[dim.key] ?? 0}
+                          levelLabel={dim.levels[scoreResult.scores[dim.key] ?? 1] ?? ""}
+                          locked={!unlocked}
+                        />
+                        {unlocked && reasoning?.reasoning && (
+                          <div style={{ marginTop: -8, marginBottom: 20, marginLeft: 2, padding: "10px 14px", background: BRAND.white, borderRadius: 6, borderLeft: `2px solid ${BRAND.teal}40` }}>
+                            <p style={{ fontSize: 12, color: BRAND.mid, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>
+                              {reasoning.reasoning}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {!unlocked ? (
+                  <div style={{ marginTop: 24, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
+                    <div style={{ background: BRAND.white, borderRadius: 8, padding: 24, border: `1px solid ${BRAND.teal}30` }}>
+                      <div style={{ textAlign: "center", marginBottom: 20 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${BRAND.teal}15`, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BRAND.teal} strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                          </svg>
+                        </div>
+                        <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock Your Full Report</h3>
+                        <p style={{ fontSize: 13, color: BRAND.mid, margin: 0 }}>Get per-dimension scores, level labels, and specific recommendations for every weak area.</p>
+                      </div>
+                      {[
+                        { label: "Name", value: name, set: setName, placeholder: "Your name" },
+                        { label: "Email", value: email, set: setEmail, placeholder: "you@company.com" },
+                        { label: "Company", value: company, set: setCompany, placeholder: "Your company" },
+                      ].map((f) => (
+                        <div key={f.label} style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 4 }}>{f.label}</label>
+                          <input
+                            type={f.label === "Email" ? "email" : "text"}
+                            value={f.value}
+                            onChange={(e) => f.set(e.target.value)}
+                            placeholder={f.placeholder}
+                            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: BRAND.dark, outline: "none", boxSizing: "border-box" }}
+                            onFocus={(e) => (e.target.style.borderColor = BRAND.teal)}
+                            onBlur={(e) => (e.target.style.borderColor = BRAND.border)}
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={handleUnlock}
+                        disabled={!name || !email || !company}
+                        style={{ width: "100%", padding: "12px", borderRadius: 6, border: "none", background: !name || !email || !company ? BRAND.border : BRAND.brandGreen, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, letterSpacing: "0.04em", marginTop: 8, cursor: !name || !email || !company ? "not-allowed" : "pointer" }}
+                      >
+                        Unlock Full Report
+                      </button>
+                      <p style={{ fontSize: 11, color: BRAND.mid, textAlign: "center", marginTop: 10, marginBottom: 0 }}>
+                        We store your details securely and use them only to deliver this report. No spam, no third-party sharing.{" "}
+                        <a href="mailto:privacy@summitstrategyadvisory.com" style={{ color: BRAND.teal, textDecoration: "none" }}>privacy@summitstrategyadvisory.com</a>.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
+                      <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Recommendations</h3>
+                      {loadingDetails ? (
+                        <div style={{ textAlign: "center", padding: "32px 0" }}>
+                          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
+                            {[0, 1, 2].map((i) => (
+                              <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: BRAND.teal, animation: "pulse 1.2s ease-in-out infinite", animationDelay: `${i * 0.2}s` }} />
+                            ))}
+                          </div>
+                          <p style={{ color: BRAND.teal, fontSize: 13, fontWeight: 500, margin: 0 }}>Generating detailed analysis…</p>
+                        </div>
+                      ) : !detailsResult || detailsResult.recommendations.length === 0 ? (
+                        <p style={{ fontSize: 13, color: BRAND.mid, textAlign: "center", padding: "16px 0" }}>All dimensions scored 4 or above — no recommendations needed.</p>
+                      ) : detailsResult.recommendations.map((rec, i) => (
+                        <div
+                          key={i}
+                          style={{ background: BRAND.white, borderRadius: 8, padding: 20, marginBottom: 12, borderLeft: `3px solid ${rec.score <= 2 ? BRAND.red : BRAND.amber}` }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, color: BRAND.darkGreen }}>{rec.dim}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 12, background: rec.score <= 2 ? "#FFEBEE" : "#FFF8E1", color: rec.score <= 2 ? BRAND.red : BRAND.amber }}>
+                              {rec.score}/5
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 13, color: BRAND.dark, lineHeight: 1.55, margin: "0 0 8px" }}><strong>Gap:</strong> {rec.gap}</p>
+                          <p style={{ fontSize: 13, color: BRAND.mid, lineHeight: 1.55, margin: "0 0 8px" }}><strong style={{ color: BRAND.dark }}>Consequence:</strong> {rec.consequence}</p>
+                          <p style={{ fontSize: 13, color: BRAND.teal, lineHeight: 1.55, margin: 0 }}><strong>Next action:</strong> {rec.action}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ marginTop: 32, background: BRAND.darkGreen, borderRadius: 10, padding: "28px 24px", textAlign: "center" }}>
+                      <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.white, margin: "0 0 8px" }}>Need help validating your market?</h3>
+                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", margin: "0 0 18px" }}>
+                        Summit works alongside small teams selling to enterprise — sharpening problem definition, refining targeting, and closing the gap between aspiration and pipeline reality.
+                      </p>
+                      <a
+                        href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: "inline-block", padding: "12px 32px", borderRadius: 6, background: BRAND.brandGreen, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, cursor: "pointer", letterSpacing: "0.03em", textDecoration: "none" }}
+                      >
+                        Book a Call
+                      </a>
+                    </div>
+
+                    <p style={{ textAlign: "center", fontSize: 11, color: BRAND.mid, marginTop: 24, fontStyle: "italic" }}>
+                      Evaluated using Summit Strategy Advisory&apos;s GTM Quality Framework for Constrained-Universe Enterprise Selling.
+                    </p>
+                  </>
+                )}
+              </>
+            ) : null}
+          </div>
+        </section>
       )}
     </div>
   );
