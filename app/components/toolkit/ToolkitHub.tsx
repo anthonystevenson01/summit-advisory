@@ -99,6 +99,12 @@ export default function ToolkitHub() {
 
         {/* Hero — full width at page level */}
         <div className="inner-hero">
+          <a href="/" className="inner-back">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 7H2M6 3L2 7l4 4" />
+            </svg>
+            Home
+          </a>
           <div className="inner-eyebrow">Scale-Up Advisory</div>
           <h1 className="inner-title">Summit GTM Toolkit</h1>
           <p className="inner-lead">
