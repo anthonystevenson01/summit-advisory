@@ -41,6 +41,28 @@ export function getLoginLimiter() {
   });
 }
 
+// 5 GTM tool calls per IP per hour
+export function getToolLimiter() {
+  const redis = getRedisForRateLimit();
+  if (!redis) return null;
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "1 h"),
+    prefix: "rl:gtm-tool",
+  });
+}
+
+// 3 Account Intel calls per IP per hour (web search is expensive)
+export function getAccountIntelLimiter() {
+  const redis = getRedisForRateLimit();
+  if (!redis) return null;
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
+    prefix: "rl:gtm-account",
+  });
+}
+
 export function getClientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();

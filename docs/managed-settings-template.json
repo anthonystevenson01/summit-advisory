@@ -1,0 +1,39 @@
+{
+  "_comment": "Paste this into: claude.ai → Admin → Claude Code → Managed Settings",
+  "_note": "Remove all lines starting with underscore before pasting. Fill in your org values.",
+
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "atlassian": {
+      "command": "npx",
+      "args": ["-y", "mcp-atlassian"],
+      "env": {
+        "JIRA_URL": "${JIRA_BASE_URL}",
+        "JIRA_USERNAME": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+      }
+    },
+    "linear": {
+      "command": "npx",
+      "args": ["-y", "linear-mcp-server"],
+      "env": {
+        "LINEAR_API_KEY": "${LINEAR_API_KEY}"
+      }
+    }
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(npm *)",
+      "Bash(npx *)"
+    ]
+  }
+}

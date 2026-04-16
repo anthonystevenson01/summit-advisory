@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600&family=Barlow+Condensed:wght@400;600;700;900&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600&family=Barlow+Condensed:wght@400;600;700;900&family=DM+Mono:wght@400;500&family=Oswald:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1360,4 +1360,1289 @@ body {
   .form-row { grid-template-columns: 1fr; }
   .footer { flex-direction: column; gap: 16px; text-align: center; padding: 24px 20px; }
   .footer-links { flex-wrap: wrap; justify-content: center; }
+}
+
+/* ─── SUMMIT GTM TOOLKIT ─── */
+.toolkit {
+  --tk-dark:      #053030;
+  --tk-teal:      #005A66;
+  --tk-green:     #319A65;
+  --tk-mint:      #D6EDE3;
+  --tk-offwhite:  #F5F9F6;
+
+  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--tk-offwhite);
+  min-height: 100vh;
+}
+
+/* Nav */
+.tk-nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--tk-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 56px;
+  border-bottom: 2px solid var(--tk-teal);
+}
+.tk-nav-logo {
+  font-family: "Oswald", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tk-nav-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tk-nav-tag {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.08em;
+  font-style: italic;
+}
+
+/* Hero */
+.tk-hero {
+  background: var(--tk-dark);
+  padding: 64px 40px 72px;
+}
+.tk-hero-h1 {
+  font-family: "Oswald", sans-serif;
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.tk-hero-sub {
+  font-size: 17px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+  max-width: 540px;
+  margin-bottom: 28px;
+}
+.tk-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tk-tag {
+  display: inline-block;
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+}
+
+/* Niche callout strip */
+.tk-niche-strip {
+  background: var(--tk-teal);
+  padding: 28px 40px;
+}
+.tk-niche-strip p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.75;
+  max-width: 760px;
+}
+
+/* Tool cards grid */
+.tk-cards-section {
+  padding: 56px 40px;
+  background: var(--tk-offwhite);
+}
+.tk-cards-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--tk-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.tk-cards-sub {
+  font-size: 14px;
+  color: rgba(5,48,48,0.6);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.tk-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.tk-tool-card {
+  background: #fff;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+}
+.tk-tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(5,48,48,0.12);
+}
+.tk-tool-card-top {
+  padding: 20px 24px 16px;
+  flex: 1;
+}
+.tk-tool-card-num {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: rgba(5,48,48,0.4);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tk-tool-card-name {
+  font-family: "Oswald", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--tk-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+.tk-tool-card-tagline {
+  font-size: 13px;
+  color: rgba(5,48,48,0.6);
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.tk-tool-card-output {
+  font-size: 12px;
+  color: rgba(5,48,48,0.45);
+  font-style: italic;
+  line-height: 1.6;
+}
+.tk-tool-card-footer {
+  padding: 12px 24px;
+  border-top: 2px solid #eee;
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tk-teal);
+  transition: color 0.2s;
+}
+.tk-tool-card:hover .tk-tool-card-footer { color: var(--tk-green); }
+.tk-badge {
+  display: inline-block;
+  font-family: "Oswald", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: var(--tk-mint);
+  color: var(--tk-dark);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* How It Works */
+.tk-how-section {
+  background: var(--tk-dark);
+  padding: 56px 40px;
+}
+.tk-how-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 36px;
+}
+.tk-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.tk-step {
+  border-left: 3px solid var(--tk-teal);
+  padding-left: 20px;
+}
+.tk-step-num {
+  font-family: "Oswald", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--tk-teal);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.tk-step-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.tk-step-body {
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.7;
+}
+
+/* Tool surface/wrapper */
+.tk-tool-surface {
+  min-height: calc(100vh - 56px);
+  padding: 40px;
+}
+
+/* Form elements within toolkit */
+.tk-form {
+  max-width: 640px;
+}
+.tk-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.tk-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tk-input, .tk-textarea, .tk-select {
+  padding: 12px 16px;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  outline: none;
+  border: 1px solid;
+  width: 100%;
+  transition: border-color 0.2s, background 0.2s;
+}
+.tk-textarea { resize: vertical; }
+.tk-select { appearance: none; cursor: pointer; }
+
+/* Buttons */
+.tk-btn-primary {
+  font-family: "Oswald", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 14px 32px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.tk-btn-primary:hover { opacity: 0.88; }
+.tk-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.tk-btn-ghost {
+  font-family: "Oswald", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 24px;
+  background: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  border: 2px solid;
+}
+.tk-btn-ghost:hover { opacity: 0.75; }
+
+/* Results */
+.tk-results { max-width: 800px; }
+
+.tk-grade-card {
+  padding: 36px;
+  margin-bottom: 24px;
+}
+.tk-grade-letter {
+  font-family: "Oswald", sans-serif;
+  font-size: 80px;
+  font-weight: 700;
+  line-height: 1;
+}
+.tk-grade-score {
+  font-family: "Oswald", sans-serif;
+  font-size: 28px;
+  font-weight: 400;
+  opacity: 0.65;
+  margin-bottom: 16px;
+}
+.tk-grade-summary {
+  font-size: 16px;
+  line-height: 1.75;
+}
+.tk-mini-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 24px;
+}
+.tk-mini-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tk-mini-bar-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: 90px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.tk-mini-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+}
+.tk-mini-bar-fill {
+  height: 100%;
+  background: currentColor;
+  transition: width 0.6s ease;
+}
+.tk-mini-bar-num {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  width: 24px;
+  text-align: right;
+  opacity: 0.7;
+}
+
+/* Two-column pair */
+.tk-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.tk-info-card {
+  padding: 24px;
+}
+.tk-info-card-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+.tk-info-card-text {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* DimRow */
+.tk-dim-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 24px;
+}
+.tk-dim-row {
+  padding: 20px 24px;
+}
+.tk-dim-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+.tk-dim-name {
+  font-family: "Oswald", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tk-dim-score {
+  font-family: "Oswald", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.tk-dim-bar-track {
+  height: 4px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+.tk-dim-bar-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+.tk-dim-observation {
+  font-size: 14px;
+  line-height: 1.65;
+  opacity: 0.8;
+}
+.tk-dim-fix {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 8px;
+  font-style: italic;
+  opacity: 0.65;
+}
+
+/* Panel */
+.tk-panel {
+  padding: 28px 32px;
+  margin-bottom: 24px;
+}
+.tk-panel-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  opacity: 0.65;
+}
+.tk-panel-text {
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+/* Collapse toggle */
+.tk-collapse-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  width: 100%;
+  font-family: "Oswald", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+  margin-bottom: 0;
+}
+.tk-collapse-bar:hover { opacity: 0.8; }
+
+/* Verdict card */
+.tk-verdict-card {
+  padding: 36px;
+  margin-bottom: 24px;
+}
+.tk-verdict-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+.tk-verdict-score {
+  font-family: "Oswald", sans-serif;
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.tk-verdict-chip {
+  display: inline-block;
+  font-family: "Oswald", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  margin-bottom: 16px;
+}
+.tk-verdict-reasoning {
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+/* Numbered list */
+.tk-numbered-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 24px 32px;
+}
+.tk-numbered-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.tk-numbered-item-num {
+  font-family: "Oswald", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 24px;
+}
+.tk-numbered-item-text {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* Hexagon score */
+.tk-hex-score {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+.tk-hex-svg {
+  flex-shrink: 0;
+}
+.tk-hex-meta {
+  flex: 1;
+}
+.tk-hex-rating {
+  font-family: "Oswald", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.tk-hex-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tk-hex-label-row {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+
+/* Contact row */
+.tk-contact-row {
+  padding: 20px 24px;
+  margin-bottom: 3px;
+}
+.tk-contact-role {
+  font-family: "Oswald", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.tk-contact-why {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 8px;
+  opacity: 0.85;
+}
+.tk-contact-signal {
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.65;
+  margin-bottom: 10px;
+}
+.tk-contact-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.tk-contact-linkedin {
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.06);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+/* Signal row */
+.tk-signal-row {
+  padding: 16px 24px;
+  margin-bottom: 3px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.tk-signal-left {
+  flex-shrink: 0;
+}
+.tk-signal-right { flex: 1; }
+.tk-signal-finding {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 6px;
+}
+.tk-signal-implication {
+  font-size: 13px;
+  font-style: italic;
+  opacity: 0.7;
+  line-height: 1.6;
+}
+
+/* Pill tag */
+.tk-pill {
+  display: inline-block;
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 0;
+}
+
+/* Timing card */
+.tk-timing-card {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.tk-timing-badge {
+  font-family: "Oswald", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tk-timing-text {
+  font-size: 14px;
+  line-height: 1.65;
+  opacity: 0.8;
+}
+
+/* ICP fit */
+.tk-fit-card {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.tk-fit-rating {
+  font-family: "Oswald", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.tk-fit-score {
+  font-family: "Oswald", sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+.tk-fit-label {
+  font-size: 12px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* Newsletter capture */
+.tk-nl-capture {
+  padding: 36px 40px;
+  margin-top: 40px;
+}
+.tk-nl-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.tk-nl-sub {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  opacity: 0.75;
+}
+.tk-nl-row {
+  display: flex;
+  gap: 0;
+  max-width: 480px;
+}
+.tk-nl-input {
+  flex: 1;
+  padding: 13px 16px;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  border: none;
+  outline: none;
+}
+.tk-nl-btn {
+  font-family: "Oswald", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 13px 24px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.tk-nl-btn:hover { opacity: 0.85; }
+.tk-nl-success {
+  font-size: 15px;
+  line-height: 1.65;
+  opacity: 0.85;
+}
+
+/* Loader */
+.tk-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+}
+.tk-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: tk-spin 0.8s linear infinite;
+  margin-bottom: 20px;
+}
+@keyframes tk-spin {
+  to { transform: rotate(360deg); }
+}
+.tk-loader-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tk-loader-sub {
+  font-size: 14px;
+  opacity: 0.55;
+  font-style: italic;
+}
+
+/* Error */
+.tk-err-wrap {
+  padding: 40px;
+  text-align: center;
+}
+.tk-err-msg {
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+/* Back button */
+.tk-back-btn {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin-bottom: 28px;
+  opacity: 0.65;
+  transition: opacity 0.2s;
+}
+.tk-back-btn:hover { opacity: 1; }
+
+/* Context toggle */
+.tk-context-toggle {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid;
+  padding: 8px 16px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.tk-context-toggle:hover { opacity: 1; }
+
+/* Footer */
+.tk-footer {
+  background: var(--tk-dark);
+  padding: 20px 40px;
+  text-align: center;
+}
+.tk-footer-text {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+}
+
+/* Newsletter */
+.tk-nl-page {
+  background: #f7f4ee;
+  min-height: 100vh;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.tk-nl-masthead {
+  background: #0e1a10;
+  padding: 56px 40px;
+  text-align: center;
+}
+.tk-nl-masthead-title {
+  font-family: "Oswald", sans-serif;
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.tk-nl-masthead-tagline {
+  font-size: 17px;
+  color: rgba(255,255,255,0.55);
+  font-style: italic;
+}
+.tk-nl-signup-strip {
+  background: var(--tk-teal);
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.tk-nl-descriptors {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.tk-nl-descriptor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tk-nl-descriptor-key {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.tk-nl-descriptor-val {
+  font-size: 14px;
+  color: #fff;
+}
+.tk-nl-inline-form {
+  display: flex;
+  gap: 0;
+}
+.tk-nl-featured {
+  padding: 48px 40px 32px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.tk-nl-featured-issue {
+  cursor: pointer;
+  transition: opacity 0.2s;
+  border-bottom: 1px solid rgba(14,26,16,0.1);
+  padding-bottom: 40px;
+  margin-bottom: 40px;
+}
+.tk-nl-featured-issue:hover { opacity: 0.85; }
+.tk-nl-issue-num {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--tk-teal);
+  margin-bottom: 10px;
+}
+.tk-nl-featured-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #0e1a10;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.tk-nl-featured-subtitle {
+  font-size: 17px;
+  color: rgba(14,26,16,0.65);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.tk-nl-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(14,26,16,0.45);
+}
+.tk-nl-meta-tag {
+  background: var(--tk-mint);
+  color: var(--tk-dark);
+  padding: 3px 9px;
+  font-size: 11px;
+}
+.tk-nl-archive {
+  padding: 0 40px 48px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.tk-nl-archive-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(14,26,16,0.45);
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(14,26,16,0.1);
+  padding-bottom: 10px;
+}
+.tk-nl-archive-item {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(14,26,16,0.08);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+.tk-nl-archive-item:hover { opacity: 0.7; }
+.tk-nl-archive-num {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tk-teal);
+  flex-shrink: 0;
+  width: 72px;
+}
+.tk-nl-archive-title-text {
+  font-family: "Oswald", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0e1a10;
+  flex: 1;
+}
+.tk-nl-archive-date {
+  font-size: 13px;
+  color: rgba(14,26,16,0.4);
+  flex-shrink: 0;
+}
+
+/* Newsletter Reader */
+.tk-nl-reader-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid rgba(14,26,16,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 52px;
+}
+.tk-nl-reader-back {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--tk-teal);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+  padding: 0;
+}
+.tk-nl-reader-back:hover { opacity: 0.7; }
+.tk-nl-reader-pub {
+  font-family: "Oswald", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0e1a10;
+}
+.tk-nl-reader-nav-btns {
+  display: flex;
+  gap: 8px;
+}
+.tk-nl-nav-btn {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid rgba(14,26,16,0.2);
+  padding: 6px 14px;
+  cursor: pointer;
+  color: #0e1a10;
+  transition: background 0.2s;
+}
+.tk-nl-nav-btn:hover { background: var(--tk-mint); }
+.tk-nl-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.tk-nl-article {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+.tk-nl-article-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(14,26,16,0.45);
+}
+.tk-nl-article-h1 {
+  font-family: "Oswald", sans-serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  color: #0e1a10;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+  margin-bottom: 16px;
+}
+.tk-nl-article-dek {
+  font-size: 19px;
+  font-style: italic;
+  color: rgba(14,26,16,0.65);
+  line-height: 1.7;
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(14,26,16,0.1);
+}
+.tk-nl-article-body { }
+.tk-nl-block-p {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+}
+.tk-nl-block-h2 {
+  font-family: "Oswald", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0e1a10;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 36px 0 14px;
+}
+.tk-nl-block-pullquote {
+  border-left: 4px solid #005A66;
+  background: #f7f4ee;
+  padding: 24px 28px;
+  font-size: 20px;
+  font-style: italic;
+  color: #0e1a10;
+  line-height: 1.7;
+  margin: 28px 0;
+}
+.tk-nl-block-rule {
+  border: none;
+  border-top: 1px solid rgba(14,26,16,0.12);
+  margin: 32px 0;
+}
+
+/* Issue footer */
+.tk-nl-issue-footer {
+  border-top: 1px solid rgba(14,26,16,0.1);
+  padding: 40px 24px;
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+.tk-nl-issue-footer-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0e1a10;
+  margin-bottom: 8px;
+}
+.tk-nl-issue-footer-sub {
+  font-size: 14px;
+  color: rgba(14,26,16,0.55);
+  margin-bottom: 20px;
+  line-height: 1.65;
+}
+.tk-nl-issue-footer-form {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Prev/Next */
+.tk-nl-prev-next {
+  border-top: 1px solid rgba(14,26,16,0.08);
+  display: flex;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.tk-nl-pn-btn {
+  flex: 1;
+  padding: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.tk-nl-pn-btn:hover { background: rgba(14,26,16,0.04); }
+.tk-nl-pn-btn:last-child { text-align: right; }
+.tk-nl-pn-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.tk-nl-pn-label {
+  font-family: "Oswald", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(14,26,16,0.45);
+  margin-bottom: 4px;
+}
+.tk-nl-pn-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0e1a10;
+}
+
+/* Bottom two-column signup */
+.tk-nl-bottom-signup {
+  background: #0e1a10;
+  padding: 56px 40px;
+}
+.tk-nl-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  max-width: 860px;
+  margin: 0 auto;
+  align-items: center;
+}
+.tk-nl-bottom-copy-title {
+  font-family: "Oswald", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+.tk-nl-bottom-copy-body {
+  font-size: 15px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.75;
+}
+.tk-nl-bottom-footer {
+  background: #070f08;
+  padding: 18px 40px;
+  text-align: center;
+}
+.tk-nl-bottom-footer-text {
+  font-family: "Oswald", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+@media (max-width: 900px) {
+  .tk-nav { padding: 0 20px; }
+  .tk-hero { padding: 40px 20px 56px; }
+  .tk-niche-strip { padding: 20px; }
+  .tk-cards-section { padding: 40px 20px; }
+  .tk-cards-grid { grid-template-columns: 1fr; }
+  .tk-how-section { padding: 40px 20px; }
+  .tk-steps { grid-template-columns: 1fr; }
+  .tk-tool-surface { padding: 24px 20px; }
+  .tk-two-col { grid-template-columns: 1fr; }
+  .tk-nl-signup-strip { flex-direction: column; align-items: flex-start; padding: 20px; }
+  .tk-nl-inline-form { flex-direction: column; }
+  .tk-nl-featured { padding: 32px 20px; }
+  .tk-nl-archive { padding: 0 20px 32px; }
+  .tk-nl-bottom-grid { grid-template-columns: 1fr; gap: 24px; }
+  .tk-nl-bottom-signup { padding: 40px 20px; }
 }
