@@ -4,19 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import ScoreGauge from "../shared/ScoreGauge";
 import GtmDimensionBar from "../shared/GtmDimensionBar";
 import { TOOL_DIMENSIONS, getGrade } from "../data/dimensionConfig";
-
-const BRAND = {
-  darkGreen: "#053030",
-  teal: "#005A66",
-  brandGreen: "#319A65",
-  lightBg: "#F0F7F4",
-  white: "#FFFFFF",
-  dark: "#1A1A1A",
-  mid: "#666666",
-  border: "#D0D5D2",
-  red: "#C0392B",
-  amber: "#D4A017",
-};
+import { BRAND } from "@/app/lib/brand";
+import { submitToolUnlock } from "../shared/useToolUnlock";
 
 const DIMS = TOOL_DIMENSIONS["problem"];
 
@@ -109,51 +98,28 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
     if (!name || !email || !company || !scoreResult) return;
     setPhase("unlocked");
     setLoadingDetails(true);
-
-    fetch("/api/gtm/unlock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: scoreResult.id, tool: "problem", name, email, company }),
-    }).catch(() => {});
-
-    try {
-      const res = await fetch("/api/gtm/problem/details", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: scoreResult.id, scores: scoreResult.scores, rubric }),
-      });
-      if (res.ok) {
-        const details = await res.json() as DetailsResult;
-        setDetailsResult(details);
-      }
-    } catch {
-      // Details failed — user still sees scores
-    } finally {
-      setLoadingDetails(false);
-    }
+    const details = await submitToolUnlock({
+      tool: "problem",
+      id: scoreResult.id,
+      name, email, company,
+      scores: scoreResult.scores,
+      rubric,
+    });
+    if (details) setDetailsResult(details);
+    setLoadingDetails(false);
   };
 
   const unlocked = phase === "unlocked";
   const scoreRevealed = phase === "scored" || phase === "unlocked";
 
   return (
-    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "'DM Sans', sans-serif" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
-        @media (max-width: 700px) { .gtm-tool-grid { grid-template-columns: 1fr !important; } }
-      `}</style>
-
-      {/* HERO */}
+    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "var(--font-dm-sans), sans-serif" }}>{/* HERO */}
       <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: 20, background: "rgba(49,154,101,0.25)", border: "1px solid rgba(49,154,101,0.4)", marginBottom: 24 }}>
             <span style={{ color: BRAND.brandGreen, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Tool 03 — GTM Toolkit</span>
           </div>
-          <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
+          <h1 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
             Market Problem Validator
           </h1>
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
@@ -166,7 +132,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "48px 24px 16px" }}>
         <div className="gtm-tool-grid" style={{ margin: "0 0 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           <div style={{ padding: "20px 24px", background: BRAND.lightBg, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
-            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
+            <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {DIMS.map((d) => (
                 <div key={d.key} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -177,7 +143,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
             </div>
           </div>
           <div style={{ padding: "20px 24px", background: BRAND.white, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
-            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
+            <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
                 { dim: "Problem Acuity", tip: "The problem is named precisely — who has it, how often, what it costs — with no room for interpretation." },
@@ -228,7 +194,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
               borderRadius: 8,
               border: `1px solid ${BRAND.border}`,
               fontSize: 14,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-dm-sans), sans-serif",
               color: BRAND.dark,
               lineHeight: 1.6,
               resize: "vertical",
@@ -262,7 +228,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
               borderRadius: 8,
               border: `1px solid ${BRAND.border}`,
               fontSize: 14,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-dm-sans), sans-serif",
               color: BRAND.dark,
               lineHeight: 1.6,
               resize: "vertical",
@@ -296,7 +262,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
               borderRadius: 6,
               border: `1px solid ${BRAND.border}`,
               fontSize: 14,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-dm-sans), sans-serif",
               color: tamSize ? BRAND.dark : BRAND.mid,
               background: BRAND.white,
               outline: "none",
@@ -322,7 +288,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                 border: "none",
                 background: buildInputText().length < 50 ? BRAND.border : BRAND.brandGreen,
                 color: BRAND.white,
-                fontFamily: "'Oswald', sans-serif",
+                fontFamily: "var(--font-oswald), sans-serif",
                 fontWeight: 600,
                 fontSize: 15,
                 letterSpacing: "0.04em",
@@ -358,7 +324,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                 <button
                   type="button"
                   onClick={() => { setPhase("input"); setEvalError(null); }}
-                  style={{ padding: "10px 20px", borderRadius: 6, border: `1px solid ${BRAND.teal}`, background: BRAND.white, color: BRAND.teal, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+                  style={{ padding: "10px 20px", borderRadius: 6, border: `1px solid ${BRAND.teal}`, background: BRAND.white, color: BRAND.teal, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
                 >
                   Try again
                 </button>
@@ -373,7 +339,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                 </div>
 
                 <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
+                  <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
                   {DIMS.map((dim) => {
                     const reasoning = detailsResult?.dimensionReasoning?.find((r) => r.dim === dim.key);
                     return (
@@ -406,7 +372,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                             <path d="M7 11V7a5 5 0 0110 0v4" />
                           </svg>
                         </div>
-                        <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock Your Full Report</h3>
+                        <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock Your Full Report</h3>
                         <p style={{ fontSize: 13, color: BRAND.mid, margin: 0 }}>Get per-dimension scores, level labels, and specific recommendations for every weak area.</p>
                       </div>
                       {[
@@ -421,7 +387,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                             value={f.value}
                             onChange={(e) => f.set(e.target.value)}
                             placeholder={f.placeholder}
-                            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: BRAND.dark, outline: "none", boxSizing: "border-box" }}
+                            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "var(--font-dm-sans), sans-serif", color: BRAND.dark, outline: "none", boxSizing: "border-box" }}
                             onFocus={(e) => (e.target.style.borderColor = BRAND.teal)}
                             onBlur={(e) => (e.target.style.borderColor = BRAND.border)}
                           />
@@ -431,7 +397,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                         type="button"
                         onClick={handleUnlock}
                         disabled={!name || !email || !company}
-                        style={{ width: "100%", padding: "12px", borderRadius: 6, border: "none", background: !name || !email || !company ? BRAND.border : BRAND.brandGreen, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, letterSpacing: "0.04em", marginTop: 8, cursor: !name || !email || !company ? "not-allowed" : "pointer" }}
+                        style={{ width: "100%", padding: "12px", borderRadius: 6, border: "none", background: !name || !email || !company ? BRAND.border : BRAND.brandGreen, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, letterSpacing: "0.04em", marginTop: 8, cursor: !name || !email || !company ? "not-allowed" : "pointer" }}
                       >
                         Unlock Full Report
                       </button>
@@ -444,7 +410,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                 ) : (
                   <>
                     <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                      <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Recommendations</h3>
+                      <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Recommendations</h3>
                       {loadingDetails ? (
                         <div style={{ textAlign: "center", padding: "32px 0" }}>
                           <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
@@ -462,7 +428,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                           style={{ background: BRAND.white, borderRadius: 8, padding: 20, marginBottom: 12, borderLeft: `3px solid ${rec.score <= 2 ? BRAND.red : BRAND.amber}` }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, color: BRAND.darkGreen }}>{rec.dim}</span>
+                            <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 14, color: BRAND.darkGreen }}>{rec.dim}</span>
                             <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 12, background: rec.score <= 2 ? "#FFEBEE" : "#FFF8E1", color: rec.score <= 2 ? BRAND.red : BRAND.amber }}>
                               {rec.score}/5
                             </span>
@@ -475,7 +441,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                     </div>
 
                     <div style={{ marginTop: 32, background: BRAND.darkGreen, borderRadius: 10, padding: "28px 24px", textAlign: "center" }}>
-                      <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.white, margin: "0 0 8px" }}>Need help validating your market?</h3>
+                      <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.white, margin: "0 0 8px" }}>Need help validating your market?</h3>
                       <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", margin: "0 0 18px" }}>
                         Summit works alongside small teams selling to enterprise — sharpening problem definition, refining targeting, and closing the gap between aspiration and pipeline reality.
                       </p>
@@ -483,7 +449,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
                         href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true"
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ display: "inline-block", padding: "12px 32px", borderRadius: 6, background: BRAND.brandGreen, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, cursor: "pointer", letterSpacing: "0.03em", textDecoration: "none" }}
+                        style={{ display: "inline-block", padding: "12px 32px", borderRadius: 6, background: BRAND.brandGreen, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, cursor: "pointer", letterSpacing: "0.03em", textDecoration: "none" }}
                       >
                         Book a Call
                       </a>

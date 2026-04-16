@@ -1,20 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
-const BRAND = {
-  darkGreen: "#053030",
-  teal: "#005A66",
-  brandGreen: "#319A65",
-  lightBg: "#F0F7F4",
-  white: "#FFFFFF",
-  dark: "#1A1A1A",
-  mid: "#666666",
-  border: "#D0D5D2",
-  red: "#C0392B",
-  amber: "#D4A017",
-  lightTeal: "#E6F2F4",
-};
+import { BRAND } from "@/app/lib/brand";
 
 const DIMENSIONS = [
   { key: "bca", name: "Buying Committee & Access Mapping", weight: 0.25, abbr: "BCA" },
@@ -109,15 +96,15 @@ function ScoreGauge({ score, size = 180, animated = true }: { score: number; siz
           strokeDashoffset={offset}
           style={{ transition: "stroke-dashoffset 0.1s ease" }}
         />
-        <text x={size / 2} y={size * 0.45} textAnchor="middle" style={{ fontSize: size * 0.22, fontFamily: "'Oswald', sans-serif", fontWeight: 700, fill: BRAND.darkGreen }}>
+        <text x={size / 2} y={size * 0.45} textAnchor="middle" style={{ fontSize: size * 0.22, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 700, fill: BRAND.darkGreen }}>
           {displayScore}
         </text>
-        <text x={size / 2} y={size * 0.58} textAnchor="middle" style={{ fontSize: size * 0.07, fontFamily: "'DM Sans', sans-serif", fill: BRAND.mid, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+        <text x={size / 2} y={size * 0.58} textAnchor="middle" style={{ fontSize: size * 0.07, fontFamily: "var(--font-dm-sans), sans-serif", fill: BRAND.mid, letterSpacing: "0.05em", textTransform: "uppercase" }}>
           out of 100
         </text>
       </svg>
       <div style={{ marginTop: 4, padding: "6px 18px", borderRadius: 24, background: grade.color + "18", border: `1px solid ${grade.color}40` }}>
-        <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, color: grade.color, letterSpacing: "0.03em" }}>{grade.label}</span>
+        <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, color: grade.color, letterSpacing: "0.03em" }}>{grade.label}</span>
       </div>
     </div>
   );
@@ -145,12 +132,12 @@ function DimensionBar({
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "baseline" }}>
-        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: BRAND.darkGreen }}>{dim.name}</span>
+        <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, fontWeight: 600, color: BRAND.darkGreen }}>{dim.name}</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {!locked && (
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: BRAND.mid, textTransform: "uppercase", letterSpacing: "0.06em" }}>{level}</span>
+            <span style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, color: BRAND.mid, textTransform: "uppercase", letterSpacing: "0.06em" }}>{level}</span>
           )}
-          <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: locked ? BRAND.mid : BRAND.darkGreen }}>{locked ? "?" : `${score}/5`}</span>
+          <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 14, fontWeight: 600, color: locked ? BRAND.mid : BRAND.darkGreen }}>{locked ? "?" : `${score}/5`}</span>
         </div>
       </div>
       <div style={{ height: 8, borderRadius: 4, background: "#E8ECE9", overflow: "hidden" }}>
@@ -280,16 +267,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "'DM Sans', sans-serif" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
-        @media (max-width: 700px) { .icp-eval-grid { grid-template-columns: 1fr !important; } }
-      `}</style>
-
+    <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "var(--font-dm-sans), sans-serif" }}>
       {/* HERO */}
       <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -305,7 +283,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
           >
             <span style={{ color: BRAND.brandGreen, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Free Tool — Resources</span>
           </div>
-          <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
+          <h1 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 46, fontWeight: 700, color: BRAND.white, lineHeight: 1.12, margin: "0 0 20px" }}>
             ICP Evaluator for Enterprise Scale-Ups
           </h1>
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: "0 0 24px" }}>
@@ -328,7 +306,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 borderRadius: 6,
                 border: "1px solid rgba(255,255,255,0.3)",
                 background: "rgba(255,255,255,0.1)",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 fontSize: 13,
                 fontWeight: 600,
                 color: BRAND.white,
@@ -356,7 +334,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                   borderRadius: 6,
                   border: "1px solid rgba(255,255,255,0.3)",
                   background: "rgba(255,255,255,0.1)",
-                  fontFamily: "'DM Sans', sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   fontSize: 13,
                   fontWeight: 600,
                   color: BRAND.white,
@@ -383,13 +361,13 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           If you&apos;re a small team selling to enterprise, you already know the dynamics are different. But most ICP frameworks are built for companies with 10,000 accounts and an SDR army. Yours has maybe 150 accounts. Three things make selling in this world fundamentally different, and your ICP needs to address all of them.
         </p>
-        <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
+        <h2 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
           There&apos;s No Volume to Hide Behind
         </h2>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
           Your universe is finite. The challenge isn&apos;t finding accounts — it&apos;s choosing which 30 to pursue first, knowing how to get access, and making every touch count. When you burn an account — wrong person, wrong timing, wrong message — that account is closed to you for 12–18 months. There&apos;s no volume to hide behind. Your real competitor isn&apos;t the other vendor — it&apos;s &ldquo;do nothing.&rdquo; Enterprise organisations have enormous inertia, and most of your target accounts are defaulting to the status quo right now. Your ICP needs to distinguish between accounts that have an active reason to change and accounts that are sitting comfortably — because pursuing the comfortable ones with the same intensity burns your limited capacity on deals that will stall. And you carry a trust tax that incumbents don&apos;t. Every enterprise buyer evaluating a small vendor is doing a private risk calculation that has nothing to do with your product — and your ICP needs to account for which accounts have champions willing to take that bet.
         </p>
-        <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
+        <h2 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 22, fontWeight: 600, color: BRAND.darkGreen, lineHeight: 1.3, margin: "28px 0 16px" }}>
           The Machines Are Only as Smart as What You Feed Them
         </h2>
         <p style={{ fontSize: 15, color: BRAND.dark, lineHeight: 1.7, margin: "0 0 14px" }}>
@@ -401,7 +379,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
 
         <div className="icp-eval-grid" style={{ margin: "28px 0 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           <div style={{ padding: "20px 24px", background: BRAND.lightBg, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
-            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
+            <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What we evaluate</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {[
                 "Buying Committee & Access Mapping",
@@ -420,7 +398,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             </div>
           </div>
           <div style={{ padding: "20px 24px", background: BRAND.white, borderRadius: 10, border: `1px solid ${BRAND.border}` }}>
-            <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
+            <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 14, fontWeight: 600, color: BRAND.teal, margin: "0 0 14px", letterSpacing: "0.04em", textTransform: "uppercase" }}>What the highest standard looks like</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
                 { dim: "Buying Committee & Access", tip: "Full buying committee mapped with roles, influence levels, access paths, and internal champions identified per account." },
@@ -478,7 +456,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             borderRadius: 8,
             border: `1px solid ${BRAND.border}`,
             fontSize: 14,
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "var(--font-dm-sans), sans-serif",
             color: BRAND.dark,
             lineHeight: 1.6,
             resize: "vertical",
@@ -507,7 +485,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 border: "none",
                 background: charCount < 50 || charCount > MAX_CHARS ? BRAND.border : BRAND.brandGreen,
                 color: BRAND.white,
-                fontFamily: "'Oswald', sans-serif",
+                fontFamily: "var(--font-oswald), sans-serif",
                 fontWeight: 600,
                 fontSize: 15,
                 letterSpacing: "0.04em",
@@ -559,7 +537,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                     border: `1px solid ${BRAND.teal}`,
                     background: BRAND.white,
                     color: BRAND.teal,
-                    fontFamily: "'Oswald', sans-serif",
+                    fontFamily: "var(--font-oswald), sans-serif",
                     fontWeight: 600,
                     fontSize: 14,
                     cursor: "pointer",
@@ -589,7 +567,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 )}
 
                 <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
+                  <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Dimension Breakdown</h3>
                   {DIMENSIONS.map((dim) => {
                     const reasoning = evalResult.dimensionReasoning?.find((r) => r.dim === dim.key);
                     return (
@@ -628,7 +606,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                         <path d="M7 11V7a5 5 0 0110 0v4" />
                       </svg>
                     </div>
-                    <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock Your Full Report</h3>
+                    <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock Your Full Report</h3>
                     <p style={{ fontSize: 13, color: BRAND.mid, margin: 0 }}>Get per-dimension scores, level labels, and specific recommendations for every weak area.</p>
                   </div>
                   {[
@@ -649,7 +627,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                           borderRadius: 6,
                           border: `1px solid ${BRAND.border}`,
                           fontSize: 14,
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "var(--font-dm-sans), sans-serif",
                           color: BRAND.dark,
                           outline: "none",
                           boxSizing: "border-box",
@@ -670,7 +648,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                       border: "none",
                       background: !name || !email || !company ? BRAND.border : BRAND.brandGreen,
                       color: BRAND.white,
-                      fontFamily: "'Oswald', sans-serif",
+                      fontFamily: "var(--font-oswald), sans-serif",
                       fontWeight: 600,
                       fontSize: 15,
                       letterSpacing: "0.04em",
@@ -689,7 +667,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
             ) : (
               <>
                 <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Recommendations</h3>
+                  <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: BRAND.darkGreen, marginBottom: 16, marginTop: 0 }}>Recommendations</h3>
                   {loadingDetails ? (
                     <div style={{ textAlign: "center", padding: "32px 0" }}>
                       <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
@@ -713,7 +691,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                        <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, color: BRAND.darkGreen }}>{rec.dim}</span>
+                        <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 14, color: BRAND.darkGreen }}>{rec.dim}</span>
                         <span
                           style={{
                             fontSize: 11,
@@ -742,7 +720,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
 
                 {!showCRM ? (
                   <div style={{ marginTop: 28, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24, textAlign: "center" }}>
-                    <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px" }}>Want to know if your ICP matches reality?</h3>
+                    <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px" }}>Want to know if your ICP matches reality?</h3>
                     <p style={{ fontSize: 13, color: BRAND.mid, margin: "0 0 20px" }}>Connect your CRM for a one-time analysis comparing your stated ICP against actual deal data.</p>
                     <button
                       type="button"
@@ -753,7 +731,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                         border: `1px solid ${BRAND.teal}`,
                         background: BRAND.white,
                         color: BRAND.teal,
-                        fontFamily: "'Oswald', sans-serif",
+                        fontFamily: "var(--font-oswald), sans-serif",
                         fontWeight: 600,
                         fontSize: 14,
                         cursor: "pointer",
@@ -769,7 +747,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                       <div style={{ display: "inline-block", padding: "6px 16px", borderRadius: 20, background: `${BRAND.amber}20`, border: `1px solid ${BRAND.amber}40`, marginBottom: 16 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: BRAND.amber, letterSpacing: "0.06em", textTransform: "uppercase" }}>Coming Soon</span>
                       </div>
-                      <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px" }}>CRM Reality Check</h3>
+                      <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px" }}>CRM Reality Check</h3>
                       <p style={{ fontSize: 13, color: BRAND.mid, margin: "0 0 20px", maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
                         We&apos;re building one-click CRM integrations to compare your stated ICP against your actual deal data. Planned integrations include:
                       </p>
@@ -814,7 +792,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                             borderRadius: 6,
                             border: `1px solid ${BRAND.border}`,
                             fontSize: 13,
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "var(--font-dm-sans), sans-serif",
                             color: BRAND.dark,
                             lineHeight: 1.5,
                             resize: "vertical",
@@ -847,7 +825,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                             border: "none",
                             background: BRAND.brandGreen,
                             color: BRAND.white,
-                            fontFamily: "'Oswald', sans-serif",
+                            fontFamily: "var(--font-oswald), sans-serif",
                             fontWeight: 600,
                             fontSize: 13,
                             cursor: crmSubmitting ? "not-allowed" : "pointer",
@@ -863,7 +841,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                 )}
 
                 <div style={{ marginTop: 32, background: BRAND.darkGreen, borderRadius: 10, padding: "28px 24px", textAlign: "center" }}>
-                  <h3 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.white, margin: "0 0 8px" }}>Need help building a better ICP?</h3>
+                  <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.white, margin: "0 0 8px" }}>Need help building a better ICP?</h3>
                   <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", margin: "0 0 18px" }}>
                     Summit works alongside small teams selling to enterprise — refining targeting, building account strategies, and closing the gap between aspiration and pipeline reality.
                   </p>
@@ -876,7 +854,7 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
                       border: "none",
                       background: BRAND.brandGreen,
                       color: BRAND.white,
-                      fontFamily: "'Oswald', sans-serif",
+                      fontFamily: "var(--font-oswald), sans-serif",
                       fontWeight: 600,
                       fontSize: 15,
                       cursor: "pointer",

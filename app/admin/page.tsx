@@ -35,7 +35,7 @@ export default async function AdminDashboard() {
     <div>
       <h1
         style={{
-          fontFamily: "'Oswald', sans-serif",
+          fontFamily: "var(--font-oswald), sans-serif",
           fontSize: 28,
           fontWeight: 600,
           color: "#053030",
@@ -59,7 +59,7 @@ export default async function AdminDashboard() {
             <p style={{ fontSize: 12, fontWeight: 600, color: "#666", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               {card.label}
             </p>
-            <p style={{ fontFamily: "'Oswald', sans-serif", fontSize: 36, fontWeight: 600, color: "#053030", margin: 0 }}>
+            <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 36, fontWeight: 600, color: "#053030", margin: 0 }}>
               {card.value.toLocaleString()}
             </p>
           </div>
@@ -77,7 +77,7 @@ export default async function AdminDashboard() {
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           }}
         >
-          <p style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
+          <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
             AI Studio Requests
           </p>
           <p style={{ fontSize: 13, color: "#666", margin: 0 }}>View all build request submissions</p>
@@ -93,7 +93,7 @@ export default async function AdminDashboard() {
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           }}
         >
-          <p style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
+          <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
             ICP Submissions
           </p>
           <p style={{ fontSize: 13, color: "#666", margin: 0 }}>View all ICP evaluations and unlocks</p>

@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getGrade } from "../data/dimensionConfig";
-
-const BRAND = {
-  darkGreen: "#053030",
-  mid: "#666666",
-};
+import { BRAND } from "@/app/lib/brand";
 
 function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
   const start = polarToCartesian(cx, cy, r, endAngle);
@@ -75,7 +71,7 @@ export default function ScoreGauge({ score, size = 180, animated = true }: Score
           x={size / 2}
           y={size * 0.45}
           textAnchor="middle"
-          style={{ fontSize: size * 0.22, fontFamily: "'Oswald', sans-serif", fontWeight: 700, fill: BRAND.darkGreen }}
+          style={{ fontSize: size * 0.22, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 700, fill: BRAND.darkGreen }}
         >
           {displayScore}
         </text>
@@ -83,13 +79,13 @@ export default function ScoreGauge({ score, size = 180, animated = true }: Score
           x={size / 2}
           y={size * 0.58}
           textAnchor="middle"
-          style={{ fontSize: size * 0.07, fontFamily: "'DM Sans', sans-serif", fill: BRAND.mid, letterSpacing: "0.05em", textTransform: "uppercase" }}
+          style={{ fontSize: size * 0.07, fontFamily: "var(--font-dm-sans), sans-serif", fill: BRAND.mid, letterSpacing: "0.05em", textTransform: "uppercase" }}
         >
           out of 100
         </text>
       </svg>
       <div style={{ marginTop: 4, padding: "6px 18px", borderRadius: 24, background: grade.color + "18", border: `1px solid ${grade.color}40` }}>
-        <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, color: grade.color, letterSpacing: "0.03em" }}>
+        <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, color: grade.color, letterSpacing: "0.03em" }}>
           {grade.label}
         </span>
       </div>

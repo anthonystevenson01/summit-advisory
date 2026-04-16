@@ -1,27 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
 import SiteNav from "./components/SiteNav";
+import { ArrowRight, ArrowLeft } from "./components/icons";
 
 const BOOK_CALL_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
-
-// ── Arrow icons ──
-function ArrowRight() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M2 7h10M8 3l4 4-4 4" />
-    </svg>
-  );
-}
-function ArrowLeft() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M12 7H2M6 3L2 7l4 4" />
-    </svg>
-  );
-}
 
 // ── Data ──
 const practiceData: Record<string, { eyebrow: string; title: string; lead: string; features: { title: string; body: string }[]; cta: string }> = {
@@ -604,7 +590,7 @@ function ResourcesPage({ onBack }: { onBack: () => void }) {
               <span className="resource-tag">{r.tag}</span>
               <div className="resource-title">{r.title}</div>
               <p className="resource-desc">{r.desc}</p>
-              <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--teal)", border: "1px solid var(--teal)", borderRadius: 2, padding: "4px 10px" }}>Coming Soon</div>
+              <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-dm-mono), monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--teal)", border: "1px solid var(--teal)", borderRadius: 2, padding: "4px 10px" }}>Coming Soon</div>
             </div>
           ))}
         </div>
@@ -730,8 +716,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
           {cards.map((c) => (
             <button type="button" className="card" key={c.id} onClick={() => onNavigate(c.id)}>
               <div className="card-icon-wrap">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={c.icon} alt={c.title} className="card-icon" width={72} height={72} />
+                <Image src={c.icon} alt={c.title} className="card-icon" width={72} height={72} />
               </div>
               <div className="card-body">
                 <div className="card-title">{c.title}</div>
@@ -762,10 +747,10 @@ function BlogPage({ onBack }: { onBack: () => void }) {
             <div className="resource" key={i}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <span className="resource-tag">{p.tag}</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "var(--ghost)", letterSpacing: "0.08em" }}>{p.date} · {p.read}</span>
+                <span style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 10, color: "var(--ghost)", letterSpacing: "0.08em" }}>{p.date} · {p.read}</span>
               </div>
               <div className="resource-title">{p.title}</div>
-              <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--teal)", border: "1px solid var(--teal)", borderRadius: 2, padding: "4px 10px" }}>Coming Soon</div>
+              <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-dm-mono), monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--teal)", border: "1px solid var(--teal)", borderRadius: 2, padding: "4px 10px" }}>Coming Soon</div>
             </div>
           ))}
         </div>
@@ -795,7 +780,7 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
       <div className="equity-band">
         <div className="inner-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
           <div className="section-label" style={{ color: "var(--sage)" }}>Our Mission</div>
-          <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, fontWeight: 800, color: "#fff", lineHeight: 1.15, maxWidth: 640, marginBottom: 20 }}>
+          <h2 style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 36, fontWeight: 800, color: "#fff", lineHeight: 1.15, maxWidth: 640, marginBottom: 20 }}>
             We exist to close the gap between big strategy and real growth.
           </h2>
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 16, lineHeight: 1.7, maxWidth: 600, marginBottom: 48 }}>
@@ -804,7 +789,7 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
           <div className="equity-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 20 }}>
             {values.map((v, i) => (
               <div className="equity-card" key={i}>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{v.title}</div>
+                <div style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{v.title}</div>
                 <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, lineHeight: 1.6, margin: 0 }}>{v.body}</p>
               </div>
             ))}
@@ -817,7 +802,7 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
         <div className="features" style={{ marginBottom: 48 }}>
           {openRoles.map((r, i) => (
             <div className="feature" key={i}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "var(--sage)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>{r.type}</div>
+              <div style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 10, color: "var(--sage)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>{r.type}</div>
               <div className="feature-title">{r.title}</div>
               <p className="feature-body">{r.desc}</p>
             </div>
@@ -889,8 +874,7 @@ export default function Summit() {
         {page === "careers" && <CareersPage onBack={() => nav("home")} onContact={goToBooking} />}
         {page === "contact" && <ContactPage onBack={() => nav("home")} />}
         <footer className="footer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO_WHITE} alt="Summit" className="footer-logo" />
+          <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
             <li><button type="button" onClick={() => nav("ai")}>AI Studio</button></li>
             <li><button type="button" onClick={() => nav("retail")}>Loyalty & Retail Media</button></li>

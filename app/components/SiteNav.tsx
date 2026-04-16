@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { HamburgerIcon, CloseIcon, UserIcon } from "./icons";
 
 const LOGO_WHITE = "/brand-icons/Combination Mark_White.png";
 const BOOK_URL =
@@ -37,10 +39,12 @@ export default function SiteNav({
   return (
     <>
       <nav className="nav">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={LOGO_WHITE}
           alt="Summit Strategy Advisory"
+          width={160}
+          height={28}
+          priority
           className="nav-logo"
           onClick={() => handleNav(onLogoClick ?? (() => { window.location.href = "/"; }))}
           role="button"
@@ -77,10 +81,7 @@ export default function SiteNav({
           )}
 
           <a href="/admin" className="nav-link" style={{ fontSize: 11, opacity: 0.5 }} title="Admin">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M20 21a8 8 0 0 0-16 0" />
-            </svg>
+            <UserIcon />
           </a>
         </div>
 
@@ -92,18 +93,7 @@ export default function SiteNav({
           aria-label={menuOpen ? "Close navigation" : "Open navigation"}
           aria-expanded={menuOpen}
         >
-          {menuOpen ? (
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="4" y1="4" x2="18" y2="18" />
-              <line x1="18" y1="4" x2="4" y2="18" />
-            </svg>
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="3" y1="6" x2="19" y2="6" />
-              <line x1="3" y1="11" x2="19" y2="11" />
-              <line x1="3" y1="16" x2="19" y2="16" />
-            </svg>
-          )}
+          {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
         </button>
       </nav>
 

@@ -158,7 +158,7 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-barlow-condensed), sans-serif",
                   fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: "0.12em",
@@ -249,7 +249,7 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
               <div className="feature">
                 <div className="feature-title">ICP Fit</div>
                 <p style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-barlow-condensed), sans-serif",
                   fontSize: 32,
                   fontWeight: 900,
                   color: "var(--sage)",
@@ -259,7 +259,7 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
                   {result.icp_fit.rating}
                 </p>
                 <p style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-barlow-condensed), sans-serif",
                   fontSize: 20,
                   fontWeight: 700,
                   color: "var(--ghost)",
@@ -270,7 +270,7 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
               <div className="feature" style={{ borderLeftColor: timingColor }}>
                 <div className="feature-title" style={{ color: timingColor }}>Timing</div>
                 <p style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontFamily: "var(--font-barlow-condensed), sans-serif",
                   fontSize: 32,
                   fontWeight: 900,
                   color: timingColor,
@@ -306,7 +306,7 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
                           ))}
                         </div>
                       )}
-                      <p style={{ fontSize: 12, color: "var(--ghost)", marginTop: 8, fontFamily: "'DM Mono', monospace" }}>
+                      <p style={{ fontSize: 12, color: "var(--ghost)", marginTop: 8, fontFamily: "var(--font-dm-mono), monospace" }}>
                         {c.linkedin_search}
                       </p>
                     </div>

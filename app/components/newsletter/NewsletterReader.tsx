@@ -20,7 +20,7 @@ function BlockRenderer({ block }: { block: BodyBlock }) {
   if (block.type === "h2") {
     return (
       <h2 style={{
-        fontFamily: "'Barlow Condensed', sans-serif",
+        fontFamily: "var(--font-barlow-condensed), sans-serif",
         fontSize: 24,
         fontWeight: 700,
         textTransform: "uppercase",
@@ -74,13 +74,13 @@ export default function NewsletterReader({ issueId }: Props) {
     return (
       <div className="inner">
         <div className="inner-body" style={{ textAlign: "center", paddingTop: 80 }}>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, color: "var(--forest)" }}>
+          <p style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, color: "var(--forest)" }}>
             Issue not found.
           </p>
           <Link
             href="/newsletter"
             style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
+              fontFamily: "var(--font-barlow-condensed), sans-serif",
               fontSize: 13,
               color: "var(--teal)",
               textDecoration: "none",
@@ -119,7 +119,7 @@ export default function NewsletterReader({ issueId }: Props) {
         <Link
           href="/newsletter"
           style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
+            fontFamily: "var(--font-barlow-condensed), sans-serif",
             fontSize: 12,
             fontWeight: 600,
             letterSpacing: "0.15em",
@@ -132,7 +132,7 @@ export default function NewsletterReader({ issueId }: Props) {
           ← All Issues
         </Link>
         <span style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
+          fontFamily: "var(--font-barlow-condensed), sans-serif",
           fontSize: 12,
           fontWeight: 700,
           letterSpacing: "0.2em",
@@ -147,7 +147,7 @@ export default function NewsletterReader({ issueId }: Props) {
             disabled={!prevIssue}
             aria-label="Previous issue"
             style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
+              fontFamily: "var(--font-barlow-condensed), sans-serif",
               fontSize: 12,
               fontWeight: 600,
               letterSpacing: "0.1em",
@@ -166,7 +166,7 @@ export default function NewsletterReader({ issueId }: Props) {
             disabled={!nextIssue}
             aria-label="Next issue"
             style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
+              fontFamily: "var(--font-barlow-condensed), sans-serif",
               fontSize: 12,
               fontWeight: 600,
               letterSpacing: "0.1em",
@@ -189,7 +189,7 @@ export default function NewsletterReader({ issueId }: Props) {
         <h1 className="inner-title">{issue.title}</h1>
         <p className="inner-lead">{issue.subtitle}</p>
         <div style={{ marginTop: 16 }}>
-          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
+          <span style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em" }}>
             {issue.readTime}
           </span>
         </div>
@@ -231,10 +231,10 @@ export default function NewsletterReader({ issueId }: Props) {
         >
           {prevIssue && (
             <>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ghost)", marginBottom: 8 }}>
+              <div style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ghost)", marginBottom: 8 }}>
                 ← Previous
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--forest)", lineHeight: 1.15 }}>
+              <div style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--forest)", lineHeight: 1.15 }}>
                 {prevIssue.title}
               </div>
             </>
@@ -254,10 +254,10 @@ export default function NewsletterReader({ issueId }: Props) {
         >
           {nextIssue && (
             <>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ghost)", marginBottom: 8 }}>
+              <div style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--ghost)", marginBottom: 8 }}>
                 Next →
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--forest)", lineHeight: 1.15 }}>
+              <div style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--forest)", lineHeight: 1.15 }}>
                 {nextIssue.title}
               </div>
             </>

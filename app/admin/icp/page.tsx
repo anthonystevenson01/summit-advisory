@@ -81,7 +81,7 @@ export default async function IcpSubmissionsPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
-        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 28, fontWeight: 600, color: "#053030", margin: 0 }}>
+        <h1 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 28, fontWeight: 600, color: "#053030", margin: 0 }}>
           ICP Submissions
         </h1>
         <span style={{ fontSize: 13, color: "#666" }}>
@@ -117,7 +117,7 @@ export default async function IcpSubmissionsPage() {
                         <span
                           style={{
                             display: "inline-block",
-                            fontFamily: "'Oswald', sans-serif",
+                            fontFamily: "var(--font-oswald), sans-serif",
                             fontWeight: 600,
                             fontSize: 16,
                             color: scoreColor(sub.totalScore / 20),

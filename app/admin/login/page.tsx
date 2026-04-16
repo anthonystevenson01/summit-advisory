@@ -2,16 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-
-const BRAND = {
-  darkGreen: "#053030",
-  teal: "#005A66",
-  brandGreen: "#319A65",
-  white: "#FFFFFF",
-  mid: "#666666",
-  border: "#D0D5D2",
-  red: "#C0392B",
-};
+import { BRAND } from "@/app/lib/brand";
 
 export default function AdminLoginPage() {
   return (
@@ -119,7 +110,7 @@ function AdminLoginInner() {
   if (isSetup === null) {
     return (
       <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)` }}>
-        <p style={{ color: BRAND.white, fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading...</p>
+        <p style={{ color: BRAND.white, fontSize: 14, fontFamily: "var(--font-dm-sans), sans-serif" }}>Loading...</p>
       </div>
     );
   }
@@ -134,14 +125,10 @@ function AdminLoginInner() {
         alignItems: "center",
         justifyContent: "center",
         background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "var(--font-dm-sans), sans-serif",
         padding: 24,
       }}
     >
-      <link
-        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
       <div
         style={{
           background: BRAND.white,
@@ -154,7 +141,7 @@ function AdminLoginInner() {
       >
         <h1
           style={{
-            fontFamily: "'Oswald', sans-serif",
+            fontFamily: "var(--font-oswald), sans-serif",
             fontSize: 24,
             fontWeight: 600,
             color: BRAND.darkGreen,
@@ -200,7 +187,7 @@ function AdminLoginInner() {
                 borderRadius: 6,
                 border: `1px solid ${BRAND.border}`,
                 fontSize: 14,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 boxSizing: "border-box",
                 outline: "none",
                 marginBottom: 12,
@@ -220,7 +207,7 @@ function AdminLoginInner() {
                 borderRadius: 6,
                 border: `1px solid ${BRAND.border}`,
                 fontSize: 14,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 boxSizing: "border-box",
                 outline: "none",
                 marginBottom: 16,
@@ -236,7 +223,7 @@ function AdminLoginInner() {
                 border: "none",
                 background: !password || !confirmPassword ? BRAND.border : BRAND.brandGreen,
                 color: BRAND.white,
-                fontFamily: "'Oswald', sans-serif",
+                fontFamily: "var(--font-oswald), sans-serif",
                 fontWeight: 600,
                 fontSize: 15,
                 cursor: !password || !confirmPassword ? "not-allowed" : "pointer",
@@ -263,7 +250,7 @@ function AdminLoginInner() {
                   borderRadius: 6,
                   border: `1px solid ${BRAND.border}`,
                   fontSize: 14,
-                  fontFamily: "'DM Sans', sans-serif",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
                   boxSizing: "border-box",
                   outline: "none",
                   marginBottom: 16,
@@ -279,7 +266,7 @@ function AdminLoginInner() {
                   border: "none",
                   background: !password ? BRAND.border : BRAND.brandGreen,
                   color: BRAND.white,
-                  fontFamily: "'Oswald', sans-serif",
+                  fontFamily: "var(--font-oswald), sans-serif",
                   fontWeight: 600,
                   fontSize: 15,
                   cursor: !password ? "not-allowed" : "pointer",
@@ -318,20 +305,20 @@ function AdminLoginInner() {
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   placeholder="Enter your admin email"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 10 }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "var(--font-dm-sans), sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 10 }}
                 />
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
                     onClick={() => setShowReset(false)}
-                    style={{ flex: 1, padding: "10px", borderRadius: 6, border: `1px solid ${BRAND.border}`, background: BRAND.white, color: BRAND.mid, fontFamily: "'DM Sans', sans-serif", fontSize: 14, cursor: "pointer" }}
+                    style={{ flex: 1, padding: "10px", borderRadius: 6, border: `1px solid ${BRAND.border}`, background: BRAND.white, color: BRAND.mid, fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, cursor: "pointer" }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!resetEmail || resetLoading}
-                    style={{ flex: 2, padding: "10px", borderRadius: 6, border: "none", background: !resetEmail ? BRAND.border : BRAND.teal, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 14, cursor: !resetEmail ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}
+                    style={{ flex: 2, padding: "10px", borderRadius: 6, border: "none", background: !resetEmail ? BRAND.border : BRAND.teal, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 14, cursor: !resetEmail ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}
                   >
                     {resetLoading ? "Sending..." : "Send Reset Link"}
                   </button>
@@ -358,7 +345,7 @@ function AdminLoginInner() {
                 border: `1px solid ${BRAND.border}`,
                 background: BRAND.white,
                 color: BRAND.darkGreen,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-dm-sans), sans-serif",
                 fontWeight: 600,
                 fontSize: 14,
                 textDecoration: "none",

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import Image from "next/image";
+import { ArrowLeft } from "../icons";
 import { TOOLS } from "./data/toolConfig";
 import { usePrompts } from "./hooks/usePrompts";
 import { useRubrics } from "./hooks/useRubrics";
@@ -38,22 +40,21 @@ export default function ToolkitHub() {
   const { prompts } = usePrompts();
   const { rubrics } = useRubrics();
 
-  function selectTool(id: ToolId) {
+  const selectTool = useCallback((id: ToolId) => {
     setActiveTool(id);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  }, []);
 
-  function exitTool() {
+  const exitTool = useCallback(() => {
     setActiveTool(null);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  }, []);
 
 
   /* ── Shared footer ── */
   const Footer = () => (
     <footer className="footer">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/brand-icons/Combination Mark_White.png" alt="Summit" className="footer-logo" />
+      <Image src="/brand-icons/Combination Mark_White.png" alt="Summit" width={140} height={22} className="footer-logo" />
       <ul className="footer-links">
         <li><a href="/">Home</a></li>
         <li><a href="/">AI Studio</a></li>
@@ -100,9 +101,7 @@ export default function ToolkitHub() {
         {/* Hero — full width at page level */}
         <div className="inner-hero">
           <a href="/" className="inner-back">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 7H2M6 3L2 7l4 4" />
-            </svg>
+            <ArrowLeft />
             Home
           </a>
           <div className="inner-eyebrow">Scale-Up Advisory</div>
@@ -114,7 +113,7 @@ export default function ToolkitHub() {
           <div style={{ display: "flex", gap: 8, marginTop: 28, flexWrap: "wrap", position: "relative" }}>
             {["Five Free Tools", "For teams selling into a finite market", "No Signup Required"].map((tag) => (
               <span key={tag} style={{
-                fontFamily: "'Barlow Condensed', sans-serif",
+                fontFamily: "var(--font-barlow-condensed), sans-serif",
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.14em",
@@ -150,7 +149,7 @@ export default function ToolkitHub() {
               ].map((step) => (
                 <div key={step.num} className="feature">
                   <div style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontFamily: "var(--font-barlow-condensed), sans-serif",
                     fontSize: 32, fontWeight: 900, color: "var(--sage)",
                     lineHeight: 1, marginBottom: 10,
                   }}>{step.num}</div>
@@ -170,7 +169,7 @@ export default function ToolkitHub() {
               <button type="button" className="card" onClick={() => selectTool("icp")} aria-label="Open ICP Evaluator">
                 <div className="card-icon-wrap" style={{ background: "#0a1a14", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
                   <span style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontFamily: "var(--font-barlow-condensed), sans-serif",
                     fontSize: 11, fontWeight: 700,
                     letterSpacing: "0.18em", textTransform: "uppercase",
                     color: "#319A65",
@@ -180,7 +179,7 @@ export default function ToolkitHub() {
                   <div className="card-title">ICP Evaluator</div>
                   <p className="card-desc">Score your Ideal Customer Profile across seven weighted dimensions.</p>
                   <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                    <strong style={{ color: "var(--teal)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                    <strong style={{ color: "var(--teal)", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
                     Weighted ICP score, dimension breakdown, and specific improvement recommendations.
                   </p>
                   <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>Open Tool →</div>
@@ -198,7 +197,7 @@ export default function ToolkitHub() {
                 >
                   <div className="card-icon-wrap" style={{ background: tool.surface, minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
                     <span style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontFamily: "var(--font-barlow-condensed), sans-serif",
                       fontSize: 11, fontWeight: 700,
                       letterSpacing: "0.18em", textTransform: "uppercase",
                       color: tool.accent,
@@ -208,7 +207,7 @@ export default function ToolkitHub() {
                     <div className="card-title">{tool.name}</div>
                     <p className="card-desc">{tool.tagline}</p>
                     <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                      <strong style={{ color: "#319A65", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                      <strong style={{ color: "#319A65", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
                       {tool.outputDescription}
                     </p>
                     <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
@@ -236,7 +235,7 @@ export default function ToolkitHub() {
                 >
                   <div className="card-icon-wrap" style={{ background: "#00252e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
                     <span style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontFamily: "var(--font-barlow-condensed), sans-serif",
                       fontSize: 11, fontWeight: 700,
                       letterSpacing: "0.18em", textTransform: "uppercase",
                       color: "#67e8f9",
@@ -246,7 +245,7 @@ export default function ToolkitHub() {
                     <div className="card-title">Account Intelligence</div>
                     <p className="card-desc">Get a full sales brief on any target account — signals, contacts, and an opening play.</p>
                     <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                      <strong style={{ color: "#67e8f9", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                      <strong style={{ color: "#67e8f9", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
                       ICP fit, timing verdict, key contacts with LinkedIn searches, market signals, recommended opening.
                     </p>
                     <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>

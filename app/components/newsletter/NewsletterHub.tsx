@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ISSUES } from "./data/issues";
 import NewsletterCapture from "../toolkit/shared/NewsletterCapture";
 import NewsletterReader from "./NewsletterReader";
@@ -11,8 +12,7 @@ const LOGO_WHITE = "/brand-icons/Combination Mark_White.png";
 function SiteFooter() {
   return (
     <footer className="footer">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO_WHITE} alt="Summit" className="footer-logo" />
+      <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
       <ul className="footer-links">
         <li><a href="/">Home</a></li>
         <li><a href="/">AI Studio</a></li>
@@ -65,15 +65,15 @@ export default function NewsletterHub() {
           <div style={{ display: "flex", gap: 32 }}>
             <div>
               <div className="section-label" style={{ marginBottom: 4 }}>Frequency</div>
-              <p style={{ fontSize: 14, color: "var(--forest)", fontWeight: 600, fontFamily: "'Barlow Condensed', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>Weekly</p>
+              <p style={{ fontSize: 14, color: "var(--forest)", fontWeight: 600, fontFamily: "var(--font-barlow-condensed), sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>Weekly</p>
             </div>
             <div>
               <div className="section-label" style={{ marginBottom: 4 }}>Read Time</div>
-              <p style={{ fontSize: 14, color: "var(--forest)", fontWeight: 600, fontFamily: "'Barlow Condensed', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>5–8 minutes</p>
+              <p style={{ fontSize: 14, color: "var(--forest)", fontWeight: 600, fontFamily: "var(--font-barlow-condensed), sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>5–8 minutes</p>
             </div>
             <div>
               <div className="section-label" style={{ marginBottom: 4 }}>Focus</div>
-              <p style={{ fontSize: 14, color: "var(--forest)", fontWeight: 600, fontFamily: "'Barlow Condensed', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>Finite-market GTM</p>
+              <p style={{ fontSize: 14, color: "var(--forest)", fontWeight: 600, fontFamily: "var(--font-barlow-condensed), sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>Finite-market GTM</p>
             </div>
           </div>
         </div>
@@ -98,8 +98,8 @@ export default function NewsletterHub() {
               <div className="resource-title">{featured.title}</div>
               <p className="resource-desc">{featured.subtitle}</p>
               <div style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>{featured.readTime}</span>
-                <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--teal)" }}>Read →</span>
+                <span style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>{featured.readTime}</span>
+                <span style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--teal)" }}>Read →</span>
               </div>
             </button>
           </div>
@@ -123,8 +123,8 @@ export default function NewsletterHub() {
                 <div className="resource-title">{issue.title}</div>
                 <p className="resource-desc">{issue.subtitle}</p>
                 <div style={{ marginTop: 12, display: "flex", gap: 16, alignItems: "center" }}>
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>{issue.date}</span>
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>{issue.readTime}</span>
+                  <span style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>{issue.date}</span>
+                  <span style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>{issue.readTime}</span>
                 </div>
               </button>
             ))}
@@ -138,7 +138,7 @@ export default function NewsletterHub() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
             <div>
               <div className="inner-eyebrow">Subscribe</div>
-              <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, fontWeight: 900, textTransform: "uppercase", color: "var(--white)", lineHeight: 1.05, marginBottom: 16 }}>
+              <h2 style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 36, fontWeight: 900, textTransform: "uppercase", color: "var(--white)", lineHeight: 1.05, marginBottom: 16 }}>
                 Join the Scale-Up Letter
               </h2>
               <p style={{ fontSize: 15, color: "rgba(255,255,255,0.58)", lineHeight: 1.75 }}>
@@ -154,7 +154,7 @@ export default function NewsletterHub() {
 
       {/* Footer note */}
       <div style={{ padding: "20px 48px", borderTop: "1px solid var(--border)" }}>
-        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>
+        <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, color: "var(--ghost)", letterSpacing: "0.06em" }}>
           The Scale-Up Letter · Summit Strategy Advisory · Unsubscribe at any time
         </p>
       </div>

@@ -2,11 +2,7 @@ import type { ReactNode } from "react";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", background: "#F5F7F6" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
+    <div style={{ minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif", background: "#F5F7F6" }}>
       <nav
         style={{
           background: "#053030",
@@ -18,7 +14,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          <span style={{ fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 16, color: "#fff" }}>
+          <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 16, color: "#fff" }}>
             Summit Admin
           </span>
           <a href="/admin" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
@@ -43,7 +39,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-dm-sans), sans-serif",
             }}
           >
             Logout

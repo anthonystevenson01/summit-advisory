@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600&family=Barlow+Condensed:wght@400;600;700;900&family=DM+Mono:wght@400;500&family=Oswald:wght@400;500;600;700&display=swap');
+/* Fonts loaded via next/font in app/layout.tsx — see --font-* CSS variables. */
 @import "tailwindcss";
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,6 +15,30 @@
   --border: rgba(13,26,15,0.10);
   --background: #ffffff;
   --foreground: #0D1A0F;
+
+  /* BRAND palette — mirrors app/lib/brand.ts for use in CSS-only contexts */
+  --brand-dark-green:  #053030;
+  --brand-teal:        #005A66;
+  --brand-green:       #319A65;
+  --brand-light-bg:    #F0F7F4;
+  --brand-dark:        #1A1A1A;
+  --brand-mid:         #666666;
+  --brand-border:      #D0D5D2;
+  --brand-red:         #C0392B;
+  --brand-amber:       #D4A017;
+  --brand-light-teal:  #E6F2F4;
+}
+
+/* Shared GTM tool animations + responsive grid. Used by ICP evaluator and
+   all GTM scoring tools — extracted from duplicated inline <style> blocks. */
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+
+@media (max-width: 700px) {
+  .gtm-tool-grid { grid-template-columns: 1fr !important; }
+  .icp-eval-grid { grid-template-columns: 1fr !important; }
 }
 
 @theme inline {
@@ -25,7 +49,7 @@
 html, body { height: 100%; font-size: 16px; }
 
 body {
-  font-family: "Barlow", sans-serif;
+  font-family: var(--font-barlow), sans-serif;
   background: var(--white);
   color: var(--ink);
   min-height: 100vh;
@@ -64,7 +88,7 @@ body {
 }
 
 .nav-link {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -80,7 +104,7 @@ body {
 .nav-link:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; border-radius: 2px; }
 
 .nav-cta {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -144,7 +168,7 @@ body {
 }
 
 .hero-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
@@ -164,7 +188,7 @@ body {
 }
 
 .hero-headline {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: clamp(52px, 7vw, 88px);
   font-weight: 900;
   line-height: 0.92;
@@ -194,7 +218,7 @@ body {
 }
 
 .cards-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
@@ -256,7 +280,7 @@ body {
 .card:hover .card-body { border-color: var(--sage); }
 
 .card-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 26px;
   font-weight: 700;
   text-transform: uppercase;
@@ -276,7 +300,7 @@ body {
 }
 
 .card-link {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -317,7 +341,7 @@ body {
 }
 
 .inner-back {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -338,7 +362,7 @@ body {
 .inner-back:focus-visible { outline: 2px solid var(--sage); outline-offset: 3px; border-radius: 2px; }
 
 .inner-eyebrow {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
@@ -349,7 +373,7 @@ body {
 }
 
 .inner-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: clamp(40px, 5vw, 64px);
   font-weight: 900;
   text-transform: uppercase;
@@ -391,7 +415,7 @@ body {
 .feature:hover { border-color: var(--sage); }
 
 .feature-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 17px;
   font-weight: 700;
   text-transform: uppercase;
@@ -416,7 +440,7 @@ body {
 }
 
 .cta-bar-left h3 {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 24px;
   font-weight: 700;
   text-transform: uppercase;
@@ -430,7 +454,7 @@ body {
 }
 
 .cta-bar-btn {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -462,7 +486,7 @@ body {
 .resource:hover { background: var(--light); }
 
 .resource-tag {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -473,7 +497,7 @@ body {
 }
 
 .resource-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
@@ -502,7 +526,7 @@ body {
 .resource-cta {
   display: inline-block;
   margin-top: 16px;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -519,7 +543,7 @@ body {
 }
 
 .contact-info-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -529,7 +553,7 @@ body {
 }
 
 .contact-info-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 32px;
   font-weight: 900;
   text-transform: uppercase;
@@ -557,7 +581,7 @@ body {
 }
 
 .contact-detail-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -576,7 +600,7 @@ body {
 }
 
 .form-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -589,7 +613,7 @@ body {
   border: 1px solid var(--border);
   color: var(--ink);
   padding: 12px 16px;
-  font-family: "Barlow", sans-serif;
+  font-family: var(--font-barlow), sans-serif;
   font-size: 15px;
   outline: none;
   transition: border-color 0.2s, background 0.2s;
@@ -612,7 +636,7 @@ body {
 
 .submit-btn {
   width: 100%;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -636,7 +660,7 @@ body {
 }
 
 .success-box h3 {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 28px;
   font-weight: 900;
   text-transform: uppercase;
@@ -652,7 +676,7 @@ body {
 
 /* ─── AI STUDIO PAGE ─── */
 .section-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -701,7 +725,7 @@ body {
 }
 
 .process-num {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--white);
@@ -738,7 +762,7 @@ body {
 }
 
 .process-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
@@ -747,7 +771,7 @@ body {
 }
 
 .process-duration {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 10px;
   color: var(--ghost);
   letter-spacing: 0.08em;
@@ -778,7 +802,7 @@ body {
 }
 
 .equity-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 32px;
   font-weight: 900;
   text-transform: uppercase;
@@ -811,7 +835,7 @@ body {
 }
 
 .equity-card-num {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 40px;
   font-weight: 900;
   color: var(--white);
@@ -840,7 +864,7 @@ body {
 .for-no  { background: var(--off); border-top: 3px solid rgba(13,26,15,0.15); }
 
 .for-card-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
@@ -890,7 +914,7 @@ body {
 }
 
 .case-name {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
@@ -912,7 +936,7 @@ body {
 }
 
 .case-outcome {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--sage);
@@ -934,7 +958,7 @@ body {
 }
 
 .form-section-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -987,7 +1011,7 @@ body {
   background: none;
   border: 1px dashed var(--border);
   color: var(--sage);
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1024,7 +1048,7 @@ body {
 }
 
 .focus-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 28px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1081,7 +1105,7 @@ body {
 }
 
 .pkg-num {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 72px;
   font-weight: 900;
   line-height: 1;
@@ -1102,7 +1126,7 @@ body {
 }
 
 .pkg-cat {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 9px;
   font-weight: 400;
   letter-spacing: 0.16em;
@@ -1114,7 +1138,7 @@ body {
 .pkg-cat.media-cat   { color: var(--teal); }
 
 .pkg-focus-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1125,7 +1149,7 @@ body {
 }
 
 .pkg-name {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1142,7 +1166,7 @@ body {
 }
 
 .pkg-tag {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1173,7 +1197,7 @@ body {
 }
 
 .pkg-deliverable {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1216,7 +1240,7 @@ body {
 }
 
 .retail-case-client {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1225,7 +1249,7 @@ body {
 }
 
 .retail-case-region {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1240,7 +1264,7 @@ body {
 }
 
 .retail-case-col-label {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1269,7 +1293,7 @@ body {
 }
 
 .calendly-title {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 36px;
   font-weight: 900;
   text-transform: uppercase;
@@ -1291,7 +1315,7 @@ body {
   display: inline-block;
   background: var(--sage);
   color: var(--white);
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1329,7 +1353,7 @@ body {
 }
 
 .footer-copy {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 11px;
   color: rgba(255,255,255,0.25);
   letter-spacing: 0.06em;
@@ -1341,7 +1365,7 @@ body {
   list-style: none;
 }
 .footer-links button {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1355,7 +1379,7 @@ body {
 }
 .footer-links button:hover { color: rgba(255,255,255,0.7); }
 .footer-links a {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1400,7 +1424,7 @@ body {
 }
 
 .nav-mobile-link {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -1423,7 +1447,7 @@ body {
 }
 
 .nav-mobile-cta {
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: var(--font-barlow-condensed), sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1491,7 +1515,7 @@ body {
   border-bottom: 2px solid var(--tk-teal);
 }
 .tk-nav-logo {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #fff;
@@ -1499,7 +1523,7 @@ body {
   text-transform: uppercase;
 }
 .tk-nav-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 13px;
   font-weight: 400;
   color: rgba(255,255,255,0.5);
@@ -1507,7 +1531,7 @@ body {
   text-transform: uppercase;
 }
 .tk-nav-tag {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 400;
   color: rgba(255,255,255,0.35);
@@ -1521,7 +1545,7 @@ body {
   padding: 64px 40px 72px;
 }
 .tk-hero-h1 {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: clamp(40px, 6vw, 72px);
   font-weight: 700;
   color: #fff;
@@ -1544,7 +1568,7 @@ body {
 }
 .tk-tag {
   display: inline-block;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -1572,7 +1596,7 @@ body {
   background: var(--tk-offwhite);
 }
 .tk-cards-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 22px;
   font-weight: 600;
   color: var(--tk-dark);
@@ -1611,7 +1635,7 @@ body {
   flex: 1;
 }
 .tk-tool-card-num {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.15em;
@@ -1620,7 +1644,7 @@ body {
   margin-bottom: 8px;
 }
 .tk-tool-card-name {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: var(--tk-dark);
@@ -1644,7 +1668,7 @@ body {
 .tk-tool-card-footer {
   padding: 12px 24px;
   border-top: 2px solid #eee;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -1655,7 +1679,7 @@ body {
 .tk-tool-card:hover .tk-tool-card-footer { color: var(--tk-green); }
 .tk-badge {
   display: inline-block;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1673,7 +1697,7 @@ body {
   padding: 56px 40px;
 }
 .tk-how-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 28px;
   font-weight: 700;
   color: #fff;
@@ -1691,7 +1715,7 @@ body {
   padding-left: 20px;
 }
 .tk-step-num {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 36px;
   font-weight: 700;
   color: var(--tk-teal);
@@ -1699,7 +1723,7 @@ body {
   margin-bottom: 8px;
 }
 .tk-step-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: #fff;
@@ -1730,7 +1754,7 @@ body {
   margin-bottom: 18px;
 }
 .tk-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -1750,7 +1774,7 @@ body {
 
 /* Buttons */
 .tk-btn-primary {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -1763,7 +1787,7 @@ body {
 .tk-btn-primary:hover { opacity: 0.88; }
 .tk-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .tk-btn-ghost {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -1784,13 +1808,13 @@ body {
   margin-bottom: 24px;
 }
 .tk-grade-letter {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 80px;
   font-weight: 700;
   line-height: 1;
 }
 .tk-grade-score {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 28px;
   font-weight: 400;
   opacity: 0.65;
@@ -1812,7 +1836,7 @@ body {
   gap: 10px;
 }
 .tk-mini-bar-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -1832,7 +1856,7 @@ body {
   transition: width 0.6s ease;
 }
 .tk-mini-bar-num {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   width: 24px;
@@ -1851,7 +1875,7 @@ body {
   padding: 24px;
 }
 .tk-info-card-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -1882,14 +1906,14 @@ body {
   gap: 12px;
 }
 .tk-dim-name {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .tk-dim-score {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 16px;
   font-weight: 700;
   flex-shrink: 0;
@@ -1922,7 +1946,7 @@ body {
   margin-bottom: 24px;
 }
 .tk-panel-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -1945,7 +1969,7 @@ body {
   border: none;
   text-align: left;
   width: 100%;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -1961,7 +1985,7 @@ body {
   margin-bottom: 24px;
 }
 .tk-verdict-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.15em;
@@ -1970,7 +1994,7 @@ body {
   margin-bottom: 12px;
 }
 .tk-verdict-score {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 64px;
   font-weight: 700;
   line-height: 1;
@@ -1978,7 +2002,7 @@ body {
 }
 .tk-verdict-chip {
   display: inline-block;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -2005,7 +2029,7 @@ body {
   align-items: flex-start;
 }
 .tk-numbered-item-num {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 14px;
   font-weight: 700;
   flex-shrink: 0;
@@ -2030,7 +2054,7 @@ body {
   flex: 1;
 }
 .tk-hex-rating {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 28px;
   font-weight: 700;
   text-transform: uppercase;
@@ -2054,7 +2078,7 @@ body {
   margin-bottom: 3px;
 }
 .tk-contact-role {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 16px;
   font-weight: 600;
   text-transform: uppercase;
@@ -2080,7 +2104,7 @@ body {
   margin-bottom: 10px;
 }
 .tk-contact-linkedin {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-dm-mono), monospace;
   font-size: 11px;
   padding: 8px 12px;
   background: rgba(0,0,0,0.06);
@@ -2115,7 +2139,7 @@ body {
 /* Pill tag */
 .tk-pill {
   display: inline-block;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -2133,7 +2157,7 @@ body {
   margin-bottom: 24px;
 }
 .tk-timing-badge {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
@@ -2151,21 +2175,21 @@ body {
   margin-bottom: 16px;
 }
 .tk-fit-rating {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 .tk-fit-score {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 40px;
   font-weight: 700;
   line-height: 1;
 }
 .tk-fit-label {
   font-size: 12px;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2178,7 +2202,7 @@ body {
   margin-top: 40px;
 }
 .tk-nl-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 22px;
   font-weight: 600;
   text-transform: uppercase;
@@ -2205,7 +2229,7 @@ body {
   outline: none;
 }
 .tk-nl-btn {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -2245,7 +2269,7 @@ body {
   to { transform: rotate(360deg); }
 }
 .tk-loader-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -2271,7 +2295,7 @@ body {
 
 /* Back button */
 .tk-back-btn {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -2291,7 +2315,7 @@ body {
 
 /* Context toggle */
 .tk-context-toggle {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -2316,7 +2340,7 @@ body {
   text-align: center;
 }
 .tk-footer-text {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.08em;
@@ -2336,7 +2360,7 @@ body {
   text-align: center;
 }
 .tk-nl-masthead-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: clamp(36px, 6vw, 72px);
   font-weight: 700;
   color: #fff;
@@ -2370,7 +2394,7 @@ body {
   gap: 2px;
 }
 .tk-nl-descriptor-key {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -2399,7 +2423,7 @@ body {
 }
 .tk-nl-featured-issue:hover { opacity: 0.85; }
 .tk-nl-issue-num {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.15em;
@@ -2408,7 +2432,7 @@ body {
   margin-bottom: 10px;
 }
 .tk-nl-featured-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 36px;
   font-weight: 700;
   color: #0e1a10;
@@ -2427,7 +2451,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -2446,7 +2470,7 @@ body {
   margin: 0 auto;
 }
 .tk-nl-archive-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -2474,7 +2498,7 @@ body {
 }
 .tk-nl-archive-item:hover { opacity: 0.7; }
 .tk-nl-archive-num {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -2484,7 +2508,7 @@ body {
   width: 72px;
 }
 .tk-nl-archive-title-text {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #0e1a10;
@@ -2510,7 +2534,7 @@ body {
   height: 52px;
 }
 .tk-nl-reader-back {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -2527,7 +2551,7 @@ body {
 }
 .tk-nl-reader-back:hover { opacity: 0.7; }
 .tk-nl-reader-pub {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -2539,7 +2563,7 @@ body {
   gap: 8px;
 }
 .tk-nl-nav-btn {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -2565,7 +2589,7 @@ body {
   gap: 12px;
   margin-bottom: 24px;
   flex-wrap: wrap;
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -2573,7 +2597,7 @@ body {
   color: rgba(14,26,16,0.45);
 }
 .tk-nl-article-h1 {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: clamp(32px, 5vw, 52px);
   font-weight: 700;
   color: #0e1a10;
@@ -2599,7 +2623,7 @@ body {
   margin-bottom: 20px;
 }
 .tk-nl-block-h2 {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 24px;
   font-weight: 700;
   color: #0e1a10;
@@ -2632,7 +2656,7 @@ body {
   text-align: center;
 }
 .tk-nl-issue-footer-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 18px;
   font-weight: 600;
   text-transform: uppercase;
@@ -2675,7 +2699,7 @@ body {
 .tk-nl-pn-btn:last-child { text-align: right; }
 .tk-nl-pn-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .tk-nl-pn-label {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -2684,7 +2708,7 @@ body {
   margin-bottom: 4px;
 }
 .tk-nl-pn-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 15px;
   font-weight: 600;
   color: #0e1a10;
@@ -2704,7 +2728,7 @@ body {
   align-items: center;
 }
 .tk-nl-bottom-copy-title {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 28px;
   font-weight: 700;
   color: #fff;
@@ -2724,7 +2748,7 @@ body {
   text-align: center;
 }
 .tk-nl-bottom-footer-text {
-  font-family: "Oswald", sans-serif;
+  font-family: var(--font-oswald), sans-serif;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;

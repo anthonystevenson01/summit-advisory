@@ -80,16 +80,21 @@ let rubricCache: {
 } | null = null;
 const CACHE_TTL = 10 * 60 * 1000;
 
+const CACHE_HEADERS = { "Cache-Control": "s-maxage=600, stale-while-revalidate=120" } as const;
+
 export async function GET() {
   // Serve from cache if fresh
   if (rubricCache && Date.now() - rubricCache.cachedAt < CACHE_TTL) {
     const { cachedAt: _c, ...rubrics } = rubricCache;
-    return NextResponse.json(rubrics);
+    return NextResponse.json(rubrics, { headers: CACHE_HEADERS });
   }
 
   const token = process.env.NOTION_TOKEN;
   if (!token) {
-    return NextResponse.json({ icp: "", persona: "", positioning: "", problem: "", moat: "" });
+    return NextResponse.json(
+      { icp: "", persona: "", positioning: "", problem: "", moat: "" },
+      { headers: CACHE_HEADERS },
+    );
   }
 
   const ids = {
@@ -119,5 +124,5 @@ export async function GET() {
   };
 
   rubricCache = { ...rubrics, cachedAt: Date.now() };
-  return NextResponse.json(rubrics);
+  return NextResponse.json(rubrics, { headers: CACHE_HEADERS });
 }

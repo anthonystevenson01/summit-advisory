@@ -47,7 +47,7 @@ export default async function AiStudioPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
-        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 28, fontWeight: 600, color: "#053030", margin: 0 }}>
+        <h1 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 28, fontWeight: 600, color: "#053030", margin: 0 }}>
           AI Studio Requests
         </h1>
         <span style={{ fontSize: 13, color: "#666" }}>{requests.length} total</span>

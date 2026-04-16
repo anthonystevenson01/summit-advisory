@@ -2,16 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-
-const BRAND = {
-  darkGreen: "#053030",
-  teal: "#005A66",
-  brandGreen: "#319A65",
-  white: "#FFFFFF",
-  mid: "#666666",
-  border: "#D0D5D2",
-  red: "#C0392B",
-};
+import { BRAND } from "@/app/lib/brand";
 
 export default function ResetPage() {
   return (
@@ -62,7 +53,7 @@ function ResetInner() {
 
   if (!token) {
     return (
-      <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, fontFamily: "var(--font-dm-sans), sans-serif" }}>
         <div style={{ background: BRAND.white, borderRadius: 12, padding: "40px 36px", maxWidth: 380, width: "100%", textAlign: "center" }}>
           <p style={{ color: BRAND.red, fontSize: 14 }}>Invalid reset link. <a href="/admin/login" style={{ color: BRAND.teal }}>Back to login</a></p>
         </div>
@@ -71,10 +62,9 @@ function ResetInner() {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, fontFamily: "'DM Sans', sans-serif", padding: 24 }}>
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, fontFamily: "var(--font-dm-sans), sans-serif", padding: 24 }}>
       <div style={{ background: BRAND.white, borderRadius: 12, padding: "40px 36px", maxWidth: 380, width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.15)" }}>
-        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 24, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px", textAlign: "center" }}>
+        <h1 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 24, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 8px", textAlign: "center" }}>
           Set New Password
         </h1>
         <p style={{ fontSize: 13, color: BRAND.mid, textAlign: "center", margin: "0 0 28px" }}>
@@ -94,7 +84,7 @@ function ResetInner() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Min 8 characters"
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 12 }}
+            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "var(--font-dm-sans), sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 12 }}
           />
           <label style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 6 }}>Confirm Password</label>
           <input
@@ -102,12 +92,12 @@ function ResetInner() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Confirm your password"
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 16 }}
+            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontSize: 14, fontFamily: "var(--font-dm-sans), sans-serif", boxSizing: "border-box", outline: "none", marginBottom: 16 }}
           />
           <button
             type="submit"
             disabled={!password || !confirm || loading}
-            style={{ width: "100%", padding: "11px", borderRadius: 6, border: "none", background: !password || !confirm ? BRAND.border : BRAND.brandGreen, color: BRAND.white, fontFamily: "'Oswald', sans-serif", fontWeight: 600, fontSize: 15, cursor: !password || !confirm ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}
+            style={{ width: "100%", padding: "11px", borderRadius: 6, border: "none", background: !password || !confirm ? BRAND.border : BRAND.brandGreen, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, cursor: !password || !confirm ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}
           >
             {loading ? "Saving..." : "Set New Password"}
           </button>
