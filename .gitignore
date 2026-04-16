@@ -42,3 +42,7 @@ APIClaudefile.env.rtf
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agentic-rig
+task-spec.md
+.claude/settings.local.json
