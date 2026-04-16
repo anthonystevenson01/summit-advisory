@@ -37,79 +37,67 @@ export default function ToolkitHub() {
     }
   }
 
-  if (activeTool === "positioning") {
+  const toolLabels: Record<ToolId, string> = {
+    positioning: "01 — Positioning Grader",
+    problem: "02 — Problem Validator",
+    persona: "03 — Persona Check",
+    moat: "04 — Moat Rater",
+    account: "05 — Account Intel",
+  };
+
+  if (activeTool) {
     return (
       <div>
-        <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#053030", padding: "8px 40px", display: "flex", alignItems: "center", gap: 16, borderBottom: "2px solid #005A66" }}>
-          <button onClick={exitTool} style={{ fontFamily: "Oswald, sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: 6, padding: 0, transition: "color 0.2s" }} aria-label="Back to toolkit hub">
-            ← All Tools
-          </button>
-          <span style={{ fontFamily: "Oswald, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>01 — Positioning Grader</span>
-        </div>
-        <PositioningTool systemPrompt={prompts.positioning} />
-      </div>
-    );
-  }
-  if (activeTool === "problem") {
-    return (
-      <div>
-        <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#053030", padding: "8px 40px", display: "flex", alignItems: "center", gap: 16, borderBottom: "2px solid #005A66" }}>
-          <button onClick={exitTool} style={{ fontFamily: "Oswald, sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: 6, padding: 0 }} aria-label="Back to toolkit hub">
-            ← All Tools
-          </button>
-          <span style={{ fontFamily: "Oswald, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>02 — Problem Validator</span>
-        </div>
-        <ProblemTool systemPrompt={prompts.problem} />
-      </div>
-    );
-  }
-  if (activeTool === "persona") {
-    return (
-      <div>
-        <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#053030", padding: "8px 40px", display: "flex", alignItems: "center", gap: 16, borderBottom: "2px solid #005A66" }}>
-          <button onClick={exitTool} style={{ fontFamily: "Oswald, sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: 6, padding: 0 }} aria-label="Back to toolkit hub">
-            ← All Tools
-          </button>
-          <span style={{ fontFamily: "Oswald, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>03 — Persona Check</span>
-        </div>
-        <PersonaTool systemPrompt={prompts.persona} />
-      </div>
-    );
-  }
-  if (activeTool === "moat") {
-    return (
-      <div>
-        <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#053030", padding: "8px 40px", display: "flex", alignItems: "center", gap: 16, borderBottom: "2px solid #005A66" }}>
-          <button onClick={exitTool} style={{ fontFamily: "Oswald, sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: 6, padding: 0 }} aria-label="Back to toolkit hub">
-            ← All Tools
-          </button>
-          <span style={{ fontFamily: "Oswald, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>04 — Moat Rater</span>
-        </div>
-        <MoatTool systemPrompt={prompts.moat} />
-      </div>
-    );
-  }
-  if (activeTool === "account") {
-    return (
-      <div>
-        <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#053030", padding: "8px 40px", display: "flex", alignItems: "center", gap: 16, borderBottom: "2px solid #005A66" }}>
-          <button onClick={exitTool} style={{ fontFamily: "Oswald, sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: 6, padding: 0 }} aria-label="Back to toolkit hub">
-            ← All Tools
-          </button>
-          <span style={{ fontFamily: "Oswald, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>05 — Account Intel</span>
-        </div>
-        <AccountIntelTool systemPrompt={prompts.account} />
+        <nav className="nav" aria-label="Summit Strategy Advisory navigation">
+          <a href="/" aria-label="Summit Strategy Advisory home">
+            <img src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" className="nav-logo" />
+          </a>
+          <div className="nav-right">
+            <button onClick={exitTool} className="nav-link" style={{ background: "none", border: "none", cursor: "pointer" }}>
+              ← All Tools
+            </button>
+            <span className="nav-link" style={{ color: "rgba(255,255,255,0.9)", cursor: "default" }}>
+              {toolLabels[activeTool]}
+            </span>
+            <a
+              href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-cta"
+            >
+              Book a Call
+            </a>
+          </div>
+        </nav>
+        {activeTool === "positioning" && <PositioningTool systemPrompt={prompts.positioning} />}
+        {activeTool === "problem" && <ProblemTool systemPrompt={prompts.problem} />}
+        {activeTool === "persona" && <PersonaTool systemPrompt={prompts.persona} />}
+        {activeTool === "moat" && <MoatTool systemPrompt={prompts.moat} />}
+        {activeTool === "account" && <AccountIntelTool systemPrompt={prompts.account} />}
       </div>
     );
   }
 
   return (
-    <div className="tk-nl-page" style={{ background: "#F5F9F6" }}>
-      {/* Sticky nav */}
-      <nav className="tk-nav" aria-label="Summit GTM Toolkit navigation">
-        <span className="tk-nav-logo">Summit</span>
-        <span className="tk-nav-label">GTM Toolkit</span>
-        <span className="tk-nav-tag">For teams selling into a finite market</span>
+    <div className="tk-nl-page" style={{ background: "#F5F9F6", paddingTop: 64 }}>
+      {/* Nav — matches homepage exactly */}
+      <nav className="nav" aria-label="Summit Strategy Advisory navigation">
+        <a href="/" aria-label="Summit Strategy Advisory home">
+          <img src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" className="nav-logo" />
+        </a>
+        <div className="nav-right">
+          <a href="/" className="nav-link">Home</a>
+          <span className="nav-link" style={{ color: "rgba(255,255,255,0.9)", cursor: "default" }}>GTM Toolkit</span>
+          <a href="/newsletter" className="nav-link">Newsletter</a>
+          <a
+            href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-cta"
+          >
+            Book a Call
+          </a>
+        </div>
       </nav>
 
       {/* Hero */}
