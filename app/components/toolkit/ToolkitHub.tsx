@@ -18,11 +18,11 @@ const BOOK_URL =
 type ToolId = "positioning" | "problem" | "persona" | "moat" | "account";
 
 const toolLabels: Record<ToolId, string> = {
-  positioning: "01 — Positioning Grader",
-  problem:     "02 — Problem Validator",
-  persona:     "03 — Persona Check",
-  moat:        "04 — Moat Rater",
-  account:     "05 — Account Intel",
+  persona:     "02 — Buyer Persona Quality Check",
+  problem:     "03 — Market Problem Validator",
+  positioning: "04 — Positioning Statement Grader",
+  moat:        "05 — Competitive Moat Rater",
+  account:     "Account Intelligence",
 };
 
 export default function ToolkitHub() {
@@ -143,10 +143,56 @@ export default function ToolkitHub() {
             </p>
           </div>
 
+          {/* How It Works — shown before tools so you know how to use them */}
+          <div className="inner-body">
+            <div className="section-label">How It Works</div>
+            <p className="section-intro" style={{ marginBottom: 40 }}>Three steps. No account required. Results in under 30 seconds.</p>
+            <div className="features">
+              {[
+                { num: "01", title: "Describe context", body: "Paste your positioning statement, problem description, persona, or target account name. The more specific you are, the more useful the output." },
+                { num: "02", title: "Get scored", body: "The AI evaluates your input across six dimensions with scores, observations, and specific gaps. No flattery — honest analysis." },
+                { num: "03", title: "Fix the right things", body: "Each dimension tells you exactly what to improve and why it matters for a team selling into a finite, named-account market." },
+              ].map((step) => (
+                <div key={step.num} className="feature">
+                  <div style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: 32, fontWeight: 900, color: "var(--sage)",
+                    lineHeight: 1, marginBottom: 10,
+                  }}>{step.num}</div>
+                  <div className="feature-title">{step.title}</div>
+                  <p className="feature-body">{step.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Tool cards — uses homepage .cards-section pattern */}
           <div className="cards-section">
             <div className="cards-label">The Tools</div>
             <div className="cards">
+
+              {/* Tool 01 — ICP Evaluator */}
+              <Link href="/?tool=icp-evaluator" className="card" style={{ textDecoration: "none" }} aria-label="Open ICP Evaluator">
+                <div className="card-icon-wrap" style={{ background: "#0f2a1e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
+                  <span style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: 11, fontWeight: 700,
+                    letterSpacing: "0.18em", textTransform: "uppercase",
+                    color: "var(--sage)",
+                  }}>Tool 01</span>
+                </div>
+                <div className="card-body" style={{ borderTopColor: "var(--sage)" }}>
+                  <div className="card-title">ICP Evaluator</div>
+                  <p className="card-desc">Score your Ideal Customer Profile across seven weighted dimensions.</p>
+                  <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
+                    <strong style={{ color: "var(--teal)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                    Weighted ICP score, dimension breakdown, and specific improvement recommendations.
+                  </p>
+                  <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>Open Tool →</div>
+                </div>
+              </Link>
+
+              {/* Tools 02–05 from config */}
               {TOOLS.map((tool) => (
                 <button
                   key={tool.id}
@@ -176,57 +222,44 @@ export default function ToolkitHub() {
                   </div>
                 </button>
               ))}
-
-              {/* ICP Evaluator card */}
-              <Link href="/?tool=icp-evaluator" className="card" style={{ textDecoration: "none" }} aria-label="Open ICP Evaluator">
-                <div className="card-icon-wrap" style={{ background: "#0f2a1e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16, position: "relative" }}>
-                  <span style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 11, fontWeight: 700,
-                    letterSpacing: "0.18em", textTransform: "uppercase",
-                    color: "var(--sage)",
-                  }}>ICP Evaluator</span>
-                  <span style={{
-                    position: "absolute", top: 10, right: 12,
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                    background: "rgba(49,154,101,0.15)", color: "var(--sage)",
-                    border: "1px solid rgba(49,154,101,0.35)", borderRadius: 2, padding: "2px 7px",
-                  }}>Existing</span>
-                </div>
-                <div className="card-body" style={{ borderTopColor: "var(--sage)" }}>
-                  <div className="card-title">ICP Evaluator</div>
-                  <p className="card-desc">Score your Ideal Customer Profile across seven weighted dimensions.</p>
-                  <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                    <strong style={{ color: "var(--teal)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
-                    Weighted ICP score, dimension breakdown, and specific improvement recommendations.
-                  </p>
-                  <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>Open Tool →</div>
-                </div>
-              </Link>
             </div>
           </div>
 
-          {/* How It Works */}
-          <div className="inner-body">
-            <div className="section-label">How It Works</div>
-            <p className="section-intro" style={{ marginBottom: 40 }}>Three steps. No account required. Results in under 30 seconds.</p>
-            <div className="features">
-              {[
-                { num: "01", title: "Describe context", body: "Paste your positioning statement, problem description, persona, or target account name. The more specific you are, the more useful the output." },
-                { num: "02", title: "Get scored", body: "The AI evaluates your input across six dimensions with scores, observations, and specific gaps. No flattery — honest analysis." },
-                { num: "03", title: "Fix the right things", body: "Each dimension tells you exactly what to improve and why it matters for a team selling into a finite, named-account market." },
-              ].map((step) => (
-                <div key={step.num} className="feature">
-                  <div style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontSize: 32, fontWeight: 900, color: "var(--sage)",
-                    lineHeight: 1, marginBottom: 10,
-                  }}>{step.num}</div>
-                  <div className="feature-title">{step.title}</div>
-                  <p className="feature-body">{step.body}</p>
-                </div>
-              ))}
+          {/* Account Intelligence — separate section */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 0 }}>
+            <div className="cards-section" style={{ paddingTop: 48 }}>
+              <div className="cards-label" style={{ color: "#67e8f9" }}>Account Intelligence</div>
+              <p style={{ fontFamily: "Barlow, sans-serif", fontSize: 14, color: "rgba(255,255,255,0.45)", marginBottom: 28, maxWidth: 560, lineHeight: 1.65 }}>
+                A deeper research tool — pulls live signals on a named account and builds you a full sales brief.
+              </p>
+              <div className="cards">
+                <button
+                  type="button"
+                  className="card"
+                  onClick={() => selectTool("account")}
+                  aria-label="Open Account Intelligence"
+                >
+                  <div className="card-icon-wrap" style={{ background: "#00252e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
+                    <span style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontSize: 11, fontWeight: 700,
+                      letterSpacing: "0.18em", textTransform: "uppercase",
+                      color: "#67e8f9",
+                    }}>Account Intel</span>
+                  </div>
+                  <div className="card-body" style={{ borderTopColor: "#67e8f9" }}>
+                    <div className="card-title">Account Intelligence</div>
+                    <p className="card-desc">Get a full sales brief on any target account — signals, contacts, and an opening play.</p>
+                    <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
+                      <strong style={{ color: "#67e8f9", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                      ICP fit, timing verdict, key contacts with LinkedIn searches, market signals, recommended opening.
+                    </p>
+                    <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
+                      Open Tool →
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
 
