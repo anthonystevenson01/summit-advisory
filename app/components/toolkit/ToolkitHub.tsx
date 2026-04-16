@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { TOOLS } from "./data/toolConfig";
 import { usePrompts } from "./hooks/usePrompts";
 import { useRubrics } from "./hooks/useRubrics";
@@ -11,14 +10,16 @@ import PersonaTool from "./tools/PersonaTool";
 import MoatTool from "./tools/MoatTool";
 import AccountIntelTool from "./tools/AccountIntelTool";
 import NewsletterCapture from "./shared/NewsletterCapture";
+import ICPEvaluator from "../icp-evaluator";
 
 const LOGO = "/brand-icons/Combination Mark_White.png";
 const BOOK_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
-type ToolId = "positioning" | "problem" | "persona" | "moat" | "account";
+type ToolId = "icp" | "positioning" | "problem" | "persona" | "moat" | "account";
 
 const toolLabels: Record<ToolId, string> = {
+  icp:         "01 — ICP Evaluator",
   persona:     "02 — Buyer Persona Quality Check",
   problem:     "03 — Market Problem Validator",
   positioning: "04 — Positioning Statement Grader",
@@ -31,7 +32,7 @@ export default function ToolkitHub() {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const tool = params.get("tool") as ToolId | null;
-    const valid: ToolId[] = ["positioning", "problem", "persona", "moat", "account"];
+    const valid: ToolId[] = ["icp", "positioning", "problem", "persona", "moat", "account"];
     return tool && valid.includes(tool) ? tool : null;
   });
   const { prompts } = usePrompts();
@@ -57,7 +58,8 @@ export default function ToolkitHub() {
       <div className="nav-right">
         {toolLabel ? (
           <>
-            <button type="button" className="nav-link" onClick={exitTool}>← All Tools</button>
+            <span className="nav-link" style={{ color: "rgba(255,255,255,0.35)", cursor: "default" }}>GTM Tools</span>
+            <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10 }}>›</span>
             <span className="nav-link" style={{ color: "rgba(255,255,255,0.85)", cursor: "default" }}>{toolLabel}</span>
           </>
         ) : (
@@ -100,6 +102,13 @@ export default function ToolkitHub() {
       <>
         <Nav toolLabel={toolLabels[activeTool]} />
         <div className="page">
+          {/* Back button — matches main site inner-back pattern */}
+          <div style={{ background: "var(--forest)", padding: "14px 48px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <button type="button" className="inner-back" style={{ marginBottom: 0 }} onClick={exitTool}>
+              ← All GTM Tools
+            </button>
+          </div>
+          {activeTool === "icp"         && <ICPEvaluator onBack={exitTool} onBookCall={() => window.open(BOOK_URL, "_blank")} />}
           {activeTool === "positioning" && <PositioningTool systemPrompt={prompts.positioning} rubric={rubrics.positioning} />}
           {activeTool === "problem"     && <ProblemTool     systemPrompt={prompts.problem}     rubric={rubrics.problem} />}
           {activeTool === "persona"     && <PersonaTool     systemPrompt={prompts.persona}      rubric={rubrics.persona} />}
@@ -152,11 +161,11 @@ export default function ToolkitHub() {
             </p>
           </div>
 
-          {/* How It Works — shown before tools so you know how to use them */}
-          <div className="inner-body">
+          {/* How It Works — full width, 3-column */}
+          <div style={{ padding: "56px 48px 64px" }}>
             <div className="section-label">How It Works</div>
             <p className="section-intro" style={{ marginBottom: 40 }}>Three steps. No account required. Results in under 30 seconds.</p>
-            <div className="features">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3 }}>
               {[
                 { num: "01", title: "Describe context", body: "Paste your positioning statement, problem description, persona, or target account name. The more specific you are, the more useful the output." },
                 { num: "02", title: "Get scored", body: "The AI evaluates your input across six dimensions with scores, observations, and specific gaps. No flattery — honest analysis." },
@@ -181,16 +190,16 @@ export default function ToolkitHub() {
             <div className="cards">
 
               {/* Tool 01 — ICP Evaluator */}
-              <Link href="/?tool=icp-evaluator" className="card" style={{ textDecoration: "none" }} aria-label="Open ICP Evaluator">
-                <div className="card-icon-wrap" style={{ background: "#0f2a1e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
+              <button type="button" className="card" onClick={() => selectTool("icp")} aria-label="Open ICP Evaluator">
+                <div className="card-icon-wrap" style={{ background: "#0a1a14", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
                   <span style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontSize: 11, fontWeight: 700,
                     letterSpacing: "0.18em", textTransform: "uppercase",
-                    color: "var(--sage)",
+                    color: "#319A65",
                   }}>Tool 01</span>
                 </div>
-                <div className="card-body" style={{ borderTopColor: "var(--sage)" }}>
+                <div className="card-body" style={{ borderTopColor: "#319A65" }}>
                   <div className="card-title">ICP Evaluator</div>
                   <p className="card-desc">Score your Ideal Customer Profile across seven weighted dimensions.</p>
                   <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
@@ -199,7 +208,7 @@ export default function ToolkitHub() {
                   </p>
                   <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>Open Tool →</div>
                 </div>
-              </Link>
+              </button>
 
               {/* Tools 02–05 from config */}
               {TOOLS.map((tool) => (
@@ -222,7 +231,7 @@ export default function ToolkitHub() {
                     <div className="card-title">{tool.name}</div>
                     <p className="card-desc">{tool.tagline}</p>
                     <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                      <strong style={{ color: "var(--teal)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                      <strong style={{ color: "#319A65", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
                       {tool.outputDescription}
                     </p>
                     <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
