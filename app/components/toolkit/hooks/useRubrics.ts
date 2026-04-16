@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const CACHE_KEY = "gtm-rubrics-v1";
+const CACHE_KEY = "gtm-rubrics-v2";
 
 export interface Rubrics {
   icp: string;
