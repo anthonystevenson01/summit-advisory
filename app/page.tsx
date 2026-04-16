@@ -848,7 +848,9 @@ export default function Summit() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tool = params.get("tool");
+    const section = params.get("page");
     if (tool) setPage(tool);
+    else if (section) setPage(section);
     // Track page visit
     fetch("/api/track-visit", { method: "POST" }).catch(() => {});
   }, []);

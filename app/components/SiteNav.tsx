@@ -42,7 +42,7 @@ export default function SiteNav({
         {onResources ? (
           <button type="button" className="nav-link" style={activePage === "resources" ? activeStyle : undefined} onClick={onResources}>Resources</button>
         ) : (
-          <a href="/" className="nav-link" style={activePage === "resources" ? activeStyle : undefined}>Resources</a>
+          <a href="/?page=resources" className="nav-link" style={activePage === "resources" ? activeStyle : undefined}>Resources</a>
         )}
 
         <a href="/tools" className="nav-link" style={activePage === "tools" ? activeStyle : undefined}>GTM Tools</a>
@@ -50,13 +50,13 @@ export default function SiteNav({
         {onBlog ? (
           <button type="button" className="nav-link" style={activePage === "blog" ? activeStyle : undefined} onClick={onBlog}>Blog</button>
         ) : (
-          <a href="/" className="nav-link" style={activePage === "blog" ? activeStyle : undefined}>Blog</a>
+          <a href="/?page=blog" className="nav-link" style={activePage === "blog" ? activeStyle : undefined}>Blog</a>
         )}
 
         {onCareers ? (
           <button type="button" className="nav-link" style={activePage === "careers" ? activeStyle : undefined} onClick={onCareers}>Careers</button>
         ) : (
-          <a href="/" className="nav-link" style={activePage === "careers" ? activeStyle : undefined}>Careers</a>
+          <a href="/?page=careers" className="nav-link" style={activePage === "careers" ? activeStyle : undefined}>Careers</a>
         )}
 
         {onBookCall ? (
