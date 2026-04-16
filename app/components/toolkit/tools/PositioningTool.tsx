@@ -6,6 +6,7 @@ import GtmDimensionBar from "../shared/GtmDimensionBar";
 import { TOOL_DIMENSIONS, getGrade } from "../data/dimensionConfig";
 import { BRAND } from "@/app/lib/brand";
 import { submitToolUnlock } from "../shared/useToolUnlock";
+import ToolShareButtons from "../shared/ToolShareButtons";
 
 const DIMS = TOOL_DIMENSIONS["positioning"];
 
@@ -115,6 +116,7 @@ export default function PositioningTool({ systemPrompt: _systemPrompt, rubric }:
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
             Score your positioning across six dimensions. Find the gaps before a weak statement costs you deals in a finite market.
           </p>
+          <ToolShareButtons slug="positioning" title="Positioning Statement Grader — Summit Strategy Advisory" />
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import Tag from "../shared/Tag";
 import NewsletterCapture from "../shared/NewsletterCapture";
 import CyclingLoader from "../shared/CyclingLoader";
 import ErrMsg from "../shared/ErrMsg";
+import ToolShareButtons from "../shared/ToolShareButtons";
 
 const CYCLING_MESSAGES = [
   "Searching company news…",
@@ -115,6 +116,7 @@ export default function AccountIntelTool({ systemPrompt }: Props) {
             <p className="inner-lead">
               Enter a target account name. Get a full sales brief — ICP fit, timing, key contacts, and live market signals.
             </p>
+            <ToolShareButtons slug="account" title="Account Intelligence — Summit Strategy Advisory" align="start" />
           </div>
 
           <div className="inner-body">

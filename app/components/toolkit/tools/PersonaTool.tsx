@@ -6,6 +6,7 @@ import GtmDimensionBar from "../shared/GtmDimensionBar";
 import { TOOL_DIMENSIONS, getGrade } from "../data/dimensionConfig";
 import { BRAND } from "@/app/lib/brand";
 import { submitToolUnlock } from "../shared/useToolUnlock";
+import ToolShareButtons from "../shared/ToolShareButtons";
 
 const DIMS = TOOL_DIMENSIONS["persona"];
 
@@ -122,6 +123,7 @@ export default function PersonaTool({ systemPrompt: _systemPrompt, rubric }: Pro
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
             Score your buyer persona across six dimensions weighted for finite-market enterprise selling. Find the gaps before they cost you accounts.
           </p>
+          <ToolShareButtons slug="persona" title="Buyer Persona Quality Check — Summit Strategy Advisory" />
         </div>
       </section>
 

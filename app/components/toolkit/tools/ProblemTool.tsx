@@ -6,6 +6,7 @@ import GtmDimensionBar from "../shared/GtmDimensionBar";
 import { TOOL_DIMENSIONS, getGrade } from "../data/dimensionConfig";
 import { BRAND } from "@/app/lib/brand";
 import { submitToolUnlock } from "../shared/useToolUnlock";
+import ToolShareButtons from "../shared/ToolShareButtons";
 
 const DIMS = TOOL_DIMENSIONS["problem"];
 
@@ -125,6 +126,7 @@ export default function ProblemTool({ systemPrompt: _systemPrompt, rubric }: Pro
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
             Score your market problem across six dimensions. Find out if the problem you&apos;re solving is worth building a company around.
           </p>
+          <ToolShareButtons slug="problem" title="Market Problem Validator — Summit Strategy Advisory" />
         </div>
       </section>
 

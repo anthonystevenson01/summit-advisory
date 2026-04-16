@@ -6,6 +6,7 @@ import GtmDimensionBar from "../shared/GtmDimensionBar";
 import { TOOL_DIMENSIONS, getGrade } from "../data/dimensionConfig";
 import { BRAND } from "@/app/lib/brand";
 import { submitToolUnlock } from "../shared/useToolUnlock";
+import ToolShareButtons from "../shared/ToolShareButtons";
 
 const DIMS = TOOL_DIMENSIONS["moat"];
 
@@ -115,6 +116,7 @@ export default function MoatTool({ systemPrompt: _systemPrompt, rubric }: Props)
           <p style={{ fontSize: 17, color: "rgba(255,255,255,0.85)", lineHeight: 1.65, margin: 0 }}>
             Score your competitive moat across six dimensions. Most companies overestimate their defensibility — find out where yours actually stands.
           </p>
+          <ToolShareButtons slug="moat" title="Competitive Moat Rater — Summit Strategy Advisory" />
         </div>
       </section>
 
