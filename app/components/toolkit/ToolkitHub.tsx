@@ -11,8 +11,8 @@ import MoatTool from "./tools/MoatTool";
 import AccountIntelTool from "./tools/AccountIntelTool";
 import NewsletterCapture from "./shared/NewsletterCapture";
 import ICPEvaluator from "../icp-evaluator";
+import SiteNav from "../SiteNav";
 
-const LOGO = "/brand-icons/Combination Mark_White.png";
 const BOOK_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
@@ -48,41 +48,12 @@ export default function ToolkitHub() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  /* ── Shared nav ── */
-  const Nav = ({ toolLabel }: { toolLabel?: string }) => (
-    <nav className="nav">
-      <a href="/">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO} alt="Summit Strategy Advisory" className="nav-logo" />
-      </a>
-      <div className="nav-right">
-        {toolLabel ? (
-          <>
-            <span className="nav-link" style={{ color: "rgba(255,255,255,0.35)", cursor: "default" }}>GTM Tools</span>
-            <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10 }}>›</span>
-            <span className="nav-link" style={{ color: "rgba(255,255,255,0.85)", cursor: "default" }}>{toolLabel}</span>
-          </>
-        ) : (
-          <>
-            <a href="/" className="nav-link">Home</a>
-            <a href="/" className="nav-link">Resources</a>
-            <span className="nav-link" style={{ color: "rgba(255,255,255,0.9)", cursor: "default" }}>GTM Tools</span>
-            <a href="/" className="nav-link">Blog</a>
-            <a href="/newsletter" className="nav-link">Newsletter</a>
-          </>
-        )}
-        <a href={BOOK_URL} target="_blank" rel="noopener noreferrer" className="nav-cta">
-          Give Us a Call
-        </a>
-      </div>
-    </nav>
-  );
 
   /* ── Shared footer ── */
   const Footer = () => (
     <footer className="footer">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO} alt="Summit" className="footer-logo" />
+      <img src="/brand-icons/Combination Mark_White.png" alt="Summit" className="footer-logo" />
       <ul className="footer-links">
         <li><a href="/">Home</a></li>
         <li><a href="/">AI Studio</a></li>
@@ -100,7 +71,7 @@ export default function ToolkitHub() {
   if (activeTool) {
     return (
       <>
-        <Nav toolLabel={toolLabels[activeTool]} />
+        <SiteNav activePage="tools" />
         <div className="page">
           {/* Back button — matches main site inner-back pattern */}
           <div style={{ background: "var(--forest)", padding: "14px 48px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -123,7 +94,7 @@ export default function ToolkitHub() {
   /* ── Hub view ── */
   return (
     <>
-      <Nav />
+      <SiteNav activePage="tools" />
       <div className="page">
 
         {/* Hero — full width at page level */}

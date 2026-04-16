@@ -4,19 +4,52 @@ import { useState } from "react";
 import { ISSUES } from "./data/issues";
 import NewsletterCapture from "../toolkit/shared/NewsletterCapture";
 import NewsletterReader from "./NewsletterReader";
+import SiteNav from "../SiteNav";
+
+const LOGO_WHITE = "/brand-icons/Combination Mark_White.png";
+
+function SiteFooter() {
+  return (
+    <footer className="footer">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={LOGO_WHITE} alt="Summit" className="footer-logo" />
+      <ul className="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/">AI Studio</a></li>
+        <li><a href="/">Scale-Up Advisory</a></li>
+        <li><a href="/">Resources</a></li>
+        <li><a href="/tools">GTM Tools</a></li>
+        <li><a href="/">Blog</a></li>
+        <li><a href="/newsletter">Newsletter</a></li>
+      </ul>
+      <span className="footer-copy">© 2026 Summit Strategy Advisory</span>
+    </footer>
+  );
+}
 
 export default function NewsletterHub() {
   const [readingIssueId, setReadingIssueId] = useState<string | null>(null);
 
   if (readingIssueId !== null) {
-    return <NewsletterReader issueId={readingIssueId} />;
+    return (
+      <>
+        <SiteNav activePage="newsletter" />
+        <div className="page">
+          <NewsletterReader issueId={readingIssueId} />
+          <SiteFooter />
+        </div>
+      </>
+    );
   }
 
   const featured = ISSUES[0];
   const archive = ISSUES.slice(1);
 
   return (
-    <div className="inner">
+    <>
+      <SiteNav activePage="newsletter" />
+      <div className="page">
+      <div className="inner">
       {/* Masthead */}
       <div className="inner-hero">
         <div className="inner-eyebrow">Summit Strategy Advisory</div>
@@ -126,5 +159,8 @@ export default function NewsletterHub() {
         </p>
       </div>
     </div>
+      <SiteFooter />
+      </div>
+    </>
   );
 }

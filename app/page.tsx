@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
+import SiteNav from "./components/SiteNav";
 
 const BOOK_CALL_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
@@ -869,29 +870,13 @@ export default function Summit() {
 
   return (
     <>
-      <nav className="nav">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_WHITE} alt="Summit Strategy Advisory" className="nav-logo" onClick={() => nav("home")} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && nav("home")} />
-        <div className="nav-right">
-          <button type="button" className="nav-link" onClick={() => nav("resources")}>Resources</button>
-          <a href="/tools" className="nav-link">GTM Tools</a>
-          <button type="button" className="nav-link" onClick={() => nav("blog")}>Blog</button>
-          <button type="button" className="nav-link" onClick={() => nav("careers")}>Careers</button>
-          <button
-            type="button"
-            className="nav-cta"
-            onClick={goToBooking}
-          >
-            Give Us a Call
-          </button>
-          <a href="/admin" className="nav-link" style={{ fontSize: 11, opacity: 0.5 }} title="Admin">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M20 21a8 8 0 0 0-16 0" />
-            </svg>
-          </a>
-        </div>
-      </nav>
+      <SiteNav
+        onLogoClick={() => nav("home")}
+        onResources={() => nav("resources")}
+        onBlog={() => nav("blog")}
+        onCareers={() => nav("careers")}
+        onBookCall={goToBooking}
+      />
       <div className="page">
         {page === "home" && <HomePage onNavigate={nav} />}
         {page === "ai" && <AIStudioPage onBack={() => nav("home")} />}
