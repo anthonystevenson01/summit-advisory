@@ -1,109 +1,57 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import Image from "next/image";
+import { Suspense, useEffect } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "../icons";
 import { TOOLS } from "./data/toolConfig";
-import { usePrompts } from "./hooks/usePrompts";
-import { useRubrics } from "./hooks/useRubrics";
-import PositioningTool from "./tools/PositioningTool";
-import ProblemTool from "./tools/ProblemTool";
-import PersonaTool from "./tools/PersonaTool";
-import MoatTool from "./tools/MoatTool";
-import AccountIntelTool from "./tools/AccountIntelTool";
 import NewsletterCapture from "./shared/NewsletterCapture";
-import ICPEvaluator from "../icp-evaluator";
+import ToolkitFooter from "./ToolkitFooter";
 import SiteNav from "../SiteNav";
+import { isToolSlug } from "@/app/tools/[tool]/toolSlugs";
 
-const BOOK_URL =
-  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
+/**
+ * Reads ?tool=X from the URL and redirects to /tools/X. Isolated in its own
+ * component so that the Suspense boundary it requires (useSearchParams
+ * triggers client bailout) doesn't force the whole hub to opt out of
+ * static rendering.
+ */
+function LegacyToolRedirect() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-type ToolId = "icp" | "positioning" | "problem" | "persona" | "moat" | "account";
+  useEffect(() => {
+    const legacy = searchParams.get("tool");
+    if (legacy && isToolSlug(legacy)) {
+      router.replace(`/tools/${legacy}`);
+    }
+  }, [searchParams, router]);
 
-const toolLabels: Record<ToolId, string> = {
-  icp:         "01 — ICP Evaluator",
-  persona:     "02 — Buyer Persona Quality Check",
-  problem:     "03 — Market Problem Validator",
-  positioning: "04 — Positioning Statement Grader",
-  moat:        "05 — Competitive Moat Rater",
-  account:     "Account Intelligence",
-};
+  return null;
+}
 
+/**
+ * GTM Toolkit hub — lists all available tools as cards.
+ *
+ * Each card links to its own URL (e.g. /tools/persona) so tools are
+ * deep-linkable, SEO-indexable, and share-friendly. For backward
+ * compatibility, legacy ?tool=X query strings redirect to the new route.
+ */
 export default function ToolkitHub() {
-  const [activeTool, setActiveTool] = useState<ToolId | null>(() => {
-    if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    const tool = params.get("tool") as ToolId | null;
-    const valid: ToolId[] = ["icp", "positioning", "problem", "persona", "moat", "account"];
-    return tool && valid.includes(tool) ? tool : null;
-  });
-  const { prompts } = usePrompts();
-  const { rubrics } = useRubrics();
-
-  const selectTool = useCallback((id: ToolId) => {
-    setActiveTool(id);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-
-  const exitTool = useCallback(() => {
-    setActiveTool(null);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-
-
-  /* ── Shared footer ── */
-  const Footer = () => (
-    <footer className="footer">
-      <Image src="/brand-icons/Combination Mark_White.png" alt="Summit" width={140} height={22} className="footer-logo" />
-      <ul className="footer-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/">AI Studio</a></li>
-        <li><a href="/">Scale-Up Advisory</a></li>
-        <li><a href="/">Resources</a></li>
-        <li><a href="/tools" style={{ color: "rgba(255,255,255,0.55)" }}>GTM Tools</a></li>
-        <li><a href="/">Blog</a></li>
-        <li><a href="/newsletter">Newsletter</a></li>
-      </ul>
-      <span className="footer-copy">© 2026 Summit Strategy Advisory</span>
-    </footer>
-  );
-
-  /* ── Active tool view ── */
-  if (activeTool) {
-    return (
-      <>
-        <SiteNav activePage="tools" />
-        <div className="page">
-          {/* Back button — matches main site inner-back pattern */}
-          <div style={{ background: "var(--forest)", padding: "14px 48px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <button type="button" className="inner-back" style={{ marginBottom: 0 }} onClick={exitTool}>
-              ← All GTM Tools
-            </button>
-          </div>
-          {activeTool === "icp"         && <ICPEvaluator onBack={exitTool} onBookCall={() => window.open(BOOK_URL, "_blank")} />}
-          {activeTool === "positioning" && <PositioningTool systemPrompt={prompts.positioning} rubric={rubrics.positioning} />}
-          {activeTool === "problem"     && <ProblemTool     systemPrompt={prompts.problem}     rubric={rubrics.problem} />}
-          {activeTool === "persona"     && <PersonaTool     systemPrompt={prompts.persona}      rubric={rubrics.persona} />}
-          {activeTool === "moat"        && <MoatTool        systemPrompt={prompts.moat}         rubric={rubrics.moat} />}
-          {activeTool === "account"     && <AccountIntelTool systemPrompt={prompts.account} />}
-          <Footer />
-        </div>
-      </>
-    );
-  }
-
-  /* ── Hub view ── */
   return (
     <>
+      <Suspense fallback={null}>
+        <LegacyToolRedirect />
+      </Suspense>
       <SiteNav activePage="tools" />
       <div className="page">
 
         {/* Hero — full width at page level */}
         <div className="inner-hero">
-          <a href="/" className="inner-back">
+          <Link href="/" className="inner-back">
             <ArrowLeft />
             Home
-          </a>
+          </Link>
           <div className="inner-eyebrow">Scale-Up Advisory</div>
           <h1 className="inner-title">Summit GTM Toolkit</h1>
           <p className="inner-lead">
@@ -166,7 +114,7 @@ export default function ToolkitHub() {
             <div className="cards">
 
               {/* Tool 01 — ICP Evaluator */}
-              <button type="button" className="card" onClick={() => selectTool("icp")} aria-label="Open ICP Evaluator">
+              <Link href="/tools/icp" className="card" aria-label="Open ICP Evaluator">
                 <div className="card-icon-wrap" style={{ background: "#0a1a14", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
                   <span style={{
                     fontFamily: "var(--font-barlow-condensed), sans-serif",
@@ -184,15 +132,14 @@ export default function ToolkitHub() {
                   </p>
                   <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>Open Tool →</div>
                 </div>
-              </button>
+              </Link>
 
               {/* Tools 02–05 from config */}
               {TOOLS.map((tool) => (
-                <button
+                <Link
                   key={tool.id}
-                  type="button"
+                  href={`/tools/${tool.id}`}
                   className="card"
-                  onClick={() => selectTool(tool.id as ToolId)}
                   aria-label={`Open ${tool.name}`}
                 >
                   <div className="card-icon-wrap" style={{ background: tool.surface, minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
@@ -214,7 +161,7 @@ export default function ToolkitHub() {
                       Open Tool →
                     </div>
                   </div>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -227,10 +174,9 @@ export default function ToolkitHub() {
                 A deeper research tool — pulls live signals on a named account and builds you a full sales brief.
               </p>
               <div className="cards">
-                <button
-                  type="button"
+                <Link
+                  href="/tools/account"
                   className="card"
-                  onClick={() => selectTool("account")}
                   aria-label="Open Account Intelligence"
                 >
                   <div className="card-icon-wrap" style={{ background: "#00252e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
@@ -252,7 +198,7 @@ export default function ToolkitHub() {
                       Open Tool →
                     </div>
                   </div>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -261,7 +207,7 @@ export default function ToolkitHub() {
           <NewsletterCapture dark label="Get the Scale-Up Letter" />
 
         </div>
-        <Footer />
+        <ToolkitFooter />
       </div>
     </>
   );
