@@ -63,7 +63,9 @@ export default function ToolkitHub() {
         ) : (
           <>
             <a href="/" className="nav-link">Home</a>
-            <span className="nav-link" style={{ color: "rgba(255,255,255,0.85)", cursor: "default" }}>GTM Toolkit</span>
+            <a href="/" className="nav-link">Resources</a>
+            <span className="nav-link" style={{ color: "rgba(255,255,255,0.9)", cursor: "default" }}>GTM Tools</span>
+            <a href="/" className="nav-link">Blog</a>
             <a href="/newsletter" className="nav-link">Newsletter</a>
           </>
         )}
@@ -80,9 +82,13 @@ export default function ToolkitHub() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={LOGO} alt="Summit" className="footer-logo" />
       <ul className="footer-links">
-        <li><a href="/" style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", textDecoration: "none" }}>Home</a></li>
-        <li><a href="/tools" style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", textDecoration: "none" }}>GTM Toolkit</a></li>
-        <li><a href="/newsletter" style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", textDecoration: "none" }}>Newsletter</a></li>
+        <li><a href="/">Home</a></li>
+        <li><a href="/">AI Studio</a></li>
+        <li><a href="/">Scale-Up Advisory</a></li>
+        <li><a href="/">Resources</a></li>
+        <li><a href="/tools" style={{ color: "rgba(255,255,255,0.55)" }}>GTM Tools</a></li>
+        <li><a href="/">Blog</a></li>
+        <li><a href="/newsletter">Newsletter</a></li>
       </ul>
       <span className="footer-copy">© 2026 Summit Strategy Advisory</span>
     </footer>
@@ -110,32 +116,33 @@ export default function ToolkitHub() {
     <>
       <Nav />
       <div className="page">
-        <div className="inner">
 
-          {/* Hero — identical structure to practice pages */}
-          <div className="inner-hero">
-            <div className="inner-eyebrow">Scale-Up Advisory</div>
-            <h1 className="inner-title">Summit GTM Toolkit</h1>
-            <p className="inner-lead">
-              Five free AI diagnostic tools for teams selling into finite, named-account markets.
-              No signup. No fluff. Results in under 30 seconds.
-            </p>
-            <div style={{ display: "flex", gap: 8, marginTop: 28, flexWrap: "wrap", position: "relative" }}>
-              {["Five Free Tools", "For teams selling into a finite market", "No Signup Required"].map((tag) => (
-                <span key={tag} style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: "var(--sage)",
-                  border: "1px solid rgba(49,154,101,0.4)",
-                  borderRadius: 2,
-                  padding: "4px 10px",
-                }}>{tag}</span>
-              ))}
-            </div>
+        {/* Hero — full width at page level */}
+        <div className="inner-hero">
+          <div className="inner-eyebrow">Scale-Up Advisory</div>
+          <h1 className="inner-title">Summit GTM Toolkit</h1>
+          <p className="inner-lead">
+            Five free AI diagnostic tools for teams selling into finite, named-account markets.
+            No signup. No fluff. Results in under 30 seconds.
+          </p>
+          <div style={{ display: "flex", gap: 8, marginTop: 28, flexWrap: "wrap", position: "relative" }}>
+            {["Five Free Tools", "For teams selling into a finite market", "No Signup Required"].map((tag) => (
+              <span key={tag} style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "var(--sage)",
+                border: "1px solid rgba(49,154,101,0.4)",
+                borderRadius: 2,
+                padding: "4px 10px",
+              }}>{tag}</span>
+            ))}
           </div>
+        </div>
+
+        <div className="inner">
 
           {/* Niche callout */}
           <div style={{ background: "var(--teal)", padding: "28px 48px" }}>
