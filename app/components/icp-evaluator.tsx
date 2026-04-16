@@ -290,31 +290,6 @@ export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => voi
         @media (max-width: 700px) { .icp-eval-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
-      {/* Back button */}
-      <div style={{ padding: "16px 32px 0", maxWidth: 1060, margin: "0 auto" }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "none",
-            border: "none",
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13,
-            fontWeight: 600,
-            color: BRAND.teal,
-            cursor: "pointer",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 7H2M6 3L2 7l4 4" />
-          </svg>
-          Resources
-        </button>
-      </div>
-
       {/* HERO */}
       <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
