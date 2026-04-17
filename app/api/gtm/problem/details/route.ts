@@ -41,6 +41,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "id and scores are required." }, { status: 400 });
   }
 
+  const redis = getRedis();
+
+  // Read-through cache: if we've already paid for this analysis, serve it for free.
+  // Checked BEFORE rate limit so refreshes (back button, share link reopen) don't burn the user's hourly quota.
+  try {
+    const cached = await redis.get(`gtm-details:${TOOL}:${submissionId}`);
+    if (cached) {
+      const parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      return NextResponse.json(parsed);
+    }
+  } catch {
+    // fall through to regenerate
+  }
+
   const limiter = getDetailsLimiter();
   if (limiter) {
     const ip = getClientIp(req);
@@ -50,7 +64,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const redis = getRedis();
   const inputText = await redis.get(`gtm-text:${submissionId}`);
   if (!inputText || typeof inputText !== "string") {
     return NextResponse.json({ error: "Input text not found. It may have expired." }, { status: 404 });
@@ -122,6 +135,17 @@ ${rubric ? rubric : ""}`;
             typeof r.action === "string"
         )
       : [];
+
+    // Cache the result so refreshes don't re-run Sonnet. 24h TTL matches icp-details.
+    try {
+      await redis.set(
+        `gtm-details:${TOOL}:${submissionId}`,
+        JSON.stringify({ dimensionReasoning, recommendations }),
+        { ex: 86400 }
+      );
+    } catch {
+      // non-fatal — response still goes out
+    }
 
     return NextResponse.json({ dimensionReasoning, recommendations });
   } catch (err) {

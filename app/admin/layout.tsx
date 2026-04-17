@@ -26,6 +26,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <a href="/admin/icp" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             ICP Submissions
           </a>
+          <a href="/admin/gtm" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            GTM Submissions
+          </a>
         </div>
         <form action="/api/admin/logout" method="POST">
           <button

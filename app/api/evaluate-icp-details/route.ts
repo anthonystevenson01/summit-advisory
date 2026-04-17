@@ -76,6 +76,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "id and scores are required." }, { status: 400 });
   }
 
+  const redis = getRedis();
+
+  // Read-through cache: this endpoint has always written icp-details:{id} but never read it.
+  // Checked BEFORE rate limit so refreshes (back button, share link reopen) don't burn the user's hourly quota.
+  try {
+    const cached = await redis.get(`icp-details:${submissionId}`);
+    if (cached) {
+      const parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      return NextResponse.json(parsed);
+    }
+  } catch {
+    // fall through to regenerate
+  }
+
   // Rate limiting — 10 unlocks per IP per hour
   const limiter = getDetailsLimiter();
   if (limiter) {
@@ -87,7 +101,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Retrieve ICP text + rubric in parallel
-  const redis = getRedis();
   const [icpText, rubricPrompt] = await Promise.all([
     redis.get(`icp-text:${submissionId}`),
     loadRubric(),

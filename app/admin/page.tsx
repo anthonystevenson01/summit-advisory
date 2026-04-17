@@ -7,19 +7,25 @@ export default async function AdminDashboard() {
   let buildRequests = 0;
   let icpsScored = 0;
   let emailsCaptured = 0;
+  let gtmScored = 0;
+  let gtmEmailsCaptured = 0;
 
   try {
     const redis = getRedis();
-    const [visits, builds, icps, unlocks] = await Promise.all([
+    const [visits, builds, icps, unlocks, gtmSubs, gtmUnlocks] = await Promise.all([
       redis.get("page-visits"),
       redis.llen("ai-studio-requests"),
       redis.llen("icp-submissions"),
       redis.llen("icp-unlocks"),
+      redis.llen("gtm-submissions"),
+      redis.llen("gtm-unlocks"),
     ]);
     pageVisits = typeof visits === "number" ? visits : parseInt(String(visits) || "0", 10);
     buildRequests = builds;
     icpsScored = icps;
     emailsCaptured = unlocks;
+    gtmScored = gtmSubs;
+    gtmEmailsCaptured = gtmUnlocks;
   } catch (err) {
     console.error("Admin dashboard Redis error", err);
   }
@@ -28,7 +34,9 @@ export default async function AdminDashboard() {
     { label: "Page Visits", value: pageVisits, color: "#005A66" },
     { label: "Build Requests", value: buildRequests, color: "#319A65" },
     { label: "ICPs Scored", value: icpsScored, color: "#D4A017" },
-    { label: "Emails Captured", value: emailsCaptured, color: "#C0392B" },
+    { label: "ICP Emails", value: emailsCaptured, color: "#C0392B" },
+    { label: "GTM Scored", value: gtmScored, color: "#7c3aed" },
+    { label: "GTM Emails", value: gtmEmailsCaptured, color: "#0891b2" },
   ];
 
   return (
@@ -65,7 +73,7 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
         <a
           href="/admin/ai-studio"
           style={{
@@ -97,6 +105,22 @@ export default async function AdminDashboard() {
             ICP Submissions
           </p>
           <p style={{ fontSize: 13, color: "#666", margin: 0 }}>View all ICP evaluations and unlocks</p>
+        </a>
+        <a
+          href="/admin/gtm"
+          style={{
+            display: "block",
+            background: "#fff",
+            borderRadius: 8,
+            padding: "20px",
+            textDecoration: "none",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
+            GTM Submissions
+          </p>
+          <p style={{ fontSize: 13, color: "#666", margin: 0 }}>Persona, Problem, Positioning, Moat — filterable</p>
         </a>
       </div>
     </div>
