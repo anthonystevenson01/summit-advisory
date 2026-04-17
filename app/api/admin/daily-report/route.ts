@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
   }
 
   lines.push("─".repeat(30));
-  lines.push("View all: https://summitstrategy.co.uk/admin");
+  lines.push("View all: https://summitstrategyadvisory.com/admin");
 
   const text = lines.join("\n");
 
