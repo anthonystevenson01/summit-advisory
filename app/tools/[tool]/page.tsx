@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ToolRunner from "./ToolRunner";
-import { TOOL_SEO, TOOL_SLUGS, isToolSlug } from "./toolSlugs";
+import { TOOL_SEO, TOOL_SLUGS, isToolHidden, isToolPublic, isToolSlug } from "./toolSlugs";
 
 type Params = Promise<{ tool: string }>;
 
 export function generateStaticParams() {
-  return TOOL_SLUGS.map((tool) => ({ tool }));
+  return TOOL_SLUGS.filter((t) => !isToolHidden(t)).map((tool) => ({ tool }));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { tool } = await params;
-  if (!isToolSlug(tool)) return {};
+  if (!isToolSlug(tool) || isToolHidden(tool)) return {};
   const seo = TOOL_SEO[tool];
   return {
     title: seo.title,
@@ -26,6 +26,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function ToolPage({ params }: { params: Params }) {
   const { tool } = await params;
-  if (!isToolSlug(tool)) notFound();
+  if (!isToolPublic(tool)) notFound();
   return <ToolRunner slug={tool} />;
 }

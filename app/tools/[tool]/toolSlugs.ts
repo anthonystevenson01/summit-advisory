@@ -15,8 +15,24 @@ export const TOOL_SLUGS = [
 
 export type ToolSlug = (typeof TOOL_SLUGS)[number];
 
+/**
+ * Tools listed here are hidden site-wide: absent from the hub, routed to 404,
+ * skipped by generateStaticParams, and blocked at the API. Code stays in place —
+ * remove a slug from this list to re-enable the tool instantly.
+ */
+export const HIDDEN_TOOL_SLUGS: readonly ToolSlug[] = ["account"];
+
 export function isToolSlug(value: string): value is ToolSlug {
   return (TOOL_SLUGS as readonly string[]).includes(value);
+}
+
+export function isToolHidden(slug: ToolSlug): boolean {
+  return HIDDEN_TOOL_SLUGS.includes(slug);
+}
+
+/** True only if the slug is valid AND currently published. Use for routing. */
+export function isToolPublic(value: string): value is ToolSlug {
+  return isToolSlug(value) && !isToolHidden(value);
 }
 
 interface ToolSeo {

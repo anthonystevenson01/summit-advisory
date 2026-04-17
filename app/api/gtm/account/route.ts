@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { Message } from "@anthropic-ai/sdk/resources/messages/messages";
 import { getAccountIntelLimiter, getClientIp } from "@/app/lib/ratelimit";
+import { isToolHidden } from "@/app/tools/[tool]/toolSlugs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
+  // Respect the site-wide hidden-tool flag — blocks direct POSTs even though
+  // the UI no longer links here. Remove "account" from HIDDEN_TOOL_SLUGS to re-enable.
+  if (isToolHidden("account")) {
+    return NextResponse.json({ error: "This tool is not available." }, { status: 404 });
+  }
+
   const limiter = getAccountIntelLimiter();
   if (limiter) {
     const ip = getClientIp(req);

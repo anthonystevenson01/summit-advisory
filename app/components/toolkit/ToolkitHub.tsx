@@ -8,7 +8,7 @@ import { TOOLS } from "./data/toolConfig";
 import NewsletterCapture from "./shared/NewsletterCapture";
 import ToolkitFooter from "./ToolkitFooter";
 import SiteNav from "../SiteNav";
-import { isToolSlug } from "@/app/tools/[tool]/toolSlugs";
+import { isToolHidden, isToolPublic } from "@/app/tools/[tool]/toolSlugs";
 
 /**
  * Reads ?tool=X from the URL and redirects to /tools/X. Isolated in its own
@@ -22,7 +22,7 @@ function LegacyToolRedirect() {
 
   useEffect(() => {
     const legacy = searchParams.get("tool");
-    if (legacy && isToolSlug(legacy)) {
+    if (legacy && isToolPublic(legacy)) {
       router.replace(`/tools/${legacy}`);
     }
   }, [searchParams, router]);
@@ -166,42 +166,44 @@ export default function ToolkitHub() {
             </div>
           </div>
 
-          {/* Account Intelligence — separate section */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 0 }}>
-            <div className="cards-section" style={{ paddingTop: 48 }}>
-              <div className="cards-label" style={{ color: "#67e8f9" }}>Account Intelligence</div>
-              <p style={{ fontFamily: "Barlow, sans-serif", fontSize: 14, color: "rgba(255,255,255,0.45)", marginBottom: 28, maxWidth: 560, lineHeight: 1.65 }}>
-                A deeper research tool — pulls live signals on a named account and builds you a full sales brief.
-              </p>
-              <div className="cards">
-                <Link
-                  href="/tools/account"
-                  className="card"
-                  aria-label="Open Account Intelligence"
-                >
-                  <div className="card-icon-wrap" style={{ background: "#00252e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
-                    <span style={{
-                      fontFamily: "var(--font-barlow-condensed), sans-serif",
-                      fontSize: 11, fontWeight: 700,
-                      letterSpacing: "0.18em", textTransform: "uppercase",
-                      color: "#67e8f9",
-                    }}>Account Intel</span>
-                  </div>
-                  <div className="card-body" style={{ borderTopColor: "#67e8f9" }}>
-                    <div className="card-title">Account Intelligence</div>
-                    <p className="card-desc">Get a full sales brief on any target account — signals, contacts, and an opening play.</p>
-                    <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                      <strong style={{ color: "#67e8f9", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
-                      ICP fit, timing verdict, key contacts with LinkedIn searches, market signals, recommended opening.
-                    </p>
-                    <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
-                      Open Tool →
+          {/* Account Intelligence — separate section. Hidden when "account" is in HIDDEN_TOOL_SLUGS. */}
+          {!isToolHidden("account") && (
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 0 }}>
+              <div className="cards-section" style={{ paddingTop: 48 }}>
+                <div className="cards-label" style={{ color: "#67e8f9" }}>Account Intelligence</div>
+                <p style={{ fontFamily: "Barlow, sans-serif", fontSize: 14, color: "rgba(255,255,255,0.45)", marginBottom: 28, maxWidth: 560, lineHeight: 1.65 }}>
+                  A deeper research tool — pulls live signals on a named account and builds you a full sales brief.
+                </p>
+                <div className="cards">
+                  <Link
+                    href="/tools/account"
+                    className="card"
+                    aria-label="Open Account Intelligence"
+                  >
+                    <div className="card-icon-wrap" style={{ background: "#00252e", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
+                      <span style={{
+                        fontFamily: "var(--font-barlow-condensed), sans-serif",
+                        fontSize: 11, fontWeight: 700,
+                        letterSpacing: "0.18em", textTransform: "uppercase",
+                        color: "#67e8f9",
+                      }}>Account Intel</span>
                     </div>
-                  </div>
-                </Link>
+                    <div className="card-body" style={{ borderTopColor: "#67e8f9" }}>
+                      <div className="card-title">Account Intelligence</div>
+                      <p className="card-desc">Get a full sales brief on any target account — signals, contacts, and an opening play.</p>
+                      <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
+                        <strong style={{ color: "#67e8f9", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                        ICP fit, timing verdict, key contacts with LinkedIn searches, market signals, recommended opening.
+                      </p>
+                      <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
+                        Open Tool →
+                      </div>
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Newsletter */}
           <NewsletterCapture dark label="Get the Scale-Up Letter" />
