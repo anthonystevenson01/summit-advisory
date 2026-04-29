@@ -6,11 +6,11 @@ export const metadata: Metadata = {
   title: "Scale-Up Advisory — Fractional CXO & GTM Strategy | Summit",
   description:
     "Fractional CXO leadership for growing companies. GTM strategy, market entry, North America expansion, and hands-on deal support from senior advisors with a track record in B2B scale-ups.",
-  alternates: { canonical: "https://summitadvisory.com/scale-up-advisory" },
+  alternates: { canonical: "https://summitstrategyadvisory.com/scale-up-advisory" },
   openGraph: {
     title: "Scale-Up Advisory — Fractional CXO & GTM Strategy | Summit",
     description: "Fractional CXO leadership for growing companies. GTM strategy, market entry, and hands-on deal support.",
-    url: "https://summitadvisory.com/scale-up-advisory",
+    url: "https://summitstrategyadvisory.com/scale-up-advisory",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
@@ -32,7 +32,7 @@ const pageSchema = {
   provider: {
     "@type": "Organization",
     name: "Summit Strategy Advisory",
-    url: "https://summitadvisory.com",
+    url: "https://summitstrategyadvisory.com",
   },
   description:
     "Fractional CXO leadership for growing businesses — executive-level GTM strategy, market entry, and hands-on deal support without the full-time overhead.",

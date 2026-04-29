@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   title: "AI Product Studio — Summit Strategy Advisory",
   description:
     "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks.",
-  alternates: { canonical: "https://summitadvisory.com/ai-studio" },
+  alternates: { canonical: "https://summitstrategyadvisory.com/ai-studio" },
   openGraph: {
     title: "AI Product Studio — Summit Strategy Advisory",
     description:
       "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks.",
-    url: "https://summitadvisory.com/ai-studio",
+    url: "https://summitstrategyadvisory.com/ai-studio",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
@@ -34,7 +34,7 @@ const pageSchema = {
   provider: {
     "@type": "Organization",
     name: "Summit Strategy Advisory",
-    url: "https://summitadvisory.com",
+    url: "https://summitstrategyadvisory.com",
   },
   description:
     "Equity-based product development for early-stage founders. We build AI-native technology products end-to-end, with first version live in 4 weeks.",

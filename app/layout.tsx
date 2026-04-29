@@ -41,15 +41,15 @@ export const metadata: Metadata = {
   title: "Summit Strategy Advisory — Vision. Action. Growth.",
   description:
     "We build AI products with founders, grow retail media networks, and lead GTM strategy at B2B scale-ups. Three advisory practices. One standard: we own the outcome, not just the advice.",
-  metadataBase: new URL("https://summitadvisory.com"),
+  metadataBase: new URL("https://summitstrategyadvisory.com"),
   alternates: {
-    canonical: "https://summitadvisory.com",
+    canonical: "https://summitstrategyadvisory.com",
   },
   openGraph: {
     title: "Summit Strategy Advisory — Vision. Action. Growth.",
     description:
       "AI products for founders, retail media for large retailers, GTM leadership for B2B scale-ups. We own the outcome, not just the advice.",
-    url: "https://summitadvisory.com",
+    url: "https://summitstrategyadvisory.com",
     siteName: "Summit Strategy Advisory",
     type: "website",
     images: [
@@ -74,8 +74,8 @@ const orgSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "Summit Strategy Advisory",
-  url: "https://summitadvisory.com",
-  logo: "https://summitadvisory.com/brand-icons/Combination%20Mark_White.png",
+  url: "https://summitstrategyadvisory.com",
+  logo: "https://summitstrategyadvisory.com/brand-icons/Combination%20Mark_White.png",
   description:
     "Strategy advisory working alongside founders and leadership teams. Three practice areas: AI Product Studio, Loyalty & Retail Media, Scale-Up Advisory.",
   address: {
@@ -86,7 +86,7 @@ const orgSchema = {
   },
   contactPoint: {
     "@type": "ContactPoint",
-    email: "info@summitadvisory.com",
+    email: "info@summitstrategyadvisory.com",
     contactType: "customer service",
   },
   sameAs: [

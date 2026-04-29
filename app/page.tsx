@@ -624,7 +624,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
               <p>We work with a focused number of clients at any time — book a call to see if there&apos;s a fit.</p>
               <div className="contact-detail">
                 <span className="contact-detail-label">Email</span>
-                <span>info@summitadvisory.com</span>
+                <span>info@summitstrategyadvisory.com</span>
               </div>
               <div className="contact-detail">
                 <span className="contact-detail-label">Location</span>

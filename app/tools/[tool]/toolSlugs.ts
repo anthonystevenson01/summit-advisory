@@ -84,7 +84,7 @@ export const TOOL_SEO: Record<ToolSlug, ToolSeo> = {
         a: "Yes — the ICP Evaluator is completely free to use with no signup or account required. Results are generated in under 30 seconds.",
       },
     ],
-    canonical: "https://summitadvisory.com/tools/icp",
+    canonical: "https://summitstrategyadvisory.com/tools/icp",
   },
   persona: {
     title: "Buyer Persona Quality Check — Summit GTM Toolkit",
@@ -116,7 +116,7 @@ export const TOOL_SEO: Record<ToolSlug, ToolSeo> = {
         a: "The tool evaluates your persona across six dimensions: specificity, problem articulation, trigger identification, stakeholder mapping, success criteria, and objection predictability. Each dimension is graded and contributes to an overall letter grade from A to F.",
       },
     ],
-    canonical: "https://summitadvisory.com/tools/persona",
+    canonical: "https://summitstrategyadvisory.com/tools/persona",
   },
   problem: {
     title: "Market Problem Validator — Summit GTM Toolkit",
@@ -148,7 +148,7 @@ export const TOOL_SEO: Record<ToolSlug, ToolSeo> = {
         a: "Yes — the Market Problem Validator is designed for exactly this use case. It is most useful before building, helping founders stress-test their problem hypothesis before investing in product development.",
       },
     ],
-    canonical: "https://summitadvisory.com/tools/problem",
+    canonical: "https://summitstrategyadvisory.com/tools/problem",
   },
   positioning: {
     title: "Positioning Statement Grader — Summit GTM Toolkit",
@@ -180,7 +180,7 @@ export const TOOL_SEO: Record<ToolSlug, ToolSeo> = {
         a: "Specific enough that your target buyer reads it and thinks 'that's exactly us', and your non-target buyer reads it and thinks 'that's not for me'. Specificity that excludes the wrong buyers is a feature, not a flaw — especially in finite markets where sales efficiency matters.",
       },
     ],
-    canonical: "https://summitadvisory.com/tools/positioning",
+    canonical: "https://summitstrategyadvisory.com/tools/positioning",
   },
   moat: {
     title: "Competitive Moat Rater — Summit GTM Toolkit",
@@ -212,7 +212,7 @@ export const TOOL_SEO: Record<ToolSlug, ToolSeo> = {
         a: "Moats are built by deepening switching costs (integrations, proprietary workflows, data lock-in), generating network effects where possible, accumulating proprietary data from product usage, and building brand through consistent delivery of distinctive results. The Competitive Moat Rater identifies which dimensions have the most room for improvement.",
       },
     ],
-    canonical: "https://summitadvisory.com/tools/moat",
+    canonical: "https://summitstrategyadvisory.com/tools/moat",
   },
   account: {
     title: "Account Intelligence — Summit GTM Toolkit",
@@ -231,6 +231,6 @@ export const TOOL_SEO: Record<ToolSlug, ToolSeo> = {
         a: "Account intelligence is the process of gathering and synthesising information about a target account before outreach — including company context, recent signals, key decision-makers, and indicators of buying readiness. Strong account intelligence improves open rates, conversation quality, and close rates.",
       },
     ],
-    canonical: "https://summitadvisory.com/tools/account",
+    canonical: "https://summitstrategyadvisory.com/tools/account",
   },
 };

@@ -51,7 +51,7 @@ export default async function ToolPage({ params }: { params: Params }) {
     provider: {
       "@type": "Organization",
       name: "Summit Strategy Advisory",
-      url: "https://summitadvisory.com",
+      url: "https://summitstrategyadvisory.com",
     },
   };
 

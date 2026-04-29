@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   title: "The Scale-Up Letter — Weekly GTM Thinking for B2B Leaders",
   description:
     "Practical GTM thinking for scale-up leaders selling into finite, defined markets. One essay per week. No generic advice, no padding. Free to subscribe.",
-  alternates: { canonical: "https://summitadvisory.com/newsletter" },
+  alternates: { canonical: "https://summitstrategyadvisory.com/newsletter" },
   openGraph: {
     title: "The Scale-Up Letter — Weekly GTM Thinking for B2B Leaders",
     description:
       "Practical GTM thinking for scale-up leaders selling into finite markets. One essay per week. Free to subscribe.",
-    url: "https://summitadvisory.com/newsletter",
+    url: "https://summitstrategyadvisory.com/newsletter",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
@@ -28,11 +28,11 @@ const newsletterSchema = {
   name: "The Scale-Up Letter",
   description:
     "Weekly GTM thinking for B2B scale-up leaders selling into finite, named-account markets. Published by Summit Strategy Advisory.",
-  url: "https://summitadvisory.com/newsletter",
+  url: "https://summitstrategyadvisory.com/newsletter",
   publisher: {
     "@type": "Organization",
     name: "Summit Strategy Advisory",
-    url: "https://summitadvisory.com",
+    url: "https://summitstrategyadvisory.com",
   },
   inLanguage: "en",
   isAccessibleForFree: true,

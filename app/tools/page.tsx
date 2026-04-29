@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   title: "Summit GTM Toolkit — Five Free Tools for Finite Markets",
   description:
     "Five free AI-powered GTM diagnostic tools for B2B teams selling into finite, named-account markets. ICP Evaluator, Positioning Grader, Moat Rater, and more. No signup required.",
-  alternates: { canonical: "https://summitadvisory.com/tools" },
+  alternates: { canonical: "https://summitstrategyadvisory.com/tools" },
   openGraph: {
     title: "Summit GTM Toolkit — Five Free Tools for Finite Markets",
     description:
       "Five free AI-powered GTM diagnostic tools for B2B teams selling into finite, named-account markets. No signup required.",
-    url: "https://summitadvisory.com/tools",
+    url: "https://summitstrategyadvisory.com/tools",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
@@ -28,7 +28,7 @@ const itemListSchema = {
   name: "Summit GTM Toolkit",
   description:
     "Five free AI diagnostic tools for B2B teams selling into finite, named-account markets.",
-  url: "https://summitadvisory.com/tools",
+  url: "https://summitstrategyadvisory.com/tools",
   numberOfItems: 5,
   itemListElement: [
     {
@@ -36,35 +36,35 @@ const itemListSchema = {
       position: 1,
       name: "ICP Evaluator",
       description: "Score your Ideal Customer Profile across seven weighted dimensions.",
-      url: "https://summitadvisory.com/tools/icp",
+      url: "https://summitstrategyadvisory.com/tools/icp",
     },
     {
       "@type": "ListItem",
       position: 2,
       name: "Buyer Persona Quality Check",
       description: "See whether your buyer persona is specific enough to actually drive sales decisions. Letter grade + 6 scored dimensions.",
-      url: "https://summitadvisory.com/tools/persona",
+      url: "https://summitstrategyadvisory.com/tools/persona",
     },
     {
       "@type": "ListItem",
       position: 3,
       name: "Market Problem Validator",
       description: "Stress-test whether the problem you're solving is real, urgent, and worth building against.",
-      url: "https://summitadvisory.com/tools/problem",
+      url: "https://summitstrategyadvisory.com/tools/problem",
     },
     {
       "@type": "ListItem",
       position: 4,
       name: "Positioning Statement Grader",
       description: "Find out if your positioning statement actually works — or just sounds good. Letter grade A–F with a suggested rewrite.",
-      url: "https://summitadvisory.com/tools/positioning",
+      url: "https://summitstrategyadvisory.com/tools/positioning",
     },
     {
       "@type": "ListItem",
       position: 5,
       name: "Competitive Moat Rater",
       description: "Understand how defensible your position really is — and what threatens it. Strong / Moderate / Thin / Exposed rating.",
-      url: "https://summitadvisory.com/tools/moat",
+      url: "https://summitstrategyadvisory.com/tools/moat",
     },
   ],
 };

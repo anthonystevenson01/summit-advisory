@@ -6,12 +6,12 @@ export const metadata: Metadata = {
   title: "Loyalty & Retail Media Advisory — Summit Strategy Advisory",
   description:
     "Loyalty programmes and retail media for large retailers. Retained advisory against outcomes — programme design, retail media networks, AI-native retail strategy.",
-  alternates: { canonical: "https://summitadvisory.com/loyalty-retail-media" },
+  alternates: { canonical: "https://summitstrategyadvisory.com/loyalty-retail-media" },
   openGraph: {
     title: "Loyalty & Retail Media Advisory — Summit Strategy Advisory",
     description:
       "Loyalty programmes and retail media for large retailers. Retained advisory against outcomes.",
-    url: "https://summitadvisory.com/loyalty-retail-media",
+    url: "https://summitstrategyadvisory.com/loyalty-retail-media",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
   twitter: {
@@ -33,7 +33,7 @@ const pageSchema = {
   provider: {
     "@type": "Organization",
     name: "Summit Strategy Advisory",
-    url: "https://summitadvisory.com",
+    url: "https://summitstrategyadvisory.com",
   },
   description:
     "Retained advisory for loyalty programmes and retail media networks at large retailers. Programme design, AI quick wins, and net-new revenue capability build.",
