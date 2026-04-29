@@ -173,7 +173,7 @@ export const ISSUES: Issue[] = [
       },
       {
         type: "pullquote",
-        text: "The test of a moat is simple: if a competitor raised £20m tomorrow, would your customers start taking their calls? If the answer is yes, you don't have a moat. You have a head start.",
+        text: "The test of a moat is simple: if a competitor raised $20M tomorrow, would your customers start taking their calls? If the answer is yes, you don't have a moat. You have a head start.",
       },
       {
         type: "h2",

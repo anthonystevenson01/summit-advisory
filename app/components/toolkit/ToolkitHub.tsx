@@ -56,7 +56,7 @@ export default function ToolkitHub() {
           <h1 className="inner-title">Summit GTM Toolkit</h1>
           <p className="inner-lead">
             Five free AI diagnostic tools for teams selling into finite, named-account markets.
-            No signup. No fluff. Results in under 30 seconds.
+            No signup. Results in under 30 seconds.
           </p>
           <div style={{ display: "flex", gap: 8, marginTop: 28, flexWrap: "wrap", position: "relative" }}>
             {["Five Free Tools", "For teams selling into a finite market", "No Signup Required"].map((tag) => (

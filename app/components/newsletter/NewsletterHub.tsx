@@ -15,11 +15,10 @@ function SiteFooter() {
       <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
       <ul className="footer-links">
         <li><a href="/">Home</a></li>
-        <li><a href="/">AI Studio</a></li>
-        <li><a href="/">Scale-Up Advisory</a></li>
-        <li><a href="/">Resources</a></li>
+        <li><a href="/ai-studio">AI Studio</a></li>
+        <li><a href="/loyalty-retail-media">Loyalty &amp; Retail Media</a></li>
+        <li><a href="/scale-up-advisory">Scale-Up Advisory</a></li>
         <li><a href="/tools">GTM Tools</a></li>
-        <li><a href="/">Blog</a></li>
         <li><a href="/newsletter">Newsletter</a></li>
       </ul>
       <span className="footer-copy">© 2026 Summit Strategy Advisory</span>

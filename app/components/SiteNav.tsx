@@ -75,9 +75,9 @@ export default function SiteNav({
           )}
 
           {onBookCall ? (
-            <button type="button" className="nav-cta" onClick={() => handleNav(onBookCall)}>Give Us a Call</button>
+            <button type="button" className="nav-cta" onClick={() => handleNav(onBookCall)}>Book a Call</button>
           ) : (
-            <a href={BOOK_URL} target="_blank" rel="noopener noreferrer" className="nav-cta">Give Us a Call</a>
+            <a href={BOOK_URL} target="_blank" rel="noopener noreferrer" className="nav-cta">Book a Call</a>
           )}
 
           <a href="/admin" className="nav-link" style={{ fontSize: 11, opacity: 0.5 }} title="Admin">
@@ -121,9 +121,9 @@ export default function SiteNav({
           )}
 
           {onBookCall ? (
-            <button type="button" className="nav-mobile-cta" onClick={() => handleNav(onBookCall)}>Give Us a Call</button>
+            <button type="button" className="nav-mobile-cta" onClick={() => handleNav(onBookCall)}>Book a Call</button>
           ) : (
-            <a href={BOOK_URL} target="_blank" rel="noopener noreferrer" className="nav-mobile-cta" onClick={() => setMenuOpen(false)}>Give Us a Call</a>
+            <a href={BOOK_URL} target="_blank" rel="noopener noreferrer" className="nav-mobile-cta" onClick={() => setMenuOpen(false)}>Book a Call</a>
           )}
         </div>
       )}

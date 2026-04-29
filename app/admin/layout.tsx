@@ -1,8 +1,24 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
+import { Oswald } from "next/font/google";
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-oswald",
+});
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif", background: "#F5F7F6" }}>
+    <div
+      className={oswald.variable}
+      style={{ minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif", background: "#F5F7F6" }}
+    >
       <nav
         style={{
           background: "#053030",

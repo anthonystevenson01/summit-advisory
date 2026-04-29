@@ -12,38 +12,38 @@ const BOOK_CALL_URL =
 // ── Data ──
 const practiceData: Record<string, { eyebrow: string; title: string; lead: string; features: { title: string; body: string }[]; cta: string }> = {
   ai: {
-    eyebrow: "Practice 01",
+    eyebrow: "For Founders",
     title: "AI Product Studio",
     lead: "We build technology products for early-stage founders — in exchange for equity. Think of us as a technical co-founder you don't have to hire full-time. Podbeat.ai is our proof of concept.",
     features: [
       { title: "Equity-based model", body: "No large upfront retainers. We take a stake in what we build, so our incentives are fully aligned with your success from day one." },
       { title: "End-to-end delivery", body: "From product specification and design through to deployed, production-grade software. We don't hand off to junior teams." },
-      { title: "AI-native approach", body: "We build with modern AI tooling — LLMs, agents, embeddings — as a first principle, not a bolt-on feature." },
-      { title: "Podbeat.ai proof of concept", body: "Our own AI podcast tool, built entirely within the studio model. Real product, live users, ongoing iteration." },
+      { title: "Built with AI at the core", body: "LLMs, agents, and embeddings aren't features we add — they're how the product works. That's the difference between software that uses AI and software that couldn't exist without it." },
+      { title: "We eat our own cooking", body: "Podbeat.ai — an AI podcast tool with multi-platform distribution — was built entirely within this model. Real product, live users, shipping weekly." },
     ],
     cta: "Talk to us about your product idea",
   },
   retail: {
-    eyebrow: "Practice 02",
+    eyebrow: "For Retailers",
     title: "Loyalty & Retail Media",
-    lead: "Loyalty programs and retail media for large retailers — retained advisory against outcomes, not open-ended retainers.",
+    lead: "Loyalty programs and retail media for large retailers. We've surfaced $40M in uncounted loyalty revenue and built retail media networks that generate real supplier income. Now we build them with you.",
     features: [
       { title: "Loyalty programme design", body: "Architecture, commercial modelling, and vendor selection for loyalty platforms across points, tiers, and coalition models." },
       { title: "Retail media strategy", body: "First-party data monetisation, network build vs buy decisions, and advertiser commercials for large-format retailers." },
       { title: "Digital commerce", body: "Online-to-offline integration, mobile commerce, and payment experience strategy for omnichannel retail." },
-      { title: "Retained advisory model", body: "We work on a monthly retainer against a defined set of objectives. You get senior thinking and hands-on execution for as long as you need it." },
+      { title: "Scoped to a clear result", body: "We work on a monthly retainer against a defined set of objectives — not open-ended hours. You get senior thinking and hands-on execution for as long as the work requires." },
     ],
     cta: "Discuss your retail challenge",
   },
   sme: {
-    eyebrow: "Practice 03",
+    eyebrow: "For Scale-Ups",
     title: "Scale-Up Advisory",
-    lead: "Fractional CXO leadership for growing businesses — executive-level strategy and hands-on execution without the full-time overhead. We embed at the leadership level, own the outcomes, and move at the speed your business needs.",
+    lead: "Fractional CXO leadership for growing businesses — executive-level strategy and hands-on execution without the full-time overhead. We embed at the leadership level and own the outcomes — not just the recommendations.",
     features: [
-      { title: "Fractional GTM leadership", body: "Part-time, senior-level ownership of your go-to-market function: sales process, channel strategy, and pipeline development." },
-      { title: "Tech expansion", body: "A proven playbook for European technology companies entering North America — from ICP definition and channel selection through to first revenue." },
+      { title: "Own your GTM, part-time", body: "Senior-level ownership of your go-to-market function: sales process, channel strategy, and pipeline development — without the full-time salary." },
+      { title: "North America entry — first revenue in 6–12 months", body: "A proven playbook for European technology companies entering North America — from ICP definition and channel selection through to first referenceable customer." },
       { title: "Market entry & positioning", body: "Competitive positioning, ICP definition, pricing architecture, and launch sequencing for new markets and new products." },
-      { title: "Deal support", body: "Direct involvement in critical deals — strategy, stakeholder mapping, and live negotiation support." },
+      { title: "In the room on critical deals", body: "Direct involvement in the deals that matter most — strategy, stakeholder mapping, and live negotiation support from a senior advisor, not a junior consultant." },
     ],
     cta: "Explore a fractional engagement",
   },
@@ -161,7 +161,7 @@ function AIStudioPage({ onBack }: { onBack: () => void }) {
     <div className="inner">
       <div className="inner-hero">
         <button type="button" className="inner-back" onClick={onBack}><ArrowLeft /> All Practices</button>
-        <div className="inner-eyebrow">Practice 01</div>
+        <div className="inner-eyebrow">For Founders</div>
         <h1 className="inner-title">AI Product Studio</h1>
         <p className="inner-lead">We build technology products for early-stage founders in exchange for equity. No large retainer. No handoffs. First version live in 4 weeks.</p>
       </div>
@@ -401,16 +401,16 @@ function RetailAdvisoryPage({ onBack, onBook }: { onBack: () => void; onBook: ()
   const focusAreas = [
     { tag: "Review & Recommendation", title: "Audit. Diagnose. Recommend.", body: "We assess your loyalty program, retail media capability, or technology stack — finding the gaps, quantifying the opportunity, and delivering a clear set of prioritised recommendations. Not a report that sits on a shelf. A blueprint you can act on." },
     { tag: "Supercharge with AI", title: "AI-Native Retail Thinking.", body: "We identify the AI quick wins that lift team and program performance today, and help you blueprint the bigger bets — personalisation engines, predictive analytics, supplier optimisation — that drive compounding growth over time." },
-    { tag: "Growth Ventures", title: "Build New Revenue Streams.", body: "We design and build net-new revenue capabilities alongside your team — supplier loyalty programs, retail media networks, marketplace models, and subscription plays. We don't just advise on these. We've built them." },
+    { tag: "New Revenue Builds", title: "Build New Revenue Streams.", body: "We design and build net-new revenue capabilities alongside your team — supplier loyalty programs, retail media networks, marketplace models, and subscription plays. We don't just advise on these. We've built them." },
   ];
 
   const packages = [
     { name: "Programme Review & Roadmap", tag: "Loyalty", focus: "Review & Recommendation", duration: "4–6 weeks", price: "Monthly retainer", desc: "A deep diagnostic of your loyalty programme — how well it drives customer behaviour, where capability gaps are limiting performance, and what revenue you're leaving on the table. Covers incremental lift, advertising and monetisation opportunities, and delivers a prioritised roadmap for what to fix and build next.", deliverables: ["Customer behaviour & programme effectiveness audit", "Revenue lift and advertising opportunity sizing", "Prioritised capability & growth roadmap"] },
     { name: "AI Quick Wins for Your Loyalty Team", tag: "Loyalty", focus: "Supercharge with AI", duration: "2 weeks", price: "Monthly retainer", desc: "A hands-on sprint embedded with your loyalty team to identify and implement immediate AI-driven productivity gains. Specific to loyalty workflows — campaign briefing, segmentation, offer testing, member comms, reporting.", deliverables: ["AI opportunity scan across loyalty workflows", "Implemented quick wins within week one", "Prioritised next-step roadmap"] },
-    { name: "Paid Loyalty Membership Design", tag: "Loyalty", focus: "Growth Ventures", duration: "6–8 weeks", price: "Monthly retainer", desc: "Designs a recurring revenue model through paid membership tiers — defining the value exchange, pricing architecture, launch strategy, and retention mechanics.", deliverables: ["Value exchange and pricing architecture", "Launch and go-to-market strategy", "Retention mechanics design"] },
+    { name: "Paid Loyalty Membership Design", tag: "Loyalty", focus: "New Revenue Builds", duration: "6–8 weeks", price: "Monthly retainer", desc: "Designs a recurring revenue model through paid membership tiers — defining the value exchange, pricing architecture, launch strategy, and retention mechanics.", deliverables: ["Value exchange and pricing architecture", "Launch and go-to-market strategy", "Retention mechanics design"] },
     { name: "Network Review & Roadmap", tag: "Retail Media", focus: "Review & Recommendation", duration: "4–6 weeks", price: "Monthly retainer", desc: "For retailers with an existing media network — evaluates ad tech stack, inventory quality, org structure, and measurement rigour. Delivers a gap analysis and 12-month roadmap.", deliverables: ["Ad tech and inventory quality audit", "Org structure and measurement review", "12-month gap-close roadmap"] },
     { name: "AI Investment Blueprint", tag: "Retail Media · AI", focus: "Supercharge with AI", duration: "6–8 weeks", price: "Monthly retainer", desc: "Develops fully scoped investment proposals for high-impact AI initiatives — predictive inventory yield, automated audience creation, AI-driven campaign planning, dynamic creative, and supplier self-serve intelligence.", deliverables: ["AI initiative longlist and prioritisation", "Business case per initiative", "Build vs. buy recommendation + roadmap"] },
-    { name: "Network Launch Strategy", tag: "Retail Media", focus: "Growth Ventures", duration: "8–10 weeks", price: "Monthly retainer", desc: "For retailers without a media network or at early stage — full business case, operating model, tech selection, and go-to-market strategy to launch a revenue-generating retail media network.", deliverables: ["Full business case and revenue model", "Operating model and tech selection", "Go-to-market strategy"] },
+    { name: "Network Launch Strategy", tag: "Retail Media", focus: "New Revenue Builds", duration: "8–10 weeks", price: "Monthly retainer", desc: "For retailers without a media network or at early stage — full business case, operating model, tech selection, and go-to-market strategy to launch a revenue-generating retail media network.", deliverables: ["Full business case and revenue model", "Operating model and tech selection", "Go-to-market strategy"] },
   ];
 
   const caseStudies = [
@@ -422,9 +422,9 @@ function RetailAdvisoryPage({ onBack, onBook }: { onBack: () => void; onBook: ()
     <div className="inner">
       <div className="inner-hero">
         <button type="button" className="inner-back" onClick={onBack}><ArrowLeft /> All Practices</button>
-        <div className="inner-eyebrow">Practice 02</div>
+        <div className="inner-eyebrow">For Retailers</div>
         <h1 className="inner-title">Loyalty & Retail Media</h1>
-        <p className="inner-lead">Loyalty programs and retail media for large retailers — retained advisory against outcomes. We&apos;ve built these capabilities before. We&apos;ll build them with you.</p>
+        <p className="inner-lead">Loyalty programs and retail media for large retailers. We&apos;ve surfaced $40M in uncounted loyalty revenue and built retail media networks that generate real supplier income. Now we build them with you.</p>
       </div>
 
       <div className="inner-body">
@@ -698,8 +698,8 @@ function ContactPage({ onBack }: { onBack: () => void }) {
 // ── Home Page ──
 function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
   const cards = [
-    { id: "ai", icon: ICON_AI, title: "AI Product Studio", desc: "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade, and AI-native." },
-    { id: "retail", icon: ICON_RETAIL, title: "Loyalty & Retail Media", desc: "Loyalty programs and retail media for large retailers — retained advisory against outcomes." },
+    { id: "ai", icon: ICON_AI, title: "AI Product Studio", desc: "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks." },
+    { id: "retail", icon: ICON_RETAIL, title: "Loyalty & Retail Media", desc: "Loyalty programs and retail media for large retailers. We've built these capabilities. Now we build them with you." },
     { id: "sme", icon: ICON_SME, title: "Scale-Up Advisory", desc: "Fractional CXO leadership for growing companies. GTM strategy, market entry, and hands-on deal support." },
   ];
   return (
@@ -707,11 +707,11 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
       <div className="home-hero">
         <div className="home-hero-inner">
           <h1 className="hero-headline">Vision.<br /><span className="accent">Action.</span><br />Growth.</h1>
-          <p className="hero-body">We work alongside founders and leadership teams to create strategy and deliver sustained growth. Three practice areas — dive in.</p>
+          <p className="hero-body">Three advisory practices. One standard: we own the outcome, not just the advice. Pick the one that fits.</p>
         </div>
       </div>
       <div className="cards-section">
-        <div className="cards-label">Our Practices</div>
+        <h2 className="cards-label">Our Practices</h2>
         <div className="cards">
           {cards.map((c) => (
             <button type="button" className="card" key={c.id} onClick={() => onNavigate(c.id)}>
@@ -725,6 +725,51 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
               </div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Static descriptive section — always in the initial HTML, extractable by AI crawlers */}
+      <div style={{ background: "var(--off)", borderTop: "1px solid var(--border)", padding: "56px 48px 64px" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 16 }}>
+            Summit Strategy Advisory
+          </p>
+          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 16, color: "var(--ghost)", lineHeight: 1.75, maxWidth: 700, marginBottom: 40 }}>
+            Summit Strategy Advisory is a boutique advisory firm based in Vancouver, BC. We take the CRO seat at B2B scale-ups, build retail media networks from scratch, and ship AI products with early-stage founders. Three practices, one operating principle: we own the outcome, not just the advice.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32 }}>
+            <div>
+              <a href="/ai-studio" style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, color: "var(--teal)", textDecoration: "none", letterSpacing: "0.01em", display: "block", marginBottom: 10 }}>
+                AI Product Studio →
+              </a>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", lineHeight: 1.7, margin: 0 }}>
+                We build technology products for early-stage founders in exchange for equity — typically 15–30%. No large upfront retainer. End-to-end, production-grade, AI-native delivery with first version live in 4 weeks. Podbeat.ai is our live proof of concept.
+              </p>
+            </div>
+            <div>
+              <a href="/loyalty-retail-media" style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, color: "var(--teal)", textDecoration: "none", letterSpacing: "0.01em", display: "block", marginBottom: 10 }}>
+                Loyalty &amp; Retail Media →
+              </a>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", lineHeight: 1.7, margin: 0 }}>
+                Loyalty programmes and retail media networks for large retailers. We&apos;ve surfaced $40M in uncounted loyalty revenue and mapped $8M in near-term retail media opportunity for clients. Retail media ad spend is projected to reach $128B by 2026 — most mid-market retailers haven&apos;t built a formalised network yet.
+              </p>
+            </div>
+            <div>
+              <a href="/scale-up-advisory" style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, color: "var(--teal)", textDecoration: "none", letterSpacing: "0.01em", display: "block", marginBottom: 10 }}>
+                Scale-Up Advisory →
+              </a>
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", lineHeight: 1.7, margin: 0 }}>
+                Fractional CXO leadership for B2B companies between $500K–$20M ARR — GTM strategy, North America expansion, and live deal support. We embed at the leadership level and own the outcomes. Typically costs 20–40% of a full-time executive salary for the same strategic input.
+              </p>
+            </div>
+          </div>
+          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: 600, marginTop: 40 }}>
+            Summit also offers a suite of free{" "}
+            <a href="/tools" style={{ color: "var(--teal)" }}>GTM tools</a>
+            {" "}— including an ICP Evaluator, Positioning Statement Grader, and Competitive Moat Rater — built for B2B teams selling into finite markets. Founded by{" "}
+            <a href="/" style={{ color: "var(--teal)" }}>Anthony Stevenson</a>
+            , Vancouver, BC.
+          </p>
         </div>
       </div>
     </div>
@@ -876,9 +921,9 @@ export default function Summit() {
         <footer className="footer">
           <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><button type="button" onClick={() => nav("ai")}>AI Studio</button></li>
-            <li><button type="button" onClick={() => nav("retail")}>Loyalty & Retail Media</button></li>
-            <li><button type="button" onClick={() => nav("sme")}>Scale-Up Advisory</button></li>
+            <li><a href="/ai-studio">AI Studio</a></li>
+            <li><a href="/loyalty-retail-media">Loyalty & Retail Media</a></li>
+            <li><a href="/scale-up-advisory">Scale-Up Advisory</a></li>
             <li><button type="button" onClick={() => nav("resources")}>Resources</button></li>
             <li><a href="/tools">GTM Tools</a></li>
             <li><button type="button" onClick={() => nav("blog")}>Blog</button></li>
