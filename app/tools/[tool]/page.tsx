@@ -76,17 +76,17 @@ export default async function ToolPage({ params }: { params: Params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      {/* Interactive tool */}
-      <ToolRunner slug={tool} />
+      {/* Interactive tool — FAQ passed as children so it renders above the footer */}
+      <ToolRunner slug={tool}>
 
-      {/* Static FAQ section — always server-rendered */}
-      <div
-        style={{
-          background: "#f8faf9",
-          borderTop: "1px solid #e5eae7",
-          padding: "56px 48px 64px",
-        }}
-      >
+        {/* Static FAQ section — always server-rendered */}
+        <div
+          style={{
+            background: "#f8faf9",
+            borderTop: "1px solid #e5eae7",
+            padding: "56px 48px 64px",
+          }}
+        >
         <div style={{ maxWidth: 780, margin: "0 auto" }}>
           <h2
             style={{
@@ -149,7 +149,8 @@ export default async function ToolPage({ params }: { params: Params }) {
             .
           </div>
         </div>
-      </div>
+        </div>
+      </ToolRunner>
     </>
   );
 }

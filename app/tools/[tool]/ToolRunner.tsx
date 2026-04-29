@@ -21,8 +21,11 @@ const BOOK_URL =
  * Renders a single GTM tool inside the standard toolkit chrome
  * (site nav + back row + footer). Back link is a real anchor so the
  * browser back button / right-click-open-in-new-tab work natively.
+ *
+ * Accepts optional children rendered between the tool and the footer
+ * (e.g. the server-side FAQ section from the parent page).
  */
-export default function ToolRunner({ slug }: { slug: ToolSlug }) {
+export default function ToolRunner({ slug, children }: { slug: ToolSlug; children?: React.ReactNode }) {
   const router = useRouter();
   const { prompts } = usePrompts();
   const { rubrics } = useRubrics();
@@ -69,6 +72,7 @@ export default function ToolRunner({ slug }: { slug: ToolSlug }) {
         )}
         {slug === "account" && <AccountIntelTool systemPrompt={prompts.account} />}
 
+        {children}
         <ToolkitFooter />
       </div>
     </>
