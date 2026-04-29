@@ -728,49 +728,18 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
         </div>
       </div>
 
-      {/* Static descriptive section — always in the initial HTML, extractable by AI crawlers */}
-      <div style={{ background: "var(--off)", borderTop: "1px solid var(--border)", padding: "56px 48px 64px" }}>
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 11, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--sage)", marginBottom: 16 }}>
-            Summit Strategy Advisory
-          </p>
-          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 16, color: "var(--ghost)", lineHeight: 1.75, maxWidth: 700, marginBottom: 40 }}>
-            Summit Strategy Advisory is a boutique advisory firm based in Vancouver, BC. We take the CRO seat at B2B scale-ups, build retail media networks from scratch, and ship AI products with early-stage founders. Three practices, one operating principle: we own the outcome, not just the advice.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32 }}>
-            <div>
-              <a href="/ai-studio" style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, color: "var(--teal)", textDecoration: "none", letterSpacing: "0.01em", display: "block", marginBottom: 10 }}>
-                AI Product Studio →
-              </a>
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", lineHeight: 1.7, margin: 0 }}>
-                We build technology products for early-stage founders in exchange for equity — typically 15–30%. No large upfront retainer. End-to-end, production-grade, AI-native delivery with first version live in 4 weeks. Podbeat.ai is our live proof of concept.
-              </p>
-            </div>
-            <div>
-              <a href="/loyalty-retail-media" style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, color: "var(--teal)", textDecoration: "none", letterSpacing: "0.01em", display: "block", marginBottom: 10 }}>
-                Loyalty &amp; Retail Media →
-              </a>
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", lineHeight: 1.7, margin: 0 }}>
-                Loyalty programmes and retail media networks for large retailers. We&apos;ve surfaced $40M in uncounted loyalty revenue and mapped $8M in near-term retail media opportunity for clients. Retail media ad spend is projected to reach $128B by 2026 — most mid-market retailers haven&apos;t built a formalised network yet.
-              </p>
-            </div>
-            <div>
-              <a href="/scale-up-advisory" style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 18, fontWeight: 700, color: "var(--teal)", textDecoration: "none", letterSpacing: "0.01em", display: "block", marginBottom: 10 }}>
-                Scale-Up Advisory →
-              </a>
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", lineHeight: 1.7, margin: 0 }}>
-                Fractional CXO leadership for B2B companies between $500K–$20M ARR — GTM strategy, North America expansion, and live deal support. We embed at the leadership level and own the outcomes. Typically costs 20–40% of a full-time executive salary for the same strategic input.
-              </p>
-            </div>
-          </div>
-          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: 600, marginTop: 40 }}>
-            Summit also offers a suite of free{" "}
-            <a href="/tools" style={{ color: "var(--teal)" }}>GTM tools</a>
-            {" "}— including an ICP Evaluator, Positioning Statement Grader, and Competitive Moat Rater — built for B2B teams selling into finite markets. Founded by{" "}
-            <a href="/" style={{ color: "var(--teal)" }}>Anthony Stevenson</a>
-            , Vancouver, BC.
-          </p>
-        </div>
+      {/* Crawlable entity block — minimal footprint for users, full context for AI/search */}
+      <div style={{ borderTop: "1px solid var(--border)", padding: "24px 48px" }}>
+        <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "rgba(255,255,255,0.25)", lineHeight: 1.7, maxWidth: 860, margin: "0 auto" }}>
+          Summit Strategy Advisory — Vancouver, BC. Founded by Anthony Stevenson.{" "}
+          <a href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>AI Product Studio</a>
+          {" · "}
+          <a href="/loyalty-retail-media" style={{ color: "rgba(255,255,255,0.35)" }}>Loyalty &amp; Retail Media</a>
+          {" · "}
+          <a href="/scale-up-advisory" style={{ color: "rgba(255,255,255,0.35)" }}>Scale-Up Advisory</a>
+          {" · "}
+          <a href="/tools" style={{ color: "rgba(255,255,255,0.35)" }}>Free GTM Tools</a>
+        </p>
       </div>
     </div>
   );
