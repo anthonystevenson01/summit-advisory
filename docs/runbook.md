@@ -106,3 +106,43 @@ Rate limit test: submit 6 requests to any `/api/gtm/*` route from the same IP wi
 
 - `app/globals.css` — Added Oswald font @import; appended ~500 lines of `.toolkit {}` scoped CSS
 - `app/lib/ratelimit.ts` — Added `getToolLimiter()` and `getAccountIntelLimiter()` factory functions
+
+---
+
+## Scale-Up Advisory: two routes — added September 2026
+
+**Trigger:** Static pages, pre-rendered at build time. No API routes, env vars or runtime data fetching.
+**Service/Function:**
+- `/scale-up-advisory` (`app/scale-up-advisory/page.tsx`): Route 02, outsourced sales. Hero, two route cards, tools pointer, then the full deck narrative under `#outsource-your-sales`, the free tools section under `#free-tools`, FAQ and CTA.
+- `/scale-up-advisory/fractional-executive` (`app/scale-up-advisory/fractional-executive/page.tsx`): Route 01, fractional CRO/CCO/CMO.
+- Homepage SPA `sme` view (`app/page.tsx`, `practiceData.sme`) now links to the full page via the optional `pageHref` field.
+**Failure mode:** Build/test time only. A tool slug typo fails `tsc` (typed as `ToolSlug`) and `npm test`. A tool that is hidden or newly published fails `npm test` until `TOOL_STAGE_MAP` is updated (intended). A tool card pointing at a hidden tool would 404 in production, which is what the test prevents.
+**Template/Config:** All copy, routes, FAQs and JSON-LD live in `app/scale-up-advisory/scale-up-content.ts`. Booking link is `BOOK_URL` in that file (the homepage and `SiteNav` still keep their own copies).
+**To disable:** Revert the branch or remove the route folder; there is no runtime toggle.
+
+### Editing the copy
+
+- Edit strings in `app/scale-up-advisory/scale-up-content.ts`. The pages only map this data onto existing `globals.css` classes, so copy changes rarely need a JSX change.
+- Keep the module free of runtime imports (`import type` only). The tests load it directly with Node's type stripping, which cannot resolve the `@/` alias or pull in React/Next.
+- FAQs (`OUTSOURCED_FAQS`, `FRACTIONAL_FAQS`) feed both the visible FAQ and the FAQPage JSON-LD, so they always match.
+- When you make a material copy change, bump `DATE_MODIFIED` (JSON-LD) and `LAST_REVIEWED_LABEL` (byline). The test currently pins `DATE_MODIFIED`, so update the assertion too.
+- Copy hygiene is enforced by the test: the deck typos ("guide by", "motion's", "rouge", "small team covers", "Management Consulting") must not reappear, and em-dashes in the module are capped at a small number. Use full stops and commas instead.
+- `PACKAGE_COUNT` (19) is the tested source of truth; `PACKAGES_SECTION.closer` spells it out in words, so change both together.
+
+### Tool-to-stage map
+
+`TOOL_STAGE_MAP` ties each public free tool to the package stage it demonstrates (Problem and ICP → MAP, Persona and Positioning → REACH, Moat → WIN). Names are hardcoded rather than imported. The test checks that every mapped slug is public, `href` is `/tools/<slug>`, the name matches the `TOOL_SEO` title, the stage is a real `PACKAGE_STAGES` id, and the set of public tools equals the set of mapped tools. If you publish or hide a tool (e.g. Account Intelligence), add or remove it here and pick a stage.
+
+### Running the tests
+
+```bash
+npm test          # node:test, runs every __tests__/*.test.ts
+npm run lint      # ESLint; public/** is ignored
+npx tsc --noEmit  # type check
+npm run build     # strongest check: validates page exports and metadata
+```
+
+- **Node ≥ 22.18 (or ≥ 23.6) is required** for `npm test`, because it relies on Node's native TypeScript type stripping. It will fail on Node 20.
+- **Tests use `node:test`.** Imports in tests must be relative with explicit `.ts` extensions, and imported modules must not have runtime `@/` alias imports (Node can't resolve them; type-only imports are fine because they are stripped). `gtm-toolkit.test.ts` now runs and pins the hub's `TOOLS` cards (02–05) to public tool slugs.
+- **Lint conventions:** prefix intentionally unused vars and args with `_`. The `/?page=` links in `SiteNav` stay `<a>` on purpose (the homepage reads `?page=` only on mount, so a full load is required).
+- If `tsc` reports errors only in `.next/types/* 2.ts`, those are stale Finder duplicates in the git-ignored build folder. Delete them; they are not from the source.

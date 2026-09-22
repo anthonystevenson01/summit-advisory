@@ -321,10 +321,10 @@ Keep an internal counter `REJECT_COUNT` starting at 0. Increment on each REJECT 
 
 ### Tech Stack
 
-- Language / runtime: TypeScript / Node 20
-- Framework: Next.js 15
-- Database: none
-- Test framework: Jest
+- Language / runtime: TypeScript / Node 22.18+ (required: npm test uses Node's native TypeScript type stripping; 23.6+ also works)
+- Framework: Next.js 16 (App Router) / React 19
+- Database: Upstash Redis (`@upstash/redis`) — env vars `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+- Test framework: Node built-in test runner (node:test + node:assert/strict) via npm test. Jest is not installed
 - Package manager: npm
 
 ### Repo Layout
@@ -351,7 +351,10 @@ docs/reviews/ — Reviewer notes and verdicts (auto-saved per task)
 
 ### CI / Quality Gates
 
-- npm test (Jest)
+- `npm test` (Node test runner, all `__tests__/*.test.ts`)
+- `npm run lint` (ESLint, 0 errors)
+- `npx tsc --noEmit`
+- `npm run build`
 
 ### External Integrations
 

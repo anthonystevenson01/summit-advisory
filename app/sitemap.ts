@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/ai-studio`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/loyalty-retail-media`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/scale-up-advisory`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/scale-up-advisory/fractional-executive`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/tools`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE}/tools/icp`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/tools/persona`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 /**
  * Shared footer used across /tools and /tools/[tool] routes.
@@ -15,13 +16,15 @@ export default function ToolkitFooter() {
         className="footer-logo"
       />
       <ul className="footer-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/">AI Studio</a></li>
-        <li><a href="/">Scale-Up Advisory</a></li>
-        <li><a href="/">Resources</a></li>
-        <li><a href="/tools" style={{ color: "rgba(255,255,255,0.55)" }}>GTM Tools</a></li>
-        <li><a href="/">Blog</a></li>
-        <li><a href="/newsletter">Newsletter</a></li>
+        <li><Link href="/">Home</Link></li>
+        <li><Link href="/ai-studio">AI Studio</Link></li>
+        <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional */}
+        <li><a href="/?page=resources">Resources</a></li>
+        <li><Link href="/tools" style={{ color: "rgba(255,255,255,0.55)" }}>GTM Tools</Link></li>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional */}
+        <li><a href="/?page=blog">Blog</a></li>
+        <li><Link href="/newsletter">Newsletter</Link></li>
       </ul>
       <span className="footer-copy">© 2026 Summit Strategy Advisory</span>
     </footer>

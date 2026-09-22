@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
 import SiteNav from "./components/SiteNav";
 import { ArrowRight, ArrowLeft } from "./components/icons";
@@ -10,7 +11,7 @@ const BOOK_CALL_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
 // ── Data ──
-const practiceData: Record<string, { eyebrow: string; title: string; lead: string; features: { title: string; body: string }[]; cta: string }> = {
+const practiceData: Record<string, { eyebrow: string; title: string; lead: string; features: { title: string; body: string }[]; cta: string; pageHref?: string }> = {
   ai: {
     eyebrow: "For Founders",
     title: "AI Product Studio",
@@ -38,14 +39,15 @@ const practiceData: Record<string, { eyebrow: string; title: string; lead: strin
   sme: {
     eyebrow: "For Scale-Ups",
     title: "Scale-Up Advisory",
-    lead: "Fractional CXO leadership for growing businesses — executive-level strategy and hands-on execution without the full-time overhead. We embed at the leadership level and own the outcomes — not just the recommendations.",
+    lead: "Summit builds, runs and leads the commercial function for B2B scale-ups. Hire a fractional executive to lead it, or outsource your sales and we'll run it for you. Fractional talent, guided by your intelligence, enabled by AI.",
     features: [
-      { title: "Own your GTM, part-time", body: "Senior-level ownership of your go-to-market function: sales process, channel strategy, and pipeline development — without the full-time salary." },
-      { title: "North America entry — first revenue in 6–12 months", body: "A proven playbook for European technology companies entering North America — from ICP definition and channel selection through to first referenceable customer." },
-      { title: "Market entry & positioning", body: "Competitive positioning, ICP definition, pricing architecture, and launch sequencing for new markets and new products." },
-      { title: "In the room on critical deals", body: "Direct involvement in the deals that matter most — strategy, stakeholder mapping, and live negotiation support from a senior advisor, not a junior consultant." },
+      { title: "Hire a fractional executive", body: "A senior CRO, CCO or CMO from Summit's bench, part-time. They own the function and answer for the results." },
+      { title: "Outsource your sales", body: "Fixed-price packages across the whole sales lifecycle, run by fractional sales people. Take up as much or as little as you need." },
+      { title: "Start with the AI Lead Engine Build", body: "An AI-powered acquisition engine in eight weeks, for a fixed price. Live conversations by week five, and you own every asset." },
+      { title: "Free GTM tools", body: "Our free tools are the engine in miniature. Try them before you talk to us." },
     ],
-    cta: "Explore a fractional engagement",
+    cta: "Explore scale-up advisory",
+    pageHref: "/scale-up-advisory",
   },
 };
 
@@ -113,8 +115,8 @@ function AIStudioPage({ onBack }: { onBack: () => void }) {
         throw new Error(data.error || "Failed to submit. Please try again.");
       }
       setSubmitted(true);
-    } catch (err: any) {
-      setSubmitError(err.message || "Something went wrong. Please try again.");
+    } catch (err) {
+      setSubmitError(err instanceof Error && err.message ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -555,6 +557,12 @@ function PracticePage({ id, onBack, onContact }: { id: string; onBack: () => voi
             </div>
           ))}
         </div>
+        {/* Optional link out to a practice's standalone page (only Scale-Up sets pageHref today) */}
+        {p.pageHref && (
+          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", marginTop: 0, marginBottom: 24, lineHeight: 1.7 }}>
+            <Link href={p.pageHref} style={{ color: "var(--teal)", fontWeight: 600 }}>Read the full {p.title} page →</Link>
+          </p>
+        )}
         <div className="cta-bar">
           <div className="cta-bar-left">
             <h3>{p.cta}</h3>
@@ -660,7 +668,8 @@ function ContactPage({ onBack }: { onBack: () => void }) {
                   <option value="">Select a practice...</option>
                   <option>AI Product Studio</option>
                   <option>Loyalty & Retail Media</option>
-                  <option>Scale-Up Advisory</option>
+                  <option>Scale-Up: Hire a fractional executive</option>
+                  <option>Scale-Up: Outsource your sales</option>
                 </select>
               </div>
               <div className="form-group">
@@ -700,7 +709,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
   const cards = [
     { id: "ai", icon: ICON_AI, title: "AI Product Studio", desc: "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks." },
     { id: "retail", icon: ICON_RETAIL, title: "Loyalty & Retail Media", desc: "Loyalty programs and retail media for large retailers. We've built these capabilities. Now we build them with you." },
-    { id: "sme", icon: ICON_SME, title: "Scale-Up Advisory", desc: "Fractional CXO leadership for growing companies. GTM strategy, market entry, and hands-on deal support." },
+    { id: "sme", icon: ICON_SME, title: "Scale-Up Advisory", desc: "Outsourced sales and fractional executives for B2B scale-ups. Fixed-price packages, AI-enabled, and you own everything we build." },
   ];
   return (
     <div className="home">
@@ -732,13 +741,15 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
       <div style={{ borderTop: "1px solid var(--border)", padding: "24px 48px" }}>
         <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "rgba(255,255,255,0.25)", lineHeight: 1.7, maxWidth: 860, margin: "0 auto" }}>
           Summit Strategy Advisory — Vancouver, BC. Founded by Anthony Stevenson.{" "}
-          <a href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>AI Product Studio</a>
+          <Link href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>AI Product Studio</Link>
           {" · "}
-          <a href="/loyalty-retail-media" style={{ color: "rgba(255,255,255,0.35)" }}>Loyalty &amp; Retail Media</a>
+          <Link href="/loyalty-retail-media" style={{ color: "rgba(255,255,255,0.35)" }}>Loyalty &amp; Retail Media</Link>
           {" · "}
-          <a href="/scale-up-advisory" style={{ color: "rgba(255,255,255,0.35)" }}>Scale-Up Advisory</a>
+          <Link href="/scale-up-advisory" style={{ color: "rgba(255,255,255,0.35)" }}>Scale-Up Advisory</Link>
           {" · "}
-          <a href="/tools" style={{ color: "rgba(255,255,255,0.35)" }}>Free GTM Tools</a>
+          <Link href="/scale-up-advisory/fractional-executive" style={{ color: "rgba(255,255,255,0.35)" }}>Fractional Executives</Link>
+          {" · "}
+          <Link href="/tools" style={{ color: "rgba(255,255,255,0.35)" }}>Free GTM Tools</Link>
         </p>
       </div>
     </div>
@@ -848,8 +859,9 @@ export default function Summit() {
     const params = new URLSearchParams(window.location.search);
     const tool = params.get("tool");
     const section = params.get("page");
-    if (tool) setPage(tool);
-    else if (section) setPage(section);
+    const initial = tool || section;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs from window.location (external system) after hydration of a static page; a lazy initialiser would mismatch
+    if (initial) setPage(initial);
     // Track page visit
     fetch("/api/track-visit", { method: "POST" }).catch(() => {});
   }, []);
@@ -890,11 +902,11 @@ export default function Summit() {
         <footer className="footer">
           <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><a href="/ai-studio">AI Studio</a></li>
-            <li><a href="/loyalty-retail-media">Loyalty & Retail Media</a></li>
-            <li><a href="/scale-up-advisory">Scale-Up Advisory</a></li>
+            <li><Link href="/ai-studio">AI Studio</Link></li>
+            <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
+            <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><button type="button" onClick={() => nav("resources")}>Resources</button></li>
-            <li><a href="/tools">GTM Tools</a></li>
+            <li><Link href="/tools">GTM Tools</Link></li>
             <li><button type="button" onClick={() => nav("blog")}>Blog</button></li>
             <li><button type="button" onClick={() => nav("careers")}>Careers</button></li>
           </ul>

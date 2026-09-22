@@ -57,10 +57,7 @@ function ScoreGauge({ score, size = 180, animated = true }: { score: number; siz
   const grade = getGrade(score);
 
   useEffect(() => {
-    if (!animated) {
-      setDisplayScore(score);
-      return;
-    }
+    if (!animated) return;
     const duration = 1800;
     const startTime = Date.now();
     const animate = () => {
@@ -75,7 +72,10 @@ function ScoreGauge({ score, size = 180, animated = true }: { score: number; siz
 
   const radius = size * 0.38;
   const circumference = 2 * Math.PI * radius * 0.75;
-  const offset = circumference - (displayScore / 100) * circumference;
+  // Derive the static value at render time rather than setState-ing it inside
+  // the effect (react-hooks/set-state-in-effect); displayScore only drives the animation.
+  const shownScore = animated ? displayScore : score;
+  const offset = circumference - (shownScore / 100) * circumference;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -98,7 +98,7 @@ function ScoreGauge({ score, size = 180, animated = true }: { score: number; siz
           style={{ transition: "stroke-dashoffset 0.1s ease" }}
         />
         <text x={size / 2} y={size * 0.45} textAnchor="middle" style={{ fontSize: size * 0.22, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 700, fill: BRAND.darkGreen }}>
-          {displayScore}
+          {shownScore}
         </text>
         <text x={size / 2} y={size * 0.58} textAnchor="middle" style={{ fontSize: size * 0.07, fontFamily: "var(--font-dm-sans), sans-serif", fill: BRAND.mid, letterSpacing: "0.05em", textTransform: "uppercase" }}>
           out of 100
@@ -166,7 +166,7 @@ type EvaluationResult = {
   rubricSource: string;
 };
 
-export default function ICPEvaluator({ onBack, onBookCall }: { onBack: () => void; onBookCall: () => void }) {
+export default function ICPEvaluator({ onBack: _onBack, onBookCall }: { onBack: () => void; onBookCall: () => void }) {
   const [icpText, setIcpText] = useState("");
   const [isScoring, setIsScoring] = useState(false);
   const [scoreRevealed, setScoreRevealed] = useState(false);

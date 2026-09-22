@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import ToolRunner from "./ToolRunner";
 import { TOOL_SEO, TOOL_SLUGS, isToolHidden, isToolPublic, isToolSlug } from "./toolSlugs";
 
@@ -139,13 +140,13 @@ export default async function ToolPage({ params }: { params: Params }) {
             }}
           >
             Part of the{" "}
-            <a href="/tools" style={{ color: "#053030", fontWeight: 600 }}>
+            <Link href="/tools" style={{ color: "#053030", fontWeight: 600 }}>
               Summit GTM Toolkit
-            </a>{" "}
+            </Link>{" "}
             — five free tools for teams selling into finite markets. Built by{" "}
-            <a href="/" style={{ color: "#053030", fontWeight: 600 }}>
+            <Link href="/" style={{ color: "#053030", fontWeight: 600 }}>
               Summit Strategy Advisory
-            </a>
+            </Link>
             .
           </div>
         </div>

@@ -27,10 +27,7 @@ export default function ScoreGauge({ score, size = 180, animated = true }: Score
   const grade = getGrade(score);
 
   useEffect(() => {
-    if (!animated) {
-      setDisplayScore(score);
-      return;
-    }
+    if (!animated) return;
     const duration = 1800;
     const startTime = Date.now();
     const animate = () => {
@@ -45,7 +42,10 @@ export default function ScoreGauge({ score, size = 180, animated = true }: Score
 
   const radius = size * 0.38;
   const circumference = 2 * Math.PI * radius * 0.75;
-  const offset = circumference - (displayScore / 100) * circumference;
+  // Derive the static value at render time rather than setState-ing it inside
+  // the effect (react-hooks/set-state-in-effect); displayScore only drives the animation.
+  const shownScore = animated ? displayScore : score;
+  const offset = circumference - (shownScore / 100) * circumference;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -73,7 +73,7 @@ export default function ScoreGauge({ score, size = 180, animated = true }: Score
           textAnchor="middle"
           style={{ fontSize: size * 0.22, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 700, fill: BRAND.darkGreen }}
         >
-          {displayScore}
+          {shownScore}
         </text>
         <text
           x={size / 2}

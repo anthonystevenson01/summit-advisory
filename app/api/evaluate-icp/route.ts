@@ -17,78 +17,6 @@ const WEIGHTS: Record<string, number> = {
   fs: 0.05,
 };
 
-type DimensionReasoning = {
-  dim: string;
-  score: number;
-  reasoning: string;
-};
-
-type EvaluateResponse = {
-  totalScore: number;
-  scores: Record<string, number>;
-  dimensionReasoning: DimensionReasoning[];
-  recommendations: Array<{
-    dim: string;
-    score: number;
-    gap: string;
-    consequence: string;
-    action: string;
-  }>;
-};
-
-function extractParagraphText(para: Record<string, unknown>): string {
-  const elements = para.elements as Array<Record<string, unknown>> | undefined;
-  if (!elements) return "";
-  const texts: string[] = [];
-  for (const el of elements) {
-    const tr = el.textRun as Record<string, unknown> | undefined;
-    if (tr && typeof tr.content === "string") texts.push(tr.content);
-  }
-  return texts.join("");
-}
-
-function extractTextFromDocBody(content: unknown[]): string {
-  const parts: string[] = [];
-  for (const node of content) {
-    if (!node || typeof node !== "object") continue;
-    const n = node as Record<string, unknown>;
-
-    // Paragraphs (including list items)
-    if (n.paragraph) {
-      const text = extractParagraphText(n.paragraph as Record<string, unknown>);
-      if (text) parts.push(text);
-    }
-
-    // Tables
-    if (n.table) {
-      const table = n.table as Record<string, unknown>;
-      const rows = table.tableRows as Array<Record<string, unknown>> | undefined;
-      if (rows) {
-        for (const row of rows) {
-          const cells = row.tableCells as Array<Record<string, unknown>> | undefined;
-          if (!cells) continue;
-          const cellTexts: string[] = [];
-          for (const cell of cells) {
-            const cellContent = cell.content as unknown[] | undefined;
-            if (cellContent) {
-              for (const cellNode of cellContent) {
-                if (!cellNode || typeof cellNode !== "object") continue;
-                const cn = cellNode as Record<string, unknown>;
-                if (cn.paragraph) {
-                  const t = extractParagraphText(cn.paragraph as Record<string, unknown>);
-                  if (t.trim()) cellTexts.push(t.trim());
-                }
-              }
-            }
-          }
-          if (cellTexts.length) parts.push(cellTexts.join(" | ") + "\n");
-        }
-      }
-    }
-  }
-  return parts.join("").replace(/\n{3,}/g, "\n\n").trim();
-}
-
 async function fetchGoogleDoc(docId: string, apiKey: string): Promise<string> {
   const errors: string[] = [];
 
@@ -220,48 +148,6 @@ async function loadSkillsFromDrive(): Promise<{ prompt: string; rubricLoaded: bo
   const result = { prompt: combined, rubricLoaded: true, rubricSource: sources.join("+"), debug };
   rubricCache = { ...result, cachedAt: Date.now() };
   return result;
-}
-
-function parseJsonFromResponse(text: string): EvaluateResponse | null {
-  const trimmed = text.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}") + 1;
-  if (start === -1 || end <= start) return null;
-  try {
-    const parsed = JSON.parse(trimmed.slice(start, end)) as EvaluateResponse;
-    if (typeof parsed.totalScore !== "number" || typeof parsed.scores !== "object" || !Array.isArray(parsed.recommendations))
-      return null;
-    const scores: Record<string, number> = {};
-    for (const k of DIMENSION_KEYS) {
-      const v = parsed.scores[k];
-      scores[k] = typeof v === "number" && v >= 1 && v <= 5 ? Math.round(v) : 3;
-    }
-    const dimensionReasoning: DimensionReasoning[] = Array.isArray(parsed.dimensionReasoning)
-      ? parsed.dimensionReasoning.filter(
-          (r: { dim?: string; score?: number; reasoning?: string }) =>
-            r &&
-            typeof r.dim === "string" &&
-            typeof r.score === "number" &&
-            typeof r.reasoning === "string"
-        )
-      : [];
-    return {
-      totalScore: Math.min(100, Math.max(0, Math.round(parsed.totalScore))),
-      scores,
-      dimensionReasoning,
-      recommendations: parsed.recommendations.filter(
-        (r: { dim?: string; score?: number; gap?: string; consequence?: string; action?: string }) =>
-          r &&
-          typeof r.dim === "string" &&
-          typeof r.score === "number" &&
-          typeof r.gap === "string" &&
-          typeof r.consequence === "string" &&
-          typeof r.action === "string"
-      ),
-    };
-  } catch {
-    return null;
-  }
 }
 
 // Phase 1: Fast scores-only endpoint — uses Haiku for speed (~2-3s)
