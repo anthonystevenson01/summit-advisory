@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ISSUES } from "./data/issues";
 import NewsletterCapture from "../toolkit/shared/NewsletterCapture";
 import NewsletterReader from "./NewsletterReader";
@@ -14,12 +15,12 @@ function SiteFooter() {
     <footer className="footer">
       <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
       <ul className="footer-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/ai-studio">AI Studio</a></li>
-        <li><a href="/loyalty-retail-media">Loyalty &amp; Retail Media</a></li>
-        <li><a href="/scale-up-advisory">Scale-Up Advisory</a></li>
-        <li><a href="/tools">GTM Tools</a></li>
-        <li><a href="/newsletter">Newsletter</a></li>
+        <li><Link href="/">Home</Link></li>
+        <li><Link href="/ai-studio">AI Studio</Link></li>
+        <li><Link href="/loyalty-retail-media">Loyalty &amp; Retail Media</Link></li>
+        <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
+        <li><Link href="/tools">GTM Tools</Link></li>
+        <li><Link href="/newsletter">Newsletter</Link></li>
       </ul>
       <span className="footer-copy">© 2026 Summit Strategy Advisory</span>
     </footer>

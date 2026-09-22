@@ -6,8 +6,6 @@ import { getDetailsLimiter, getClientIp } from "@/app/lib/ratelimit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DIMENSION_KEYS = ["bca", "pa", "usp", "it", "cd", "nf", "fs"] as const;
-
 type DimensionReasoning = { dim: string; score: number; reasoning: string };
 type Recommendation = { dim: string; score: number; gap: string; consequence: string; action: string };
 

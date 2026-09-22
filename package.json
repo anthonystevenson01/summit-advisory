@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON __tests__/scale-up-advisory.test.ts"
+    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"__tests__/*.test.ts\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

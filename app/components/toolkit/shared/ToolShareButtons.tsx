@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, useState, useSyncExternalStore } from "react";
 import type { ToolSlug } from "@/app/tools/[tool]/toolSlugs";
 
 interface Props {
@@ -14,6 +14,13 @@ interface Props {
   align?: "center" | "start";
 }
 
+// Share capability never changes during a session, so there is nothing to
+// subscribe to. Module-level so identities are stable across renders.
+const subscribeNoop = () => () => {};
+const getCanNativeShare = () =>
+  typeof navigator !== "undefined" && typeof navigator.share === "function";
+const getCanNativeShareServer = () => false;
+
 /**
  * Copy-link + native-share buttons for a GTM tool page.
  *
@@ -26,13 +33,11 @@ interface Props {
  */
 export default function ToolShareButtons({ slug, title, align = "center" }: Props) {
   const [copied, setCopied] = useState(false);
-  const [canNativeShare, setCanNativeShare] = useState(false);
-
-  useEffect(() => {
-    setCanNativeShare(
-      typeof navigator !== "undefined" && typeof navigator.share === "function"
-    );
-  }, []);
+  const canNativeShare = useSyncExternalStore(
+    subscribeNoop,
+    getCanNativeShare,
+    getCanNativeShareServer
+  );
 
   const buildUrl = () => {
     if (typeof window === "undefined") return "";

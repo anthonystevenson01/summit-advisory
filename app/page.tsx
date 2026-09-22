@@ -115,8 +115,8 @@ function AIStudioPage({ onBack }: { onBack: () => void }) {
         throw new Error(data.error || "Failed to submit. Please try again.");
       }
       setSubmitted(true);
-    } catch (err: any) {
-      setSubmitError(err.message || "Something went wrong. Please try again.");
+    } catch (err) {
+      setSubmitError(err instanceof Error && err.message ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -741,15 +741,15 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
       <div style={{ borderTop: "1px solid var(--border)", padding: "24px 48px" }}>
         <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "rgba(255,255,255,0.25)", lineHeight: 1.7, maxWidth: 860, margin: "0 auto" }}>
           Summit Strategy Advisory — Vancouver, BC. Founded by Anthony Stevenson.{" "}
-          <a href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>AI Product Studio</a>
+          <Link href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>AI Product Studio</Link>
           {" · "}
-          <a href="/loyalty-retail-media" style={{ color: "rgba(255,255,255,0.35)" }}>Loyalty &amp; Retail Media</a>
+          <Link href="/loyalty-retail-media" style={{ color: "rgba(255,255,255,0.35)" }}>Loyalty &amp; Retail Media</Link>
           {" · "}
-          <a href="/scale-up-advisory" style={{ color: "rgba(255,255,255,0.35)" }}>Scale-Up Advisory</a>
+          <Link href="/scale-up-advisory" style={{ color: "rgba(255,255,255,0.35)" }}>Scale-Up Advisory</Link>
           {" · "}
           <Link href="/scale-up-advisory/fractional-executive" style={{ color: "rgba(255,255,255,0.35)" }}>Fractional Executives</Link>
           {" · "}
-          <a href="/tools" style={{ color: "rgba(255,255,255,0.35)" }}>Free GTM Tools</a>
+          <Link href="/tools" style={{ color: "rgba(255,255,255,0.35)" }}>Free GTM Tools</Link>
         </p>
       </div>
     </div>
@@ -859,8 +859,9 @@ export default function Summit() {
     const params = new URLSearchParams(window.location.search);
     const tool = params.get("tool");
     const section = params.get("page");
-    if (tool) setPage(tool);
-    else if (section) setPage(section);
+    const initial = tool || section;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs from window.location (external system) after hydration of a static page; a lazy initialiser would mismatch
+    if (initial) setPage(initial);
     // Track page visit
     fetch("/api/track-visit", { method: "POST" }).catch(() => {});
   }, []);
@@ -901,11 +902,11 @@ export default function Summit() {
         <footer className="footer">
           <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><a href="/ai-studio">AI Studio</a></li>
-            <li><a href="/loyalty-retail-media">Loyalty & Retail Media</a></li>
-            <li><a href="/scale-up-advisory">Scale-Up Advisory</a></li>
+            <li><Link href="/ai-studio">AI Studio</Link></li>
+            <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
+            <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><button type="button" onClick={() => nav("resources")}>Resources</button></li>
-            <li><a href="/tools">GTM Tools</a></li>
+            <li><Link href="/tools">GTM Tools</Link></li>
             <li><button type="button" onClick={() => nav("blog")}>Blog</button></li>
             <li><button type="button" onClick={() => nav("careers")}>Careers</button></li>
           </ul>

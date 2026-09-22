@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { HamburgerIcon, CloseIcon, UserIcon } from "./icons";
 
 const LOGO_WHITE = "/brand-icons/Combination Mark_White.png";
@@ -57,20 +58,23 @@ export default function SiteNav({
           {onResources ? (
             <button type="button" className="nav-link" style={activePage === "resources" ? activeStyle : undefined} onClick={() => handleNav(onResources)}>Resources</button>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional
             <a href="/?page=resources" className="nav-link" style={activePage === "resources" ? activeStyle : undefined}>Resources</a>
           )}
 
-          <a href="/tools" className="nav-link" style={activePage === "tools" ? activeStyle : undefined}>GTM Tools</a>
+          <Link href="/tools" className="nav-link" style={activePage === "tools" ? activeStyle : undefined}>GTM Tools</Link>
 
           {onBlog ? (
             <button type="button" className="nav-link" style={activePage === "blog" ? activeStyle : undefined} onClick={() => handleNav(onBlog)}>Blog</button>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional
             <a href="/?page=blog" className="nav-link" style={activePage === "blog" ? activeStyle : undefined}>Blog</a>
           )}
 
           {onCareers ? (
             <button type="button" className="nav-link" style={activePage === "careers" ? activeStyle : undefined} onClick={() => handleNav(onCareers)}>Careers</button>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional
             <a href="/?page=careers" className="nav-link" style={activePage === "careers" ? activeStyle : undefined}>Careers</a>
           )}
 
@@ -103,20 +107,23 @@ export default function SiteNav({
           {onResources ? (
             <button type="button" className="nav-mobile-link" onClick={() => handleNav(onResources)}>Resources</button>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional
             <a href="/?page=resources" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>Resources</a>
           )}
 
-          <a href="/tools" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>GTM Tools</a>
+          <Link href="/tools" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>GTM Tools</Link>
 
           {onBlog ? (
             <button type="button" className="nav-mobile-link" onClick={() => handleNav(onBlog)}>Blog</button>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional
             <a href="/?page=blog" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>Blog</a>
           )}
 
           {onCareers ? (
             <button type="button" className="nav-mobile-link" onClick={() => handleNav(onCareers)}>Careers</button>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional
             <a href="/?page=careers" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>Careers</a>
           )}
 

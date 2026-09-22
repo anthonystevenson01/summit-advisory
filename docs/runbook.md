@@ -136,11 +136,13 @@ Rate limit test: submit 6 requests to any `/api/gtm/*` route from the same IP wi
 ### Running the tests
 
 ```bash
-npm test          # node:test, runs __tests__/scale-up-advisory.test.ts only
+npm test          # node:test, runs every __tests__/*.test.ts
+npm run lint      # ESLint; public/** is ignored
 npx tsc --noEmit  # type check
 npm run build     # strongest check: validates page exports and metadata
 ```
 
-- **Node ≥ 22.18 (or ≥ 23.6) is required** for `npm test`, because it relies on Node's native TypeScript type stripping. It will fail on Node 20, despite the project context listing Node 20.
-- **Jest is not installed.** The project context lists Jest, but there is no `jest`/`ts-jest` dependency. `npm test` uses Node's built-in runner so no new dependency was needed. The older `__tests__/gtm-toolkit.test.ts` uses Jest globals, is stale against `toolConfig.ts`, and is deliberately excluded from the test script. Fixing that needs a team decision on a runner.
+- **Node ≥ 22.18 (or ≥ 23.6) is required** for `npm test`, because it relies on Node's native TypeScript type stripping. It will fail on Node 20.
+- **Tests use `node:test`.** Imports in tests must be relative with explicit `.ts` extensions, and imported modules must not have runtime `@/` alias imports (Node can't resolve them; type-only imports are fine because they are stripped). `gtm-toolkit.test.ts` now runs and pins the hub's `TOOLS` cards (02–05) to public tool slugs.
+- **Lint conventions:** prefix intentionally unused vars and args with `_`. The `/?page=` links in `SiteNav` stay `<a>` on purpose (the homepage reads `?page=` only on mount, so a full load is required).
 - If `tsc` reports errors only in `.next/types/* 2.ts`, those are stale Finder duplicates in the git-ignored build folder. Delete them; they are not from the source.

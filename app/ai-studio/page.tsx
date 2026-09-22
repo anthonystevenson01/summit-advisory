@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import SiteNav from "@/app/components/SiteNav";
 
 export const metadata: Metadata = {
@@ -136,9 +137,9 @@ export default function AIStudioPage() {
             </p>
             <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>
               Last reviewed: April 2026 · By{" "}
-              <a href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>
+              <Link href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>
                 Anthony Stevenson
-              </a>
+              </Link>
               , Founder, Summit Strategy Advisory
             </p>
           </div>
@@ -214,9 +215,9 @@ export default function AIStudioPage() {
             </div>
             <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", marginTop: 24, lineHeight: 1.7 }}>
               Before building, use our free{" "}
-              <a href="/tools/icp" style={{ color: "var(--teal)", fontWeight: 600 }}>ICP Evaluator</a>{" "}
+              <Link href="/tools/icp" style={{ color: "var(--teal)", fontWeight: 600 }}>ICP Evaluator</Link>{" "}
               to stress-test your target customer, and the{" "}
-              <a href="/tools/problem" style={{ color: "var(--teal)", fontWeight: 600 }}>Market Problem Validator</a>{" "}
+              <Link href="/tools/problem" style={{ color: "var(--teal)", fontWeight: 600 }}>Market Problem Validator</Link>{" "}
               to confirm the problem is real and worth solving.
             </p>
           </div>
@@ -299,11 +300,11 @@ export default function AIStudioPage() {
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><a href="/ai-studio">AI Studio</a></li>
-            <li><a href="/loyalty-retail-media">Loyalty & Retail Media</a></li>
-            <li><a href="/scale-up-advisory">Scale-Up Advisory</a></li>
-            <li><a href="/tools">GTM Tools</a></li>
-            <li><a href="/newsletter">Newsletter</a></li>
+            <li><Link href="/ai-studio">AI Studio</Link></li>
+            <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
+            <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
+            <li><Link href="/tools">GTM Tools</Link></li>
+            <li><Link href="/newsletter">Newsletter</Link></li>
           </ul>
           <span className="footer-copy">© 2026 Summit Strategy Advisory</span>
         </footer>
