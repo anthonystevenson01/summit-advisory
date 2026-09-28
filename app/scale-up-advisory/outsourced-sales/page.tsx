@@ -5,26 +5,18 @@ import SiteNav from "@/app/components/SiteNav";
 import { ArrowLeft } from "@/app/components/icons";
 import {
   BOOK_URL,
-  HOW_IT_WORKS,
   HOW_WE_CHARGE,
   HOW_WE_CHARGE_TITLE,
   LAST_REVIEWED_LABEL,
   LEAD_ENGINE,
   OUTSOURCED_FAQS,
   OUTSOURCED_HERO,
-  PACKAGES_SECTION,
-  PACKAGE_STAGES,
-  PANEL,
-  ROLES,
+  OUTSOURCED_TOOLS_LINE,
   SCALE_UP_CTA,
   SCALE_UP_PATH,
-  SITUATION,
   THESIS,
   TOOLS_HUB_PATH,
-  TOOLS_SECTION,
-  TOOL_STAGE_MAP,
   WHAT_SUMMIT_IS,
-  WHY_SUMMIT,
   outsourcedFaqSchema,
   outsourcedServiceSchema,
 } from "../scale-up-content";
@@ -73,12 +65,24 @@ const bandHeading = {
 } as const;
 
 /**
- * The outsourced sales option of Scale-Up Advisory. Section order follows
- * the deck: situation, what Summit is, thesis, how it works, the Panel,
- * packages, free tools, where to start, why Summit, FAQ, CTA. The sections
- * moved here from the hub unchanged (only the in-page anchor ids went); the
- * page carries its own metadata, canonical and JSON-LD so this content has
- * a URL of its own to rank on.
+ * Paragraph style for the dark thesis band, matching the fractional page's
+ * band paragraphs (16px, white at 60%) so the two bands read the same. Top
+ * margin because the closing line follows the cards rather than preceding them.
+ */
+const bandPara = {
+  color: "rgba(255,255,255,0.6)",
+  fontSize: 16,
+  lineHeight: 1.7,
+  maxWidth: 620,
+  marginTop: 24,
+} as const;
+
+/**
+ * The outsourced sales option of Scale-Up Advisory as a pitch summary, in the
+ * shape of the fractional page: hero, what Summit is, thesis, how we charge,
+ * where to start with a pointer to the free tools, four FAQs, CTA. The deck
+ * narrative that used to be here is on `main` at `0912fd5` and in the deck.
+ * The page carries its own metadata, canonical and JSON-LD.
  */
 export default function OutsourcedSalesPage() {
   return (
@@ -105,45 +109,13 @@ export default function OutsourcedSalesPage() {
             </p>
           </div>
 
-          {/* 2. The situation */}
-          <div className="inner-body">
-            <h2 className="section-label">{SITUATION.label}</h2>
-            <p className="section-intro">{SITUATION.heading}</p>
-            <div className="focus-grid">
-              {SITUATION.pains.map((p) => (
-                <div className="focus-card" key={p.title}>
-                  <div className="focus-title">{p.title}</div>
-                  <p className="focus-body">{p.body}</p>
-                </div>
-              ))}
-            </div>
-            <h3 className="section-label" style={{ marginTop: 40 }}>{SITUATION.quotesLabel}</h3>
-            <div className="focus-grid">
-              {SITUATION.quotes.map((q) => (
-                <div className="focus-card" key={q}>
-                  <p className="focus-body italic">&ldquo;{q}&rdquo;</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. What Summit is */}
+          {/* 2. What Summit is */}
           <div className="inner-body">
             <h2 className="section-label">{WHAT_SUMMIT_IS.label}</h2>
-            <p className="section-intro">
-              <strong>{WHAT_SUMMIT_IS.heading}</strong> {WHAT_SUMMIT_IS.intro}
-            </p>
-            <div className="features">
-              {WHAT_SUMMIT_IS.parts.map((p) => (
-                <div className="feature" key={p.num}>
-                  <div className="feature-title">{p.num} · {p.title}</div>
-                  <p className="feature-body">{p.body}</p>
-                </div>
-              ))}
-            </div>
+            <p className="section-intro">{WHAT_SUMMIT_IS.body}</p>
           </div>
 
-          {/* 4. Thesis */}
+          {/* 3. Thesis */}
           <div className="equity-band">
             <div className="inner-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
               <h2 className="section-label" style={{ color: "var(--sage)" }}>{THESIS.label}</h2>
@@ -159,23 +131,14 @@ export default function OutsourcedSalesPage() {
                   </div>
                 ))}
               </div>
+              <p style={bandPara}>{THESIS.closer}</p>
             </div>
           </div>
 
-          {/* 5. How it works */}
+          {/* 4. How we charge */}
           <div className="inner-body">
-            <h2 className="section-label">{HOW_IT_WORKS.label}</h2>
-            <p className="section-intro">{HOW_IT_WORKS.heading}</p>
-            <div className="features">
-              {ROLES.map((r) => (
-                <div className="feature" key={r.title}>
-                  <div className="feature-title">{r.title}</div>
-                  <p className="feature-body"><strong>{r.strap}</strong> {r.body}</p>
-                </div>
-              ))}
-            </div>
+            <h2 className="section-label">{HOW_WE_CHARGE_TITLE}</h2>
             <div className="for-card for-yes">
-              <div className="for-card-title">{HOW_WE_CHARGE_TITLE}</div>
               {HOW_WE_CHARGE.map((item) => (
                 <div className="for-item" key={item}>
                   <span className="for-check">✓</span>
@@ -185,90 +148,21 @@ export default function OutsourcedSalesPage() {
             </div>
           </div>
 
-          {/* 6. The Panel */}
-          <div className="inner-body">
-            <h2 className="section-label">{PANEL.label}</h2>
-            <p className="section-intro">
-              <strong>{PANEL.heading}</strong> {PANEL.fractionalTeam} {PANEL.prospects} {PANEL.intro}
-            </p>
-            <div className="features">
-              {PANEL.points.map((p) => (
-                <div className="feature" key={p.title}>
-                  <div className="feature-title">{p.title}</div>
-                  <p className="feature-body">{p.body}</p>
-                </div>
-              ))}
-            </div>
-            <h3 className="section-label">{PANEL.libraryLabel}</h3>
-            <div className="pkg-meta">
-              {PANEL.library.map((item) => (
-                <span className="pkg-tag" key={item}>{item}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* 7. Package coverage */}
-          <div className="inner-body">
-            <h2 className="section-label">{PACKAGES_SECTION.label}</h2>
-            <p className="section-intro">{PACKAGES_SECTION.heading}</p>
-            <div className="focus-grid">
-              {PACKAGE_STAGES.map((s) => (
-                <div className="focus-card" key={s.id}>
-                  <div className="focus-title">{s.id}</div>
-                  <p className="focus-body">{s.body}</p>
-                </div>
-              ))}
-            </div>
-            <p className="feature-title" style={{ marginTop: 24 }}>{PACKAGES_SECTION.closer}</p>
-          </div>
-
-          {/* 8. Free tools, joined to the message */}
-          <div className="inner-body">
-            <h2 className="section-label">{TOOLS_SECTION.label}</h2>
-            <p className="section-intro" style={{ marginBottom: 16 }}><strong>{TOOLS_SECTION.heading}</strong></p>
-            {TOOLS_SECTION.paragraphs.map((para) => (
-              <p className="section-intro" key={para} style={{ marginBottom: 16 }}>{para}</p>
-            ))}
-            <div className="resources" style={{ marginTop: 32 }}>
-              {TOOL_STAGE_MAP.map((t) => (
-                <Link key={t.slug} href={t.href} className="resource resource-tool no-underline">
-                  <span className="resource-tag">{t.stage} package</span>
-                  <div className="resource-title">{t.name}</div>
-                  <p className="resource-desc">{t.summary} {t.stageNote}</p>
-                  <span className="resource-cta">{TOOLS_SECTION.cardCta} →</span>
-                </Link>
-              ))}
-            </div>
-            <p style={smallPara}>
-              <Link href={TOOLS_HUB_PATH} style={inlineLink}>{TOOLS_SECTION.hubLink} →</Link>
-            </p>
-          </div>
-
-          {/* 9. Where to start */}
+          {/* 5. Where to start */}
           <div className="inner-body">
             <h2 className="section-label">{LEAD_ENGINE.label}</h2>
             <p className="section-intro">{LEAD_ENGINE.strap}</p>
             <h3 className="feature-title" style={{ fontSize: 24 }}>{LEAD_ENGINE.name}</h3>
             <p className="section-intro">{LEAD_ENGINE.summary}</p>
-            <div className="for-grid">
-              <div className="for-card for-yes">
-                <div className="for-card-title">{LEAD_ENGINE.walkAwayTitle}</div>
-                {LEAD_ENGINE.walkAway.map((item) => (
-                  <div className="for-item" key={item}>
-                    <span className="for-check">✓</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="for-card for-yes">
-                <div className="for-card-title">{LEAD_ENGINE.factsTitle}</div>
-                {LEAD_ENGINE.facts.map((item) => (
-                  <div className="for-item" key={item}>
-                    <span className="for-check">✓</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
+            {/* One full-width card, as How we charge above; with no .for-grid the margin supplies the 16px gap before the cta-bar itself. */}
+            <div className="for-card for-yes" style={{ marginBottom: 16 }}>
+              <div className="for-card-title">{LEAD_ENGINE.factsTitle}</div>
+              {LEAD_ENGINE.facts.map((item) => (
+                <div className="for-item" key={item}>
+                  <span className="for-check">✓</span>
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
             <div className="cta-bar">
               <div className="cta-bar-left">
@@ -279,25 +173,14 @@ export default function OutsourcedSalesPage() {
                 {LEAD_ENGINE.ctaButton} →
               </a>
             </div>
-          </div>
-
-          {/* 10. Why Summit */}
-          <div className="inner-body">
-            <h2 className="section-label">{WHY_SUMMIT.label}</h2>
-            <p className="section-intro">
-              <strong>{WHY_SUMMIT.heading}</strong> {WHY_SUMMIT.intro}
+            {/* The "not ready" alternative to the CTA it follows; smallPara's top margin sets the distance from the bar. */}
+            <p style={smallPara}>
+              {OUTSOURCED_TOOLS_LINE.lead}{" "}
+              <Link href={TOOLS_HUB_PATH} style={inlineLink}>{OUTSOURCED_TOOLS_LINE.link}</Link>.
             </p>
-            <div className="features">
-              {WHY_SUMMIT.points.map((p) => (
-                <div className="feature" key={p.title}>
-                  <div className="feature-title">{p.title}</div>
-                  <p className="feature-body">{p.body}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* 11. FAQ */}
+          {/* 6. FAQ */}
           <div className="inner-body">
             <h2 className="section-label">Frequently Asked Questions</h2>
             <div className="features">
@@ -310,7 +193,7 @@ export default function OutsourcedSalesPage() {
             </div>
           </div>
 
-          {/* 12. CTA */}
+          {/* 7. CTA */}
           <div className="calendly-band">
             <div className="inner-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
               <div className="calendly-content">
@@ -329,7 +212,7 @@ export default function OutsourcedSalesPage() {
           </div>
         </div>
 
-        {/* 13. Footer */}
+        {/* 8. Footer */}
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
