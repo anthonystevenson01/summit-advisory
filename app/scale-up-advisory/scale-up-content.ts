@@ -3,7 +3,7 @@
  * Scale-Up Advisory pages:
  *   /scale-up-advisory                       (hub: hero, two options, free tools)
  *   /scale-up-advisory/fractional-executive  (hire a fractional executive)
- *   /scale-up-advisory/outsourced-sales      (outsource your sales)
+ *   /scale-up-advisory/outsourced-sales      (outsource your sales: pitch summary)
  *
  * Keep this module free of runtime imports (`import type` only). The tests in
  * __tests__/scale-up-advisory.test.ts load it directly with Node's type
@@ -22,7 +22,7 @@ export const BOOK_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
 export const LAST_REVIEWED_LABEL = "September 2026";
-export const DATE_MODIFIED = "2026-09-24";
+export const DATE_MODIFIED = "2026-09-28";
 
 // ── Top level: hero and the two options ──
 
@@ -70,9 +70,9 @@ export const HUB_OPTIONS_LABEL = "Two ways in";
 
 /**
  * The hub's free tools section. The cards reuse TOOL_STAGE_MAP but carry the
- * constant `cardTag` rather than "{stage} package": the packages are only
- * explained on the outsourced page, so a stage name means nothing here. The
- * test requires heading + body to mention AI and free.
+ * constant `cardTag` rather than "{stage} package" because no page explains
+ * the package stages any more (the outsourced page only says "from MAP to
+ * GROW"). The test requires heading + body to mention AI and free.
  */
 export const HUB_TOOLS = {
   label: "Free GTM tools",
@@ -83,7 +83,7 @@ export const HUB_TOOLS = {
   hubLink: "See all five tools",
 } as const;
 
-// ── Outsource your sales: page narrative (follows the deck) ──
+// ── Outsource your sales: pitch summary (the deck narrative is on main at 0912fd5) ──
 
 /**
  * Hero for the outsourced page. `eyebrow` is the shared HERO.eyebrow rather
@@ -97,48 +97,14 @@ export const OUTSOURCED_HERO = {
   lead: "Hand over as much or as little of sales as you need. Summit builds the engine on your intelligence, supplies the fractional people to run it, and charges a fixed price for each package. You own everything we build.",
 } as const;
 
-export const SITUATION = {
-  label: "The situation",
-  heading: "Your business is starting to scale and sales looks expensive.",
-  pains: [
-    {
-      title: "No single source of truth",
-      body: "Targets, contacts and signals scattered across inboxes and spreadsheets, so nothing compounds.",
-    },
-    {
-      title: "Pipeline you can't predict",
-      body: "Outreach happens in bursts when someone finds the time. Some months are full, most are not.",
-    },
-    {
-      title: "Hiring is a gamble",
-      body: "A full sales hire is expensive and slow to ramp. Get it wrong and you lose two quarters.",
-    },
-  ],
-  quotesLabel: "Who buys Summit?",
-  quotes: [
-    "We're entering a new market and need a sales push, but I can't distract the current team.",
-    "I'm the founder and I'm still the whole sales team. I need to get back to product without growth stalling.",
-    "We're launching a new product and nobody owns taking it to market.",
-  ],
-} as const;
-
+/**
+ * The one-paragraph pitch. It spells out PACKAGE_COUNT ("Nineteen") and spans
+ * PACKAGE_STAGES first to last ("from MAP to GROW"); the test checks both, so
+ * change them together.
+ */
 export const WHAT_SUMMIT_IS = {
   label: "What Summit is",
-  heading: "The convenience of outsourcing. The ownership of insourcing.",
-  intro:
-    "A series of packages that cover the whole sales process, taken up piece by piece as you grow. Every package is two things.",
-  parts: [
-    {
-      num: "01",
-      title: "The Engine build",
-      body: "An intelligence library holding your ICP and target accounts, mapped, alongside personas, signals, battlecards and objection handling. Playbooks for the sales motions your business needs. Your company's voice and positioning. Built and configured for you, with real sales know-how.",
-    },
-    {
-      num: "02",
-      title: "The people to run it",
-      body: "Fractional professionals, hired and trained from a deep roster of excellent salespeople. They drive sales forward from day one, for much less than a full-time sales hire or team.",
-    },
-  ],
+  body: "The convenience of outsourcing. The ownership of insourcing. Nineteen fixed-price packages cover the whole sales process, from MAP to GROW, taken up piece by piece as you grow. Each one is two things: an engine built on your intelligence, and the fractional people to run it.",
 } as const;
 
 export const THESIS = {
@@ -162,25 +128,9 @@ export const THESIS = {
       body: "No platform, no licence. The IP and the tools we build for your operation are yours.",
     },
   ],
+  /** Rendered under the four cards, inside the band: what survives of the cut Why Summit section. */
+  closer: "Summit runs on the same engine. If we end up on a call, it probably booked it.",
 } as const;
-
-export const HOW_IT_WORKS = {
-  label: "How it works",
-  heading: "Two roles, one contract.",
-} as const;
-
-export const ROLES = [
-  {
-    title: "Forward deployed specialists",
-    strap: "They set up. They stay on.",
-    body: "They build and configure the engine, package by package. Then they stay: customer success, account management, one point of contact who knows your world.",
-  },
-  {
-    title: "Fractional sales people",
-    strap: "They flex with the plan.",
-    body: "Brought in as the plan needs them, on a fractional basis, to do the sales work: outbound, closing, channels, content. Scale up and down without a hire.",
-  },
-] as const;
 
 export const HOW_WE_CHARGE_TITLE = "How we charge";
 
@@ -191,41 +141,7 @@ export const HOW_WE_CHARGE: readonly string[] = [
   "You own everything we build.",
 ];
 
-export const PANEL = {
-  label: "Summit's Panel",
-  heading: "Fractional people, guided by everything you know.",
-  intro: "Every interaction runs through the Panel.",
-  fractionalTeam: "SDRs, closers, specialists. They arrive experienced. The Panel makes them yours.",
-  prospects: "Your prospects are a finite market, approached with precision. The right people, in the right order, with the right message.",
-  points: [
-    { title: "Who to go after", body: "Your ICP, scored and ranked." },
-    { title: "What to say", body: "Your best message, nailed down." },
-    { title: "How to say it", body: "Your language, your proof." },
-    {
-      title: "Always measuring, always learning",
-      body: "What works feeds back into the library, so the Engine keeps getting sharper.",
-    },
-  ],
-  libraryLabel: "The intelligence library",
-  library: [
-    "ICP",
-    "Target accounts",
-    "Personas",
-    "Positioning",
-    "Signals",
-    "Battlecards",
-    "Sequences",
-    "Playbook",
-  ],
-} as const;
-
 export type PackageStageId = "MAP" | "REACH" | "WIN" | "ONBOARD" | "KEEP" | "GROW";
-
-export const PACKAGES_SECTION = {
-  label: "Summit packages",
-  heading: "Packages across every sales motion and process.",
-  closer: "Nineteen packages. The whole lifecycle covered.",
-} as const;
 
 export const PACKAGE_STAGES: readonly { id: PackageStageId; body: string }[] = [
   { id: "MAP", body: "Market, ICP, prospect universe. Defined and scored." },
@@ -236,25 +152,23 @@ export const PACKAGE_STAGES: readonly { id: PackageStageId; body: string }[] = [
   { id: "GROW", body: "Expansion, cross-sell, and winning back the lost." },
 ];
 
-/** Source of truth for the package count. PACKAGES_SECTION.closer spells it out. */
+/** Source of truth for the package count. WHAT_SUMMIT_IS.body spells it out ("Nineteen"). */
 export const PACKAGE_COUNT = 19;
 
-// ── Free tools, joined to the message ──
+// ── Free tools (hub cards) ──
 
 export interface ToolStage {
   slug: ToolSlug;
   name: string;
   stage: PackageStageId;
   href: string;
-  /**
-   * What the tool does, in one sentence. The hub shows only this: it has no
-   * packages section, so a stage tie-in would mean nothing there.
-   */
+  /** What the tool does, in one sentence. The hub cards show this. */
   summary: string;
   /**
-   * How it ties to the package stage. The outsourced page renders `summary`
-   * then this, the original card text split at its full stop. The test
-   * requires it to name `stage`.
+   * How it ties to the package stage. No page renders it since the outsourced
+   * page became a pitch summary (September 2026); kept with `stage` as the
+   * documented tool-to-stage map, and the test still requires it to name
+   * `stage`.
    */
   stageNote: string;
 }
@@ -309,17 +223,6 @@ export const TOOL_STAGE_MAP: readonly ToolStage[] = [
   },
 ];
 
-export const TOOLS_SECTION = {
-  label: "See the engine at work",
-  heading: "Our free tools are the engine, in miniature.",
-  paragraphs: [
-    "Our five free GTM tools are small demonstrations of the AI skills Summit uses every day: scoring an ICP, pressure-testing a persona, grading positioning. They cover the front of the lifecycle. The engine goes further.",
-    "When Summit takes on your sales, we build bespoke versions of the same kind of AI for you. They're trained on your intelligence library rather than a blank form, and they're yours to keep.",
-  ],
-  cardCta: "Try it free",
-  hubLink: "See all five tools",
-} as const;
-
 // ── Where to start: the AI Lead Engine Build ──
 
 export const LEAD_ENGINE = {
@@ -328,15 +231,6 @@ export const LEAD_ENGINE = {
   name: "The AI Lead Engine Build",
   summary:
     "An AI-powered acquisition engine, installed in eight weeks. Live conversations by week five, predictable pipeline every month after.",
-  walkAwayTitle: "What you walk away with",
-  walkAway: [
-    "A sales strategy and plan, calibrated to your stage",
-    "Your ICP and target accounts, mapped and tiered",
-    "The intelligence library, built and live",
-    "An AI acquisition system producing pipeline",
-    "A trained fractional SDR, embedded in your team",
-    "The playbook, documented and yours",
-  ],
   factsTitle: "The shape of it",
   facts: [
     "Fixed price.",
@@ -350,27 +244,14 @@ export const LEAD_ENGINE = {
   ctaButton: "Book a 30-Minute Call",
 } as const;
 
-// ── Why Summit ──
-
-export const WHY_SUMMIT = {
-  label: "Why Summit",
-  heading: "Built by operators, not an agency.",
-  intro:
-    "Twenty years selling technology across North America, Europe and Australia. Summit is that experience, turned into an engine.",
-  points: [
-    {
-      title: "Done the exact job.",
-      body: "Nine years taking a UK scale-up into North America, from zero to a scaled, repeatable commercial function. Your situation, from the inside.",
-    },
-    {
-      title: "Doing it now.",
-      body: "A team of experienced operators in fractional commercial leadership today. Pipeline carried, quotas owned, teams built. Not advice from the sidelines.",
-    },
-    {
-      title: "Summit runs on the engine.",
-      body: "Every email, call and deal at Summit goes through the same Panel and library described on this page. We sell what we use. If we end up on a call, the engine probably booked it.",
-    },
-  ],
+/**
+ * Rendered by the outsourced page as `{lead} <Link to TOOLS_HUB_PATH>{link}</Link>.`
+ * with the full stop supplied by the page: the same pattern as
+ * FRACTIONAL_CROSS_SELL.toolsLead / toolsLink.
+ */
+export const OUTSOURCED_TOOLS_LINE = {
+  lead: "Not ready to talk? Start with our",
+  link: "free GTM tools",
 } as const;
 
 export const SCALE_UP_CTA = {
@@ -397,28 +278,12 @@ export const OUTSOURCED_FAQS: readonly Faq[] = [
     a: "For most scale-ups, yes. You pay for the days you need rather than a full-time salary, and you skip the ramp. A full sales hire is expensive and slow to get going, and the wrong hire costs you two quarters. Summit's people arrive experienced, the engine gets them productive quickly, and there's no platform fee, licence or per-seat charge on top.",
   },
   {
-    q: "What's in the AI Lead Engine Build?",
-    a: "An AI-powered acquisition engine, installed in eight weeks for a fixed price. You'll have live conversations by week five and predictable pipeline every month after. You walk away with a sales strategy and plan, your ICP and target accounts mapped and tiered, the intelligence library built and live, an AI acquisition system producing pipeline, a trained fractional SDR embedded in your team, and a documented playbook.",
-  },
-  {
     q: "Who owns what Summit builds?",
     a: "You do. The intelligence library, the playbooks, the IP and any tools we build for your operation are yours. There's no platform to rent and no licence to renew.",
   },
   {
-    q: "What happens after the eight weeks?",
-    a: "That's your call. You can keep the fractional SDR on a monthly rate that flexes with the plan, and add packages from the nineteen as you grow. Or you can run it yourselves and keep every asset.",
-  },
-  {
-    q: "How do the free GTM tools relate to working with Summit?",
-    a: "The tools are a small demonstration of the AI skills behind the engine. Each one maps to a package stage: the Market Problem Validator and ICP Evaluator to MAP, the Buyer Persona Quality Check and Positioning Statement Grader to REACH, and the Competitive Moat Rater to WIN. When we take on your sales, we build bespoke versions trained on your own intelligence, and you keep them.",
-  },
-  {
     q: "How is this different from a lead-gen agency?",
     a: "An agency rents you its process and keeps the know-how. Summit builds the engine inside your business, runs it with people who learn your world, and hands you everything we build. It's the convenience of outsourcing with the ownership of insourcing.",
-  },
-  {
-    q: "Can I hire a fractional executive instead?",
-    a: "Yes. If what you need is senior leadership rather than hands on the phones, Summit can put a fractional CRO, CCO or CMO in the seat. That option has its own page.",
   },
 ];
 

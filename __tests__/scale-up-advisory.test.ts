@@ -1,6 +1,7 @@
 /**
  * Scale-Up Advisory: the hub page and its two option pages (fractional
- * executive, outsourced sales).
+ * executive, outsourced sales). The outsourced page is a pitch summary; its
+ * thesis, facts, FAQ order and tools line are pinned here.
  *
  * Runs on Node's built-in test runner with native TypeScript type stripping
  * (Node >= 22.18 / 23.6). No extra dependencies: `npm test`.
@@ -18,10 +19,13 @@ import {
   OPTIONS,
   OUTSOURCED_FAQS,
   OUTSOURCED_SALES_PATH,
+  OUTSOURCED_TOOLS_LINE,
   PACKAGE_COUNT,
   PACKAGE_STAGES,
   SCALE_UP_PATH,
+  THESIS,
   TOOL_STAGE_MAP,
+  WHAT_SUMMIT_IS,
   fractionalFaqSchema,
   fractionalServiceSchema,
   outsourcedFaqSchema,
@@ -136,8 +140,47 @@ describe("packages", () => {
     assert.equal(PACKAGE_COUNT, 19);
   });
 
-  test("the Lead Engine Build has six walk-away items", () => {
-    assert.equal(LEAD_ENGINE.walkAway.length, 6);
+  test("the What Summit is paragraph spells out the package count and the stage span", () => {
+    assert.match(WHAT_SUMMIT_IS.body, /\bNineteen fixed-price packages\b/);
+    assert.ok(
+      WHAT_SUMMIT_IS.body.includes("from " + PACKAGE_STAGES[0].id + " to " + PACKAGE_STAGES[PACKAGE_STAGES.length - 1].id),
+    );
+  });
+});
+
+describe("outsourced pitch page", () => {
+  test("the thesis has four points and a closing line", () => {
+    assert.equal(THESIS.points.length, 4);
+    assert.ok(THESIS.closer.length > 0);
+  });
+
+  test("the Lead Engine Build has five facts and no walk-away list", () => {
+    assert.equal(LEAD_ENGINE.facts.length, 5);
+    assert.ok(!("walkAway" in LEAD_ENGINE));
+  });
+
+  test("the FAQ is exactly the four pitch questions in order", () => {
+    assert.deepEqual(
+      OUTSOURCED_FAQS.map((f) => f.q),
+      [
+        "What is an outsourced sales team?",
+        "Is it cheaper than hiring an SDR?",
+        "Who owns what Summit builds?",
+        "How is this different from a lead-gen agency?",
+      ],
+    );
+  });
+
+  test("the tools line points at the free GTM tools", () => {
+    assert.ok(OUTSOURCED_TOOLS_LINE.lead.length > 0);
+    assert.equal(OUTSOURCED_TOOLS_LINE.link, "free GTM tools");
+  });
+
+  // Deleted rather than left exported: copy that nothing renders would drift silently.
+  test("the cut sections' constants are gone from the module", () => {
+    for (const name of ["SITUATION", "HOW_IT_WORKS", "ROLES", "PANEL", "PACKAGES_SECTION", "TOOLS_SECTION", "WHY_SUMMIT"]) {
+      assert.ok(!(name in content), name);
+    }
   });
 });
 
@@ -155,7 +198,7 @@ describe("service schemas", () => {
     });
 
     test(`${name} schema is dated ${DATE_MODIFIED}`, () => {
-      assert.equal(schema.dateModified, "2026-09-24");
+      assert.equal(schema.dateModified, "2026-09-28");
     });
 
     test(`${name} schema url is absolute on the Summit domain`, () => {
