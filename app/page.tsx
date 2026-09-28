@@ -11,46 +11,6 @@ const BOOK_CALL_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
 // ── Data ──
-const practiceData: Record<string, { eyebrow: string; title: string; lead: string; features: { title: string; body: string }[]; cta: string; pageHref?: string }> = {
-  ai: {
-    eyebrow: "For Founders",
-    title: "AI Product Studio",
-    lead: "We build technology products for early-stage founders — in exchange for equity. Think of us as a technical co-founder you don't have to hire full-time. Podbeat.ai is our proof of concept.",
-    features: [
-      { title: "Equity-based model", body: "No large upfront retainers. We take a stake in what we build, so our incentives are fully aligned with your success from day one." },
-      { title: "End-to-end delivery", body: "From product specification and design through to deployed, production-grade software. We don't hand off to junior teams." },
-      { title: "Built with AI at the core", body: "LLMs, agents, and embeddings aren't features we add — they're how the product works. That's the difference between software that uses AI and software that couldn't exist without it." },
-      { title: "We eat our own cooking", body: "Podbeat.ai — an AI podcast tool with multi-platform distribution — was built entirely within this model. Real product, live users, shipping weekly." },
-    ],
-    cta: "Talk to us about your product idea",
-  },
-  retail: {
-    eyebrow: "For Retailers",
-    title: "Loyalty & Retail Media",
-    lead: "Loyalty programs and retail media for large retailers. We've surfaced $40M in uncounted loyalty revenue and built retail media networks that generate real supplier income. Now we build them with you.",
-    features: [
-      { title: "Loyalty programme design", body: "Architecture, commercial modelling, and vendor selection for loyalty platforms across points, tiers, and coalition models." },
-      { title: "Retail media strategy", body: "First-party data monetisation, network build vs buy decisions, and advertiser commercials for large-format retailers." },
-      { title: "Digital commerce", body: "Online-to-offline integration, mobile commerce, and payment experience strategy for omnichannel retail." },
-      { title: "Scoped to a clear result", body: "We work on a monthly retainer against a defined set of objectives — not open-ended hours. You get senior thinking and hands-on execution for as long as the work requires." },
-    ],
-    cta: "Discuss your retail challenge",
-  },
-  sme: {
-    eyebrow: "For Scale-Ups",
-    title: "Scale-Up Advisory",
-    lead: "Summit builds, runs and leads the commercial function for B2B scale-ups. Hire a fractional executive to lead it, or outsource your sales and we'll run it for you. Fractional talent, guided by your intelligence, enabled by AI.",
-    features: [
-      { title: "Hire a fractional executive", body: "A senior CRO, CCO or CMO from Summit's bench, part-time. They own the function and answer for the results." },
-      { title: "Outsource your sales", body: "Fixed-price packages across the whole sales lifecycle, run by fractional sales people. Take up as much or as little as you need." },
-      { title: "Start with the AI Lead Engine Build", body: "An AI-powered acquisition engine in eight weeks, for a fixed price. Live conversations by week five, and you own every asset." },
-      { title: "Free GTM tools", body: "Our free tools are the engine in miniature. Try them before you talk to us." },
-    ],
-    cta: "Explore scale-up advisory",
-    pageHref: "/scale-up-advisory",
-  },
-};
-
 const resources = [
   { tag: "Framework", title: "The North American Entry Playbook", desc: "How European B2B SaaS companies can sequence their first 18 months in the US and Canadian markets." },
   { tag: "Guide", title: "Loyalty Programme Architecture", desc: "Key decisions in loyalty platform design: earn/burn mechanics, tier structure, and tech stack selection." },
@@ -536,51 +496,6 @@ function RetailAdvisoryPage({ onBack, onBook }: { onBack: () => void; onBook: ()
   );
 }
 
-// ── Practice (SME) Page ──
-function PracticePage({ id, onBack, onContact }: { id: string; onBack: () => void; onContact: () => void }) {
-  const p = practiceData[id];
-  if (!p) return null;
-  return (
-    <div className="inner">
-      <div className="inner-hero">
-        <button type="button" className="inner-back" onClick={onBack}><ArrowLeft /> All Practices</button>
-        <div className="inner-eyebrow">{p.eyebrow}</div>
-        <h1 className="inner-title">{p.title}</h1>
-        <p className="inner-lead">{p.lead}</p>
-      </div>
-      <div className="inner-body">
-        <div className="features">
-          {p.features.map((f, i) => (
-            <div className="feature" key={i}>
-              <div className="feature-title">{f.title}</div>
-              <p className="feature-body">{f.body}</p>
-            </div>
-          ))}
-        </div>
-        {/* Optional link out to a practice's standalone page (only Scale-Up sets pageHref today) */}
-        {p.pageHref && (
-          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 14, color: "var(--ghost)", marginTop: 0, marginBottom: 24, lineHeight: 1.7 }}>
-            <Link href={p.pageHref} style={{ color: "var(--teal)", fontWeight: 600 }}>Read the full {p.title} page →</Link>
-          </p>
-        )}
-        <div className="cta-bar">
-          <div className="cta-bar-left">
-            <h3>{p.cta}</h3>
-            <p>Book a 30-minute call — no obligation.</p>
-          </div>
-          <button
-            type="button"
-            className="cta-bar-btn"
-            onClick={onContact}
-          >
-            Book a 30-Minute Call →
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Resources Page ──
 function ResourcesPage({ onBack }: { onBack: () => void }) {
   return (
@@ -706,10 +621,12 @@ function ContactPage({ onBack }: { onBack: () => void }) {
 
 // ── Home Page ──
 function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
-  const cards = [
+  // A card with an href is a plain link to that practice's own page; the
+  // others open a view inside this client component.
+  const cards: { id: string; icon: string; title: string; desc: string; href?: string }[] = [
     { id: "ai", icon: ICON_AI, title: "AI Product Studio", desc: "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks." },
     { id: "retail", icon: ICON_RETAIL, title: "Loyalty & Retail Media", desc: "Loyalty programs and retail media for large retailers. We've built these capabilities. Now we build them with you." },
-    { id: "sme", icon: ICON_SME, title: "Scale-Up Advisory", desc: "Outsourced sales and fractional executives for B2B scale-ups. Fixed-price packages, AI-enabled, and you own everything we build." },
+    { id: "sme", icon: ICON_SME, title: "Scale-Up Advisory", desc: "Outsourced sales and fractional executives for B2B scale-ups. Fixed-price packages, AI-enabled, and you own everything we build.", href: "/scale-up-advisory" },
   ];
   return (
     <div className="home">
@@ -722,18 +639,32 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
       <div className="cards-section">
         <h2 className="cards-label">Our Practices</h2>
         <div className="cards">
-          {cards.map((c) => (
-            <button type="button" className="card" key={c.id} onClick={() => onNavigate(c.id)}>
-              <div className="card-icon-wrap">
-                <Image src={c.icon} alt={c.title} className="card-icon" width={72} height={72} />
-              </div>
-              <div className="card-body">
-                <div className="card-title">{c.title}</div>
-                <p className="card-desc">{c.desc}</p>
-                <div className="card-link">Learn more <ArrowRight /></div>
-              </div>
-            </button>
-          ))}
+          {cards.map((c) => {
+            // Built once so the link and button branches render identical
+            // markup; .card already styles <a> and <button> alike, so the
+            // linked card lays out like its siblings.
+            const body = (
+              <>
+                <div className="card-icon-wrap">
+                  <Image src={c.icon} alt={c.title} className="card-icon" width={72} height={72} />
+                </div>
+                <div className="card-body">
+                  <div className="card-title">{c.title}</div>
+                  <p className="card-desc">{c.desc}</p>
+                  <div className="card-link">Learn more <ArrowRight /></div>
+                </div>
+              </>
+            );
+            return c.href ? (
+              <Link href={c.href} className="card no-underline" key={c.id}>
+                {body}
+              </Link>
+            ) : (
+              <button type="button" className="card" key={c.id} onClick={() => onNavigate(c.id)}>
+                {body}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -748,6 +679,8 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
           <Link href="/scale-up-advisory" style={{ color: "rgba(255,255,255,0.35)" }}>Scale-Up Advisory</Link>
           {" · "}
           <Link href="/scale-up-advisory/fractional-executive" style={{ color: "rgba(255,255,255,0.35)" }}>Fractional Executives</Link>
+          {" · "}
+          <Link href="/scale-up-advisory/outsourced-sales" style={{ color: "rgba(255,255,255,0.35)" }}>Outsourced Sales</Link>
           {" · "}
           <Link href="/tools" style={{ color: "rgba(255,255,255,0.35)" }}>Free GTM Tools</Link>
         </p>
@@ -894,7 +827,6 @@ export default function Summit() {
         {page === "home" && <HomePage onNavigate={nav} />}
         {page === "ai" && <AIStudioPage onBack={() => nav("home")} />}
         {page === "retail" && <RetailAdvisoryPage onBack={() => nav("home")} onBook={goToBooking} />}
-        {page === "sme" && <PracticePage id="sme" onBack={() => nav("home")} onContact={goToBooking} />}
         {page === "resources" && <ResourcesPage onBack={() => nav("home")} />}
 {page === "blog" && <BlogPage onBack={() => nav("home")} />}
         {page === "careers" && <CareersPage onBack={() => nav("home")} onContact={goToBooking} />}
