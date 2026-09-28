@@ -1,8 +1,9 @@
 /**
- * Copy, route definitions, tool-to-stage map, FAQs and JSON-LD for the two
+ * Copy, option definitions, tool-to-stage map, FAQs and JSON-LD for the three
  * Scale-Up Advisory pages:
- *   /scale-up-advisory                       (Route 02, outsourced sales)
- *   /scale-up-advisory/fractional-executive  (Route 01, fractional executive)
+ *   /scale-up-advisory                       (hub: hero, two options, free tools)
+ *   /scale-up-advisory/fractional-executive  (hire a fractional executive)
+ *   /scale-up-advisory/outsourced-sales      (outsource your sales)
  *
  * Keep this module free of runtime imports (`import type` only). The tests in
  * __tests__/scale-up-advisory.test.ts load it directly with Node's type
@@ -15,16 +16,15 @@ import type { ToolSlug } from "@/app/tools/[tool]/toolSlugs";
 export const SITE_URL = "https://summitstrategyadvisory.com";
 export const SCALE_UP_PATH = "/scale-up-advisory";
 export const FRACTIONAL_EXEC_PATH = "/scale-up-advisory/fractional-executive";
-export const OUTSOURCED_ANCHOR_ID = "outsource-your-sales";
-export const FREE_TOOLS_ANCHOR_ID = "free-tools";
+export const OUTSOURCED_SALES_PATH = "/scale-up-advisory/outsourced-sales";
 export const TOOLS_HUB_PATH = "/tools";
 export const BOOK_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
 export const LAST_REVIEWED_LABEL = "September 2026";
-export const DATE_MODIFIED = "2026-09-22";
+export const DATE_MODIFIED = "2026-09-24";
 
-// ── Top level: hero and the two routes ──
+// ── Top level: hero and the two options ──
 
 export const HERO = {
   eyebrow: "For B2B Scale-Ups",
@@ -32,11 +32,10 @@ export const HERO = {
   lead: "Summit builds, runs and leads your commercial function. Fractional talent, guided by your intelligence, enabled by AI.",
 } as const;
 
-export type RouteId = "fractional-executive" | "outsource-sales";
+export type OptionId = "fractional-executive" | "outsource-sales";
 
-export interface ScaleUpRoute {
-  id: RouteId;
-  num: "01" | "02";
+export interface ScaleUpOption {
+  id: OptionId;
   title: string;
   body: string;
   href: string;
@@ -44,14 +43,13 @@ export interface ScaleUpRoute {
 }
 
 /**
- * The two route cards at the top of /scale-up-advisory. Route 01 links to its
- * own page; Route 02 is an in-page anchor built from OUTSOURCED_ANCHOR_ID, the
- * same constant the page uses for the section id, so the link cannot drift.
+ * The two option cards on /scale-up-advisory. Each links to its own page,
+ * built from the path constants above so the cards cannot drift from the
+ * pages they point at.
  */
-export const ROUTES: readonly ScaleUpRoute[] = [
+export const OPTIONS: readonly ScaleUpOption[] = [
   {
     id: "fractional-executive",
-    num: "01",
     title: "Hire a fractional executive",
     body: "Senior commercial leadership, part-time. Summit has experienced commercial people you can bring in as your CRO, CCO or CMO. They own the function and answer for the results.",
     href: FRACTIONAL_EXEC_PATH,
@@ -59,24 +57,48 @@ export const ROUTES: readonly ScaleUpRoute[] = [
   },
   {
     id: "outsource-sales",
-    num: "02",
     title: "Outsource your sales",
     body: "Hand over as much or as little of sales as you need. Fixed-price packages, fractional people to run them, and an engine built on your intelligence. You own all of it.",
-    href: `#${OUTSOURCED_ANCHOR_ID}`,
+    href: OUTSOURCED_SALES_PATH,
     cta: "See how it works",
   },
 ];
 
-export const TOOLS_POINTER = {
-  lead: "Not ready to talk? Our free GTM tools are a good place to start:",
-  hubLabel: "the full toolkit",
-  fitLabel: "more on how they fit below",
+// ── Hub-only copy ──
+
+export const HUB_OPTIONS_LABEL = "Two ways in";
+
+/**
+ * The hub's free tools section. The cards reuse TOOL_STAGE_MAP but carry the
+ * constant `cardTag` rather than "{stage} package": the packages are only
+ * explained on the outsourced page, so a stage name means nothing here. The
+ * test requires heading + body to mention AI and free.
+ */
+export const HUB_TOOLS = {
+  label: "Free GTM tools",
+  heading: "We know AI. We've built free tools to help you.",
+  body: "Summit uses AI every day, in our own sales and in the engines we build for clients. Along the way we've built five free GTM tools that put some of that to work for you: score your ICP, validate the problem, pressure-test a persona, grade your positioning, rate your moat. No sign-up. Try them before you talk to us.",
+  cardTag: "Free tool",
+  cardCta: "Try it free",
+  hubLink: "See all five tools",
 } as const;
 
-// ── Route 02: outsourced sales narrative (follows the deck) ──
+// ── Outsource your sales: page narrative (follows the deck) ──
+
+/**
+ * Hero for the outsourced page. `eyebrow` is the shared HERO.eyebrow rather
+ * than "Scale-Up Advisory" because the back link directly above it already
+ * says that. `lead` only restates claims made further down the page.
+ */
+export const OUTSOURCED_HERO = {
+  back: "Scale-Up Advisory",
+  eyebrow: HERO.eyebrow,
+  title: "Outsource your sales",
+  lead: "Hand over as much or as little of sales as you need. Summit builds the engine on your intelligence, supplies the fractional people to run it, and charges a fixed price for each package. You own everything we build.",
+} as const;
 
 export const SITUATION = {
-  label: "Route 02 · Outsource your sales",
+  label: "The situation",
   heading: "Your business is starting to scale and sales looks expensive.",
   pains: [
     {
@@ -224,7 +246,17 @@ export interface ToolStage {
   name: string;
   stage: PackageStageId;
   href: string;
-  body: string;
+  /**
+   * What the tool does, in one sentence. The hub shows only this: it has no
+   * packages section, so a stage tie-in would mean nothing there.
+   */
+  summary: string;
+  /**
+   * How it ties to the package stage. The outsourced page renders `summary`
+   * then this, the original card text split at its full stop. The test
+   * requires it to name `stage`.
+   */
+  stageNote: string;
 }
 
 /**
@@ -240,35 +272,40 @@ export const TOOL_STAGE_MAP: readonly ToolStage[] = [
     name: "Market Problem Validator",
     stage: "MAP",
     href: "/tools/problem",
-    body: "Tests whether the problem you solve is real and urgent. It's the first question in any MAP package.",
+    summary: "Tests whether the problem you solve is real and urgent.",
+    stageNote: "It's the first question in any MAP package.",
   },
   {
     slug: "icp",
     name: "ICP Evaluator",
     stage: "MAP",
     href: "/tools/icp",
-    body: "Scores your ideal customer profile. In a MAP package we score and rank your whole prospect universe.",
+    summary: "Scores your ideal customer profile.",
+    stageNote: "In a MAP package we score and rank your whole prospect universe.",
   },
   {
     slug: "persona",
     name: "Buyer Persona Quality Check",
     stage: "REACH",
     href: "/tools/persona",
-    body: "Pressure-tests a buyer persona. REACH depends on getting to the right people, in the right order.",
+    summary: "Pressure-tests a buyer persona.",
+    stageNote: "REACH depends on getting to the right people, in the right order.",
   },
   {
     slug: "positioning",
     name: "Positioning Statement Grader",
     stage: "REACH",
     href: "/tools/positioning",
-    body: "Grades your positioning and suggests a rewrite. REACH only works with the right message.",
+    summary: "Grades your positioning and suggests a rewrite.",
+    stageNote: "REACH only works with the right message.",
   },
   {
     slug: "moat",
     name: "Competitive Moat Rater",
     stage: "WIN",
     href: "/tools/moat",
-    body: "Rates how defensible you are. In WIN, that becomes battlecards and competitive handling.",
+    summary: "Rates how defensible you are.",
+    stageNote: "In WIN, that becomes battlecards and competitive handling.",
   },
 ];
 
@@ -381,15 +418,19 @@ export const OUTSOURCED_FAQS: readonly Faq[] = [
   },
   {
     q: "Can I hire a fractional executive instead?",
-    a: "Yes. If what you need is senior leadership rather than hands on the phones, Summit can put a fractional CRO, CCO or CMO in the seat. That's Route 01, and it has its own page.",
+    a: "Yes. If what you need is senior leadership rather than hands on the phones, Summit can put a fractional CRO, CCO or CMO in the seat. That option has its own page.",
   },
 ];
 
-// ── Route 01: fractional executive page ──
+// ── Hire a fractional executive: page copy ──
 
+/**
+ * `eyebrow` is shared with the hub for the same reason as OUTSOURCED_HERO:
+ * the back link above it already reads "Scale-Up Advisory".
+ */
 export const FRACTIONAL_HERO = {
   back: "Scale-Up Advisory",
-  eyebrow: "Scale-Up Advisory · Route 01",
+  eyebrow: HERO.eyebrow,
   title: "Hire a fractional executive",
   lead: "Senior commercial leadership, part-time. Summit has a bench of experienced commercial executives, Anthony among them, who step in as your CRO, CCO or CMO. They own the function and are accountable for the outcomes, not just the recommendations.",
 } as const;
@@ -488,12 +529,40 @@ function faqPageSchema(faqs: readonly Faq[]) {
   };
 }
 
+/**
+ * Hub: the practice as a whole, with the two options as its offer catalog.
+ * Structured data describes the page it sits on, and the hub no longer
+ * carries the outsourced narrative or FAQs, so those schemas moved to the
+ * outsourced page under their own names below. No prices or availability.
+ */
 export const scaleUpServiceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Scale-Up Advisory",
+  serviceType: "Fractional executive leadership and outsourced sales",
+  url: `${SITE_URL}${SCALE_UP_PATH}`,
+  dateModified: DATE_MODIFIED,
+  provider,
+  areaServed: ["Canada", "United States", "United Kingdom", "Europe", "Australia"],
+  description:
+    "Summit builds, runs and leads the commercial function for B2B scale-ups. Clients hire a fractional CRO, CCO or CMO from Summit's bench, or outsource their sales: fixed-price packages, fractional sales people to run them, and an AI-enabled engine built on the client's own intelligence.",
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: "Ways to work with Summit",
+    itemListElement: OPTIONS.map((o) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name: o.title, description: o.body, url: `${SITE_URL}${o.href}` },
+    })),
+  },
+};
+
+/** Outsourced sales page: the packaged offer, with the six package stages as its offer catalog. */
+export const outsourcedServiceSchema = {
   "@context": "https://schema.org",
   "@type": "Service",
   name: "Outsourced Sales for B2B Scale-Ups",
   serviceType: "Outsourced sales and business development",
-  url: `${SITE_URL}${SCALE_UP_PATH}`,
+  url: `${SITE_URL}${OUTSOURCED_SALES_PATH}`,
   dateModified: DATE_MODIFIED,
   provider,
   areaServed: ["Canada", "United States", "United Kingdom", "Europe", "Australia"],
@@ -509,7 +578,7 @@ export const scaleUpServiceSchema = {
   },
 };
 
-export const scaleUpFaqSchema = faqPageSchema(OUTSOURCED_FAQS);
+export const outsourcedFaqSchema = faqPageSchema(OUTSOURCED_FAQS);
 
 export const fractionalServiceSchema = {
   "@context": "https://schema.org",

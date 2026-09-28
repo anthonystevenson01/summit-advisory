@@ -12,7 +12,7 @@ import {
   FRACTIONAL_HERO,
   FRACTIONAL_WHY,
   LAST_REVIEWED_LABEL,
-  OUTSOURCED_ANCHOR_ID,
+  OUTSOURCED_SALES_PATH,
   SCALE_UP_PATH,
   TOOLS_HUB_PATH,
   fractionalFaqSchema,
@@ -116,7 +116,7 @@ export default function FractionalExecutivePage() {
           <div className="inner-body" style={{ paddingBottom: 0 }}>
             <p style={{ ...smallPara, marginTop: 0 }}>
               {FRACTIONAL_CROSS_SELL.lead}{" "}
-              <Link href={`${SCALE_UP_PATH}#${OUTSOURCED_ANCHOR_ID}`} style={inlineLink}>
+              <Link href={OUTSOURCED_SALES_PATH} style={inlineLink}>
                 {FRACTIONAL_CROSS_SELL.link}
               </Link>
             </p>

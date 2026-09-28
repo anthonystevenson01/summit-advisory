@@ -1,5 +1,6 @@
 /**
- * Scale-Up Advisory: two routes (fractional executive + outsourced sales).
+ * Scale-Up Advisory: the hub page and its two option pages (fractional
+ * executive, outsourced sales).
  *
  * Runs on Node's built-in test runner with native TypeScript type stripping
  * (Node >= 22.18 / 23.6). No extra dependencies: `npm test`.
@@ -12,29 +13,34 @@ import {
   DATE_MODIFIED,
   FRACTIONAL_EXEC_PATH,
   FRACTIONAL_FAQS,
+  HUB_TOOLS,
   LEAD_ENGINE,
-  OUTSOURCED_ANCHOR_ID,
+  OPTIONS,
   OUTSOURCED_FAQS,
+  OUTSOURCED_SALES_PATH,
   PACKAGE_COUNT,
   PACKAGE_STAGES,
-  ROUTES,
+  SCALE_UP_PATH,
   TOOL_STAGE_MAP,
   fractionalFaqSchema,
   fractionalServiceSchema,
-  scaleUpFaqSchema,
+  outsourcedFaqSchema,
+  outsourcedServiceSchema,
   scaleUpServiceSchema,
 } from "../app/scale-up-advisory/scale-up-content.ts";
 import { TOOL_SEO, TOOL_SLUGS, isToolPublic } from "../app/tools/[tool]/toolSlugs.ts";
 import sitemap from "../app/sitemap.ts";
+import nextConfig from "../next.config.ts";
 
 const BASE = "https://summitstrategyadvisory.com";
 
 describe("sitemap", () => {
   const urls = sitemap().map((e) => e.url);
 
-  test("includes both scale-up pages", () => {
+  test("includes the hub and both option pages", () => {
     assert.ok(urls.includes(`${BASE}/scale-up-advisory`));
     assert.ok(urls.includes(`${BASE}/scale-up-advisory/fractional-executive`));
+    assert.ok(urls.includes(`${BASE}/scale-up-advisory/outsourced-sales`));
   });
 
   test("has no duplicate URLs", () => {
@@ -42,20 +48,37 @@ describe("sitemap", () => {
   });
 });
 
-describe("routes", () => {
-  test("there are exactly two routes", () => {
-    assert.equal(ROUTES.length, 2);
+describe("options", () => {
+  test("there are exactly two options", () => {
+    assert.equal(OPTIONS.length, 2);
   });
 
-  test("route 1 links to the fractional executive page", () => {
-    assert.equal(ROUTES[0].id, "fractional-executive");
-    assert.equal(ROUTES[0].href, FRACTIONAL_EXEC_PATH);
+  test("option 1 links to the fractional executive page", () => {
+    assert.equal(OPTIONS[0].id, "fractional-executive");
+    assert.equal(OPTIONS[0].href, FRACTIONAL_EXEC_PATH);
     assert.equal(FRACTIONAL_EXEC_PATH, "/scale-up-advisory/fractional-executive");
   });
 
-  test("route 2 links to the outsourced sales anchor", () => {
-    assert.equal(ROUTES[1].id, "outsource-sales");
-    assert.equal(ROUTES[1].href, `#${OUTSOURCED_ANCHOR_ID}`);
+  test("option 2 links to the outsourced sales page", () => {
+    assert.equal(OPTIONS[1].id, "outsource-sales");
+    assert.equal(OPTIONS[1].href, OUTSOURCED_SALES_PATH);
+    assert.equal(OUTSOURCED_SALES_PATH, "/scale-up-advisory/outsourced-sales");
+  });
+
+  test("every option is a page under the hub, not an in-page anchor", () => {
+    assert.equal(SCALE_UP_PATH, "/scale-up-advisory");
+    for (const o of OPTIONS) {
+      assert.ok(o.href.startsWith(`${SCALE_UP_PATH}/`), o.href);
+      assert.ok(!o.href.includes("#"), o.href);
+    }
+  });
+});
+
+describe("hub tools copy", () => {
+  test("says Summit knows AI and that the tools are free", () => {
+    const text = `${HUB_TOOLS.heading} ${HUB_TOOLS.body}`;
+    assert.match(text, /\bAI\b/);
+    assert.match(text, /\bfree\b/i);
   });
 });
 
@@ -91,6 +114,14 @@ describe("tool-to-stage map", () => {
     const publicSlugs = TOOL_SLUGS.filter((s) => isToolPublic(s));
     assert.deepEqual([...publicSlugs].sort(), [...slugs].sort());
   });
+
+  test("every tool has a summary and a stage note that names its stage", () => {
+    for (const t of TOOL_STAGE_MAP) {
+      assert.ok(t.summary.length > 0, `${t.slug} has no summary`);
+      assert.ok(t.stageNote.length > 0, `${t.slug} has no stage note`);
+      assert.ok(t.stageNote.includes(t.stage), `${t.slug} stage note does not name ${t.stage}`);
+    }
+  });
 });
 
 describe("packages", () => {
@@ -113,6 +144,7 @@ describe("packages", () => {
 describe("service schemas", () => {
   const schemas = [
     ["scale-up", scaleUpServiceSchema],
+    ["outsourced", outsourcedServiceSchema],
     ["fractional", fractionalServiceSchema],
   ] as const;
 
@@ -123,27 +155,37 @@ describe("service schemas", () => {
     });
 
     test(`${name} schema is dated ${DATE_MODIFIED}`, () => {
-      assert.equal(schema.dateModified, "2026-09-22");
+      assert.equal(schema.dateModified, "2026-09-24");
     });
 
     test(`${name} schema url is absolute on the Summit domain`, () => {
       assert.ok(schema.url.startsWith(`${BASE}/`), schema.url);
     });
-  }
 
-  test("scale-up service type is not Management Consulting", () => {
-    assert.notEqual(scaleUpServiceSchema.serviceType, "Management Consulting");
-  });
+    test(`${name} service type is not Management Consulting`, () => {
+      assert.notEqual(schema.serviceType, "Management Consulting");
+    });
+  }
 
   test("urls point at the right pages", () => {
     assert.equal(scaleUpServiceSchema.url, `${BASE}/scale-up-advisory`);
+    assert.equal(outsourcedServiceSchema.url, `${BASE}/scale-up-advisory/outsourced-sales`);
     assert.equal(fractionalServiceSchema.url, `${BASE}/scale-up-advisory/fractional-executive`);
+  });
+
+  test("hub offer catalog lists the two options with their page URLs", () => {
+    const items = scaleUpServiceSchema.hasOfferCatalog.itemListElement;
+    assert.equal(items.length, 2);
+    items.forEach((item, i) => {
+      assert.equal(item.itemOffered.name, OPTIONS[i].title);
+      assert.equal(item.itemOffered.url, `${BASE}${OPTIONS[i].href}`);
+    });
   });
 });
 
 describe("FAQ schemas", () => {
   const cases = [
-    ["outsourced", scaleUpFaqSchema, OUTSOURCED_FAQS],
+    ["outsourced", outsourcedFaqSchema, OUTSOURCED_FAQS],
     ["fractional", fractionalFaqSchema, FRACTIONAL_FAQS],
   ] as const;
 
@@ -163,6 +205,21 @@ describe("FAQ schemas", () => {
   }
 });
 
+describe("homepage deep link", () => {
+  test("/?page=sme redirects permanently to the hub", async () => {
+    assert.ok(nextConfig.redirects, "next.config.ts defines redirects()");
+    const redirects = await nextConfig.redirects();
+    const entry = redirects.find(
+      (r) =>
+        r.source === "/" &&
+        (r.has ?? []).some((h) => h.type === "query" && h.key === "page" && h.value === "sme"),
+    );
+    assert.ok(entry, "no redirect for /?page=sme");
+    assert.equal(entry.destination, "/scale-up-advisory");
+    assert.equal(entry.permanent, true);
+  });
+});
+
 describe("copy hygiene", () => {
   const copy = JSON.stringify(content);
 
@@ -175,5 +232,9 @@ describe("copy hygiene", () => {
   test("em-dashes are kept to a minimum", () => {
     const count = (copy.match(/—/g) ?? []).length;
     assert.ok(count <= 3, `found ${count} em-dashes`);
+  });
+
+  test("the options are never called routes (copy or export names)", () => {
+    assert.doesNotMatch(copy, /\broutes?\b/i);
   });
 });
