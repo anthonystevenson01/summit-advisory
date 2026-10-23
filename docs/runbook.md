@@ -188,3 +188,53 @@ npm run build     # strongest check: validates page exports, metadata and the re
 **Caution:** Run the gates one after another (`npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build`), never `tsc` and `next build` at the same time, or `tsc` may report errors from half-written `.next/types/` files that are not in the source.
 
 **Known limitations / future work:** The page no longer links to the fractional page (the FAQ that did was cut); the hub back link is the way across, and a one-line cross-sell would restore symmetry with the fractional page's "Need the sales work done as well as led?" line. `TOOL_STAGE_MAP.stageNote` is rendered nowhere (kept as documentation, still tested). The Service `OfferCatalog` names six stage packages that the page only summarises as "from MAP to GROW". Fewer visible words and a four-question FAQPage (was eight) are an accepted SEO trade-off.
+
+---
+
+## GTM tool pipeline, routing table and calibration gate, added October 2026
+
+**Trigger:** A visitor scores a tool at `/tools/{slug}` (icp, persona, problem, positioning, moat). `ToolPage.tsx` POSTs to `/api/tools/{slug}/score`; after the unlock form it POSTs to `/api/tools/{slug}/unlock` and then `/api/tools/{slug}/details`. The hidden `account` tool keeps its own route at `/api/gtm/account` and answers 404 while `hidden: true` in the registry.
+
+**Service/Function:**
+- `app/lib/tools/registry.ts` describes every tool once. Nothing else holds a dimension, weight, input or SEO string.
+- `app/lib/tools/pipeline.ts` exports `scoreRun(slug, inputs, ctx)` (validate against the registry, load the Published rubric and system prompt from Notion, one scoring call at temperature 0 with a JSON schema generated from the registry, score out of 100, grade 1 to 5 on the 85/70/50/30 bands, persist, return the free view) and `detailRun(runId, ctx)` (requires an unlock, one details call for per dimension reasoning, recommendations for dimensions at 3 or below and the tool's extras, persist, return the full view; a second call for the same run is served from Redis).
+- Routes: `app/api/tools/[tool]/score/route.ts` (5 scores per IP per tool per hour, `maxDuration = 60`), `app/api/tools/[tool]/details/route.ts` (10 per IP per tool per hour, `maxDuration = 60`), `app/api/tools/[tool]/unlock/route.ts` (name, email, company; records the unlock on the run and appends to `gtm-unlocks` so the daily digest is unchanged). Errors map through `app/api/tools/[tool]/errors.ts`. Any `rubric` or `systemPrompt` field in a request body is dropped.
+- `app/lib/llm.ts` is the only model client (OpenRouter through the `openai` package) and the only file that names a model id (`DEFAULT_ROUTES`, `CURATED_MODELS`). `app/lib/rubrics.ts` is the only reader of Notion. `app/lib/runs.ts` is the run store. `app/lib/events.ts` is the event stream.
+- Admin: `/admin/runs` (every run, filter by tool, expandable inputs and reasoning), `/admin/models` (the routing table), `/admin/rubrics` (live rubric version, hash, fetched time, refresh button). `/admin` counts come from the run store.
+
+**Failure mode:**
+- Rubric row missing or not Published in Notion, or `NOTION_TOKEN` / `NOTION_RUBRICS_DB_ID` unset: 503 `rubric not published`. The tool never scores without a rubric.
+- `OPENROUTER_API_KEY` unset: 503 `model provider not configured`.
+- Model answer fails the schema validator, or is empty: 502 "The model returned an unusable answer. Please try again." The page shows a retry.
+- Details requested before the unlock: 403. Unknown or hidden slug: 404. Expired or unknown run id: 404.
+- Rate limit reached: 429 with `Retry-After: 3600`.
+- Timeout: one attempt is capped at 40 seconds. A connection error or 5xx inside the first 15 seconds is retried once; a timeout is never retried, so the worst case is about 55 seconds inside the route's 60. A timed out call surfaces as 500 "Something went wrong" and is logged to `ai:calls` with `ok: false`.
+- Upstash variables unset: rate limiting is skipped. Redis unreachable: the run is scored but not saved (the page still shows the result; unlock then fails with 404 because the run is not stored), and `ai:calls` and `events` writes are dropped silently. Tracking and call logging never throw and are never awaited on the response path, so on Vercel an entry can occasionally be lost when the function returns first.
+- Any other error: 500 with a generic message; the detail is in the function log, never in the response.
+
+**Template/Config:**
+- Environment: `OPENROUTER_API_KEY` (all model calls), `NOTION_TOKEN` and `NOTION_RUBRICS_DB_ID` (rubrics and prompts; the database is `dad404fc12af4207bd446e9e8be22330`), `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (or the `KV_REST_API_*` pair). SMTP and admin variables are unchanged.
+- Retired and safe to delete from Vercel: `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `SKILL_DOC_ID`, `RECOMMENDATIONS_DOC_ID`, `NOTION_PROMPTS_DB_ID` and every `NOTION_*_RUBRIC_ID`.
+- Redis keys:
+
+| Key | What | TTL |
+|---|---|---|
+| `run:{id}` | Hash, one per scored run: inputs, scores, score, grade, verdict, confidence, reasoning, recommendations, extras, rubric version and hash, model per call, calibrated flag per call, unlock | 30 days; removed when the run is unlocked, so unlocked runs persist |
+| `runs:by-time` | Sorted set index of run ids by created time | none; `listRuns` prunes expired ids as it reads |
+| `rubric:{slug}` | Cached `{ systemPrompt, rubric, version, hash, fetchedAt }` from Notion | 10 minutes, plus a 60 second in memory cache per instance |
+| `admin:model-config` | Hash, routing key to `{ model, reasoning?, maxTokens?, fallback? }` override | none; cached in memory for 30 seconds |
+| `admin:calibration` | Hash, routing key to `{ model, passedAt, rubricHashes }` or `{ model, uncalibratedSince }` | none |
+| `admin:model-catalog` | The curated model list with OpenRouter prices | 10 minutes |
+| `ai:calls` | List, one entry per model call: key, model, runId, ms, tokens, cost, ok, error, calibrated | none; capped at the last 2000 |
+| `events` | Stream: `tool_started`, `result_shown`, `email_given`, `full_view_opened`, `re_run` | none; capped at about 50000 entries |
+| `gtm-unlocks` | List read by the daily digest; unchanged shape, ICP unlocks now land here with `tool: "icp"` | none |
+
+- The old `gtm-submissions`, `icp-submissions`, `gtm-text:*`, `icp-text:*`, `gtm-details:*` and `icp-details:*` keys are no longer written. They are left in place; no migration.
+- Changing a model: `/admin/models` shows one row per routing key (`scoring`, `details`, `synthesis`, `extraction`) with the current model and live price, reasoning, calibration state, and calls and spend over the last 30 days. Pick a model from the dropdown (curated list only) and save; the change is live within 30 seconds, no deploy. "Add per-tool override" creates a `{task}:{tool}` row that wins over the task row for that tool only. "Reset to default" deletes the override and the key's calibration record. Changing `scoring`, `scoring:{tool}` or `synthesis` marks that key "Uncalibrated since" until the calibration script records a pass with that model; `details` and `extraction` are not gated. Reasoning is off for `scoring` (Haiku 5.5 allows it) and low for `details`, `extraction` and `synthesis` (medium). Sonnet and Opus class models through OpenRouter refuse to disable reasoning with a 400 "Reasoning is mandatory"; if a key is set to a model that refuses, the client resends once with low effort and the call log shows `reasoningFallback: true`. The 5.x models think before answering and thinking tokens count against max tokens, so if you turn reasoning on for a key in `/admin/models`, raise that key's max tokens to cover the thinking plus the answer (a scoring answer is about 150 tokens; thinking adds hundreds to thousands) or calls fail with 502 and `ai:calls` shows "ran out of tokens". Keep `details` reasoning off or low: a heavy reasoning model on a 3000 token answer can approach the 60 second limit. Any saved change on `scoring`, `scoring:{tool}` or `synthesis`, including a reasoning change, marks that key uncalibrated.
+- Changing a rubric or system prompt: edit the row in the Notion "Tool Rubrics" database (page body is the rubric, the System Prompt property is the prompt), bump Version, set Status to Published. The site picks it up within 10 minutes, or at once after the refresh button on `/admin/rubrics`, which clears every `rubric:*` key (each warm instance then catches up within its 60 second memory cache). Then run `npm run calibrate`. Every run stores the rubric hash it was scored with, so results are traceable across versions.
+- Calibration: `npm run calibrate` (reads `.env.local`; needs the OpenRouter, Notion and Upstash variables when at least one case is runnable). It scores every `calibration/{tool}/*.json` case through `scoreRun`, compares the overall grade and each dimension grade with `expected`, prints a table and exits `0` when every run case is within one point (or nothing was runnable), `1` when a grade moved by more than one point or a case threw, `2` when configuration is missing. A case whose input contains `TO FILL` is reported as skipped and never scored; a folder with no public registry entry (`built-to-scale`, `route-to-buyer`, `unit-of-value`) is reported as skipped too. On a full pass with at least one case run it writes `admin:calibration` for every scoring key used, which `/admin/models` shows as "Passed with {model} on {date}". Calibration runs are not stored in `run:{id}`; they appear in `ai:calls` with a `cal_` run id. See `calibration/README.md` for the case format.
+
+**To disable:**
+- One tool, no deploy: set its row to Draft in Notion and press refresh on `/admin/rubrics`. That tool answers 503 "rubric not published" until the row is Published again; the other tools are unaffected.
+- All scoring, no deploy: remove `OPENROUTER_API_KEY` from Vercel and redeploy the environment. Every score and details call answers 503 "model provider not configured"; pages still render.
+- One tool permanently: set `hidden: true` on its registry entry and deploy. It leaves the hub, the sitemap params and the three routes (404).

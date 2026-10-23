@@ -7,14 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"__tests__/*.test.ts\""
+    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"__tests__/*.test.ts\"",
+    "calibrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/calibrate.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "next": "16.1.5",
     "nodemailer": "^8.0.2",
+    "openai": "^7.3.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

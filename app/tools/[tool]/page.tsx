@@ -2,18 +2,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ToolRunner from "./ToolRunner";
-import { TOOL_SEO, TOOL_SLUGS, isToolHidden, isToolPublic, isToolSlug } from "./toolSlugs";
+import { PUBLIC_TOOLS, getTool, isToolPublic } from "@/app/lib/tools/registry";
 
 type Params = Promise<{ tool: string }>;
 
 export function generateStaticParams() {
-  return TOOL_SLUGS.filter((t) => !isToolHidden(t)).map((tool) => ({ tool }));
+  return PUBLIC_TOOLS.map((t) => ({ tool: t.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { tool } = await params;
-  if (!isToolSlug(tool) || isToolHidden(tool)) return {};
-  const seo = TOOL_SEO[tool];
+  const entry = isToolPublic(tool) ? getTool(tool) : undefined;
+  if (!entry) return {};
+  const seo = entry.seo;
   return {
     title: seo.title,
     description: seo.description,
@@ -37,13 +38,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function ToolPage({ params }: { params: Params }) {
   const { tool } = await params;
   if (!isToolPublic(tool)) notFound();
+  const entry = getTool(tool);
+  if (!entry) notFound();
 
-  const seo = TOOL_SEO[tool];
+  const seo = entry.seo;
 
   const webAppSchema = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: seo.title.split(" —")[0],
+    name: entry.name,
     description: seo.about,
     url: seo.canonical,
     applicationCategory: "BusinessApplication",
@@ -77,10 +80,10 @@ export default async function ToolPage({ params }: { params: Params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      {/* Interactive tool — FAQ passed as children so it renders above the footer */}
+      {/* Interactive tool. FAQ passed as children so it renders above the footer. */}
       <ToolRunner slug={tool}>
 
-        {/* Static FAQ section — always server-rendered */}
+        {/* Static FAQ section, always server-rendered */}
         <div
           style={{
             background: "#f8faf9",
@@ -142,8 +145,8 @@ export default async function ToolPage({ params }: { params: Params }) {
             Part of the{" "}
             <Link href="/tools" style={{ color: "#053030", fontWeight: 600 }}>
               Summit GTM Toolkit
-            </Link>{" "}
-            — five free tools for teams selling into finite markets. Built by{" "}
+            </Link>
+            : five free tools for teams selling into finite markets. Built by{" "}
             <Link href="/" style={{ color: "#053030", fontWeight: 600 }}>
               Summit Strategy Advisory
             </Link>
