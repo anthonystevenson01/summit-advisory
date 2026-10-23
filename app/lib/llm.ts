@@ -38,7 +38,7 @@ export type { ResolvedRoute, RouteConfig, RoutingTask };
 
 export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   scoring: { model: "anthropic/claude-haiku-5.5", maxTokens: 1200 },
-  details: { model: "anthropic/claude-sonnet-5.5", maxTokens: 3000 },
+  details: { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 4000 },
   synthesis: { model: "anthropic/claude-opus-5.5", reasoning: "medium", maxTokens: 4000, fallback: "anthropic/claude-sonnet-5.5" },
   extraction: { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 4000 },
 };
@@ -173,13 +173,14 @@ export async function markUncalibrated(key: string, model: string): Promise<void
 // ── Client ───────────────────────────────────────────────────────────────────
 
 let client: OpenAI | null = null;
-// Time budget. One attempt is capped at 25 s. The single retry is allowed
-// only inside the first 25 s and never after a timeout (see isRetryable), so
-// the worst case (an error late in the window, then one full attempt) stays
-// under 55 s and inside the score and details routes' maxDuration of 60.
-// Raising either constant means re-checking that sum.
-const CALL_TIMEOUT_MS = 25_000;
-const RETRY_WINDOW_MS = 25_000;
+// Time budget. One attempt is capped at 40 s (a details call with reasoning
+// on took 23 s in a replay, so 25 s was too tight). The single connection
+// retry is allowed only inside the first 15 s and never after a timeout (see
+// isRetryable), so the worst case (an error just under 15 s, then one full
+// 40 s attempt) stays at about 55 s and inside the score and details routes'
+// maxDuration of 60. Raising either constant means re-checking that sum.
+const CALL_TIMEOUT_MS = 40_000;
+const RETRY_WINDOW_MS = 15_000;
 
 function getClient(): OpenAI {
   if (client) return client;
@@ -242,6 +243,8 @@ export interface AiCallLog {
   ok: boolean;
   error: string | null;
   calibrated: boolean;
+  /** True when the model refused `reasoning: { enabled: false }` and the call was resent with low effort. */
+  reasoningFallback?: boolean;
 }
 
 export async function logCall(entry: AiCallLog): Promise<void> {
@@ -338,15 +341,22 @@ function errorText(err: unknown): string {
 /**
  * One chat completion through OpenRouter with a strict JSON schema.
  *
- * Reasoning (extended thinking) is sent as `{ enabled: false }` unless the
- * resolved route sets an effort. The Anthropic 5.x models think by default
- * and their thinking tokens count against `max_tokens`, so with thinking on
- * a small cap is spent on reasoning and the answer comes back empty. Off by
- * default also keeps scoring and details deterministic alongside
- * temperature 0. An admin who turns reasoning on for a key in /admin/models
- * must raise that key's max tokens to cover the reasoning plus the answer
- * (the scoring answer alone is about 150 tokens; thinking adds hundreds to
- * thousands), or the call fails with "ran out of tokens".
+ * Reasoning (extended thinking) is sent as `{ enabled: false }` when the
+ * resolved route sets no effort, and as `{ effort }` when it does. The
+ * Anthropic 5.x models think by default and their thinking tokens count
+ * against `max_tokens`, so with thinking on a small cap is spent on
+ * reasoning and the answer comes back empty. Off is only possible where the
+ * model allows it: Haiku 5.5 accepts `enabled: false` (scoring runs with it
+ * off, which also keeps scoring deterministic alongside temperature 0), but
+ * Sonnet-class models through OpenRouter refuse to disable reasoning with a
+ * 400 "Reasoning is mandatory for this endpoint and cannot be disabled". The
+ * details default is therefore `low`, and when any model answers that 400
+ * the client resends once with `{ effort: "low" }` and the same max_tokens,
+ * recording `reasoningFallback: true` on the call log. An admin who turns
+ * reasoning on or up for a key in /admin/models must keep that key's max
+ * tokens large enough for the reasoning plus the answer (the scoring answer
+ * alone is about 150 tokens; thinking adds hundreds to thousands), or the
+ * call fails with "ran out of tokens".
  */
 export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T>> {
   const route = await resolveRoute(args.routingKey);
@@ -384,6 +394,15 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
   const started = Date.now();
   let answeredBy = route.model;
   let usage: CallUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: null };
+  let reasoningFallback = false;
+
+  // A 400 from a model that refuses to disable reasoning (Sonnet-class through
+  // OpenRouter). Handled once by resending with low effort; never looped.
+  const refusesDisabledReasoning = (err: unknown): boolean =>
+    err instanceof OpenAI.APIError &&
+    err.status === 400 &&
+    /cannot be disabled|Reasoning is mandatory/i.test(err.message) &&
+    (body.reasoning as { enabled?: boolean } | undefined)?.enabled === false;
 
   const attempt = async () => {
     const completion = await openai.chat.completions.create(body as unknown as ChatCompletionCreateParamsNonStreaming);
@@ -406,8 +425,16 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
     try {
       content = await attempt();
     } catch (err) {
-      if (!isRetryable(err) || Date.now() - started >= RETRY_WINDOW_MS) throw err;
-      content = await attempt();
+      if (refusesDisabledReasoning(err)) {
+        // Fails fast (under a second), so it is outside the retry window and
+        // separate from the connection-error retry below.
+        reasoningFallback = true;
+        body.reasoning = { effort: "low" };
+        content = await attempt();
+      } else {
+        if (!isRetryable(err) || Date.now() - started >= RETRY_WINDOW_MS) throw err;
+        content = await attempt();
+      }
     }
     let raw: unknown;
     try {
@@ -427,6 +454,7 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
       ok: true,
       error: null,
       calibrated,
+      reasoningFallback,
     });
     return { data, model: answeredBy, routingKey: args.routingKey, resolvedKey, source: route.source, ms, usage, calibrated };
   } catch (err) {
@@ -440,6 +468,7 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
       ok: false,
       error: errorText(err),
       calibrated,
+      reasoningFallback,
     });
     throw err;
   }

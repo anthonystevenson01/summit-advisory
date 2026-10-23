@@ -46,3 +46,11 @@ Fault: every scoring call on the preview returned 502. Cause: the 5.x models run
 Fix (`app/lib/llm.ts`, `app/api/tools/[tool]/errors.ts`): every call now sends an explicit `reasoning` field, `{ enabled: false }` unless the route sets an effort, so scoring and details run with thinking off and synthesis and extraction keep their default efforts; `DEFAULT_ROUTES.scoring.maxTokens` 600 to 1200; an empty answer with `finish_reason` "length" throws "model ran out of tokens before answering", mapped to the same 502 and logged to `ai:calls`. Verified: `scoreRun` for moat completed against production Redis, Notion and OpenRouter (score 67, grade 3, verdict and confidence). Gates re-run by the Reviewer and green.
 
 Additional notes for PR: consider extracting a pure `buildChatBody(route, args)` so a unit test can assert the reasoning field; runbook to state that turning reasoning on for a key needs a higher max tokens; the `admin:calibration` state is keyed by model, and any PATCH on a gated key marks it uncalibrated, including a reasoning change.
+
+## Round 4: APPROVE (second fix from the live preview smoke test)
+
+Fault: details returned 500 because OpenRouter answers `400 Reasoning is mandatory for this endpoint and cannot be disabled.` for Sonnet 5.5 when the body carries `reasoning: { enabled: false }`; Haiku 5.5 accepts it. Replay on Sonnet 5.5: reasoning omitted 1209 reasoning tokens and 23 s; effort low 0 reasoning tokens and 14 s.
+
+Fix (`app/lib/llm.ts`): `DEFAULT_ROUTES.details` now `reasoning: "low"`, maxTokens 4000; a self-healing fallback resends once with `{ effort: "low" }` when a 400 says reasoning cannot be disabled and the body sent `enabled: false`, recorded as `reasoningFallback: true` on the call log; `CALL_TIMEOUT_MS` 40 s and `RETRY_WINDOW_MS` 15 s, worst case about 55 s. Verified: `detailRun` for the unlocked preview run returns the full view against production Redis, Notion and OpenRouter. Gates re-run by the Reviewer and green.
+
+Additional note for PR: if Haiku ever refuses `enabled: false`, scoring will fall back to low effort with the same max tokens; `reasoningFallback: true` entries in `ai:calls` are the signal to raise scoring max tokens or set an explicit effort, and to re-run `npm run calibrate` because reasoning on versus off can move grades.
