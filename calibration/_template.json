@@ -1,0 +1,16 @@
+{
+  "tool": "moat",
+  "name": "Example Co",
+  "source": "public information, October 2026",
+  "agreedBy": "Anthony Stevenson",
+  "agreedOn": "2026-10-23",
+  "input": {
+    "position": "Paste the input exactly as a visitor would type it.",
+    "competitors": "Optional second field where the tool has one."
+  },
+  "expected": {
+    "grade": 2,
+    "dimensions": { "sc": 2, "pd": 2, "ne": 1, "br": 2, "sd": 3, "pr": 2 }
+  },
+  "note": "Why these grades. One or two sentences."
+}

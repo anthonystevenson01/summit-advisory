@@ -4,11 +4,14 @@ import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "../icons";
-import { TOOLS } from "./data/toolConfig";
 import NewsletterCapture from "./shared/NewsletterCapture";
 import ToolkitFooter from "./ToolkitFooter";
 import SiteNav from "../SiteNav";
-import { isToolHidden, isToolPublic } from "@/app/tools/[tool]/toolSlugs";
+import { PUBLIC_TOOLS, isToolHidden, isToolPublic } from "@/app/lib/tools/registry";
+
+// One surface and accent for every card.
+const CARD_SURFACE = "#0a1a14";
+const CARD_ACCENT = "#319A65";
 
 /**
  * Reads ?tool=X from the URL and redirects to /tools/X. Isolated in its own
@@ -113,48 +116,27 @@ export default function ToolkitHub() {
             <div className="cards-label">The Tools</div>
             <div className="cards">
 
-              {/* Tool 01 — ICP Evaluator */}
-              <Link href="/tools/icp" className="card" aria-label="Open ICP Evaluator">
-                <div className="card-icon-wrap" style={{ background: "#0a1a14", minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
-                  <span style={{
-                    fontFamily: "var(--font-barlow-condensed), sans-serif",
-                    fontSize: 11, fontWeight: 700,
-                    letterSpacing: "0.18em", textTransform: "uppercase",
-                    color: "#319A65",
-                  }}>Tool 01</span>
-                </div>
-                <div className="card-body" style={{ borderTopColor: "#319A65" }}>
-                  <div className="card-title">ICP Evaluator</div>
-                  <p className="card-desc">Score your Ideal Customer Profile across seven weighted dimensions.</p>
-                  <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                    <strong style={{ color: "var(--teal)", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
-                    Weighted ICP score, dimension breakdown, and specific improvement recommendations.
-                  </p>
-                  <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>Open Tool →</div>
-                </div>
-              </Link>
-
-              {/* Tools 02–05 from config */}
-              {TOOLS.map((tool) => (
+              {/* Tools 01 to 05 from the registry */}
+              {PUBLIC_TOOLS.map((tool) => (
                 <Link
-                  key={tool.id}
-                  href={`/tools/${tool.id}`}
+                  key={tool.slug}
+                  href={`/tools/${tool.slug}`}
                   className="card"
                   aria-label={`Open ${tool.name}`}
                 >
-                  <div className="card-icon-wrap" style={{ background: tool.surface, minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
+                  <div className="card-icon-wrap" style={{ background: CARD_SURFACE, minHeight: 64, alignItems: "flex-end", paddingBottom: 16 }}>
                     <span style={{
                       fontFamily: "var(--font-barlow-condensed), sans-serif",
                       fontSize: 11, fontWeight: 700,
                       letterSpacing: "0.18em", textTransform: "uppercase",
-                      color: tool.accent,
-                    }}>Tool {String(tool.num).padStart(2, "0")}</span>
+                      color: CARD_ACCENT,
+                    }}>Tool {tool.number}</span>
                   </div>
-                  <div className="card-body" style={{ borderTopColor: tool.accent }}>
+                  <div className="card-body" style={{ borderTopColor: CARD_ACCENT }}>
                     <div className="card-title">{tool.name}</div>
                     <p className="card-desc">{tool.tagline}</p>
                     <p style={{ fontSize: 13, color: "var(--ghost)", marginTop: 8, lineHeight: 1.6 }}>
-                      <strong style={{ color: "#319A65", fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
+                      <strong style={{ color: CARD_ACCENT, fontFamily: "var(--font-barlow-condensed), sans-serif", letterSpacing: "0.04em" }}>You get:</strong>{" "}
                       {tool.outputDescription}
                     </p>
                     <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
@@ -166,7 +148,7 @@ export default function ToolkitHub() {
             </div>
           </div>
 
-          {/* Account Intelligence — separate section. Hidden when "account" is in HIDDEN_TOOL_SLUGS. */}
+          {/* Account Intelligence: separate section. Hidden while the registry marks "account" hidden. */}
           {!isToolHidden("account") && (
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 0 }}>
               <div className="cards-section" style={{ paddingTop: 48 }}>

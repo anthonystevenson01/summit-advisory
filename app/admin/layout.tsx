@@ -39,11 +39,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <a href="/admin/ai-studio" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             AI Studio
           </a>
-          <a href="/admin/icp" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
-            ICP Submissions
+          <a href="/admin/runs" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Runs
           </a>
-          <a href="/admin/gtm" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
-            GTM Submissions
+          <a href="/admin/models" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Models
+          </a>
+          <a href="/admin/rubrics" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Rubrics
           </a>
         </div>
         <form action="/api/admin/logout" method="POST">

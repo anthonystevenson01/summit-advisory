@@ -324,6 +324,8 @@ Keep an internal counter `REJECT_COUNT` starting at 0. Increment on each REJECT 
 - Language / runtime: TypeScript / Node 22.18+ (required: npm test uses Node's native TypeScript type stripping; 23.6+ also works)
 - Framework: Next.js 16 (App Router) / React 19
 - Database: Upstash Redis (`@upstash/redis`) — env vars `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+- Model calls: OpenRouter through the `openai` package. `app/lib/llm.ts` is the only file that calls a model. Reference implementation: `Summit - Canvas/app/lib/ai.ts` and `app/api/admin/models/route.ts` in the sibling Canvas repo
+- Rubrics and system prompts: Notion database "Tool Rubrics" (`NOTION_RUBRICS_DB_ID`), one row per tool, read server side only, Published rows only
 - Test framework: Node built-in test runner (node:test + node:assert/strict) via npm test. Jest is not installed
 - Package manager: npm
 
@@ -336,18 +338,29 @@ public/       — Static assets
 docs/         — Runbook and design docs
 docs/designs/ — Architect design documents (auto-saved per task)
 docs/reviews/ — Reviewer notes and verdicts (auto-saved per task)
+app/lib/tools/ — Tool registry, pipeline, run store (from Release 1a)
+calibration/  — Known inputs with agreed grades, one folder per tool, run by scripts/calibrate.ts
 ```
 
 ### Code Conventions
 
 - camelCase for variables/functions, PascalCase for components
 - Component files use PascalCase; utility files use kebab-case
-- Tailwind CSS for all styling — no custom CSS files
+- Styling: inline style objects using the BRAND tokens in `app/lib/brand.ts`, plus shared classes in `app/globals.css`. Tailwind is installed for the base layer only; do not add Tailwind utility classes to components
+- Copy in the UI and in generated text: British spelling, no em or en dashes, no hype words, plain sentences
 
 ### Key Constraints (Project-Wide)
 
 - Secrets via environment variables only — never hardcoded
 - No new dependencies without team approval
+- The `openai` package (OpenRouter client) is the approved dependency for model calls; `@anthropic-ai/sdk` is retired
+- One registry: `app/lib/tools/registry.ts` is the only place a tool is described (inputs, dimensions, weights, role, extras, SEO, hidden flag, feeds). Nothing else may hard-code a tool's dimensions or copy
+- One pipeline: `app/lib/tools/pipeline.ts` scores and produces the full view for every tool; routes and the Built to Scale page call it as a function. No per-tool route or component files
+- Rubrics never reach the browser and are never accepted from a request body. `app/lib/rubrics.ts` loads them server side
+- Every model call names a routing key (`scoring`, `details`, `synthesis`, `extraction`, optionally `:{tool}`) resolved by `app/lib/llm.ts` from code defaults plus Redis overrides set in /admin. No model id outside `llm.ts`
+- Every run is stored at `run:{id}` with inputs, scores, grade, verdict, extras, confidence, rubric version and hash, model id per call, and timestamp
+- Changing a scoring or synthesis model, or publishing a rubric, requires `npm run calibrate` to pass. A one-point grade move on any calibration case blocks the change
+- Dimension weights live in code. Rubric descriptors live in Notion
 
 ### CI / Quality Gates
 
@@ -355,6 +368,7 @@ docs/reviews/ — Reviewer notes and verdicts (auto-saved per task)
 - `npm run lint` (ESLint, 0 errors)
 - `npx tsc --noEmit`
 - `npm run build`
+- `npm run calibrate` when a rubric, prompt, model or scoring change is in the diff (needs `OPENROUTER_API_KEY` and `NOTION_TOKEN`; skipped cases are reported, never silently passed)
 
 ### External Integrations
 

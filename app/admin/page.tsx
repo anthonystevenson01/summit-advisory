@@ -1,42 +1,43 @@
 import { getRedis } from "@/app/lib/redis";
+import { countRuns } from "@/app/lib/runs";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   let pageVisits = 0;
   let buildRequests = 0;
-  let icpsScored = 0;
+  let runsScored = 0;
   let emailsCaptured = 0;
-  let gtmScored = 0;
-  let gtmEmailsCaptured = 0;
 
   try {
     const redis = getRedis();
-    const [visits, builds, icps, unlocks, gtmSubs, gtmUnlocks] = await Promise.all([
+    const [visits, builds, runs, gtmUnlocks, icpUnlocks] = await Promise.all([
       redis.get("page-visits"),
       redis.llen("ai-studio-requests"),
-      redis.llen("icp-submissions"),
-      redis.llen("icp-unlocks"),
-      redis.llen("gtm-submissions"),
+      countRuns(),
       redis.llen("gtm-unlocks"),
+      redis.llen("icp-unlocks"),
     ]);
     pageVisits = typeof visits === "number" ? visits : parseInt(String(visits) || "0", 10);
     buildRequests = builds;
-    icpsScored = icps;
-    emailsCaptured = unlocks;
-    gtmScored = gtmSubs;
-    gtmEmailsCaptured = gtmUnlocks;
+    runsScored = runs;
+    emailsCaptured = gtmUnlocks + icpUnlocks;
   } catch (err) {
-    console.error("Admin dashboard Redis error", err);
+    console.error("Admin dashboard Redis error", err instanceof Error ? err.message : err);
   }
 
   const cards = [
     { label: "Page Visits", value: pageVisits, color: "#005A66" },
     { label: "Build Requests", value: buildRequests, color: "#319A65" },
-    { label: "ICPs Scored", value: icpsScored, color: "#D4A017" },
-    { label: "ICP Emails", value: emailsCaptured, color: "#C0392B" },
-    { label: "GTM Scored", value: gtmScored, color: "#7c3aed" },
-    { label: "GTM Emails", value: gtmEmailsCaptured, color: "#0891b2" },
+    { label: "Runs Scored", value: runsScored, color: "#D4A017" },
+    { label: "Emails Captured (incl. legacy ICP list)", value: emailsCaptured, color: "#C0392B" },
+  ];
+
+  const links = [
+    { href: "/admin/ai-studio", title: "AI Studio Requests", body: "View all build request submissions" },
+    { href: "/admin/runs", title: "Runs", body: "Every scored run: inputs, scores, reasoning, unlocks" },
+    { href: "/admin/models", title: "Models", body: "Which model handles each call, with calibration state and spend" },
+    { href: "/admin/rubrics", title: "Rubrics", body: "Live rubric versions from Notion, with a refresh" },
   ];
 
   return (
@@ -74,54 +75,25 @@ export default async function AdminDashboard() {
         ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-        <a
-          href="/admin/ai-studio"
-          style={{
-            display: "block",
-            background: "#fff",
-            borderRadius: 8,
-            padding: "20px",
-            textDecoration: "none",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
-            AI Studio Requests
-          </p>
-          <p style={{ fontSize: 13, color: "#666", margin: 0 }}>View all build request submissions</p>
-        </a>
-        <a
-          href="/admin/icp"
-          style={{
-            display: "block",
-            background: "#fff",
-            borderRadius: 8,
-            padding: "20px",
-            textDecoration: "none",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
-            ICP Submissions
-          </p>
-          <p style={{ fontSize: 13, color: "#666", margin: 0 }}>View all ICP evaluations and unlocks</p>
-        </a>
-        <a
-          href="/admin/gtm"
-          style={{
-            display: "block",
-            background: "#fff",
-            borderRadius: 8,
-            padding: "20px",
-            textDecoration: "none",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
-            GTM Submissions
-          </p>
-          <p style={{ fontSize: 13, color: "#666", margin: 0 }}>Persona, Problem, Positioning, Moat — filterable</p>
-        </a>
+        {links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            style={{
+              display: "block",
+              background: "#fff",
+              borderRadius: 8,
+              padding: "20px",
+              textDecoration: "none",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}
+          >
+            <p style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 16, fontWeight: 600, color: "#053030", margin: "0 0 4px" }}>
+              {link.title}
+            </p>
+            <p style={{ fontSize: 13, color: "#666", margin: 0 }}>{link.body}</p>
+          </a>
+        ))}
       </div>
     </div>
   );

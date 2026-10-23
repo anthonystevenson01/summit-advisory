@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ToolkitHub from "@/app/components/toolkit/ToolkitHub";
+import { PUBLIC_TOOLS } from "@/app/lib/tools/registry";
 
 export const metadata: Metadata = {
   title: "Summit GTM Toolkit — Five Free Tools for Finite Markets",
@@ -29,44 +30,14 @@ const itemListSchema = {
   description:
     "Five free AI diagnostic tools for B2B teams selling into finite, named-account markets.",
   url: "https://summitstrategyadvisory.com/tools",
-  numberOfItems: 5,
-  itemListElement: [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "ICP Evaluator",
-      description: "Score your Ideal Customer Profile across seven weighted dimensions.",
-      url: "https://summitstrategyadvisory.com/tools/icp",
-    },
-    {
-      "@type": "ListItem",
-      position: 2,
-      name: "Buyer Persona Quality Check",
-      description: "See whether your buyer persona is specific enough to actually drive sales decisions. Letter grade + 6 scored dimensions.",
-      url: "https://summitstrategyadvisory.com/tools/persona",
-    },
-    {
-      "@type": "ListItem",
-      position: 3,
-      name: "Market Problem Validator",
-      description: "Stress-test whether the problem you're solving is real, urgent, and worth building against.",
-      url: "https://summitstrategyadvisory.com/tools/problem",
-    },
-    {
-      "@type": "ListItem",
-      position: 4,
-      name: "Positioning Statement Grader",
-      description: "Find out if your positioning statement actually works — or just sounds good. Letter grade A–F with a suggested rewrite.",
-      url: "https://summitstrategyadvisory.com/tools/positioning",
-    },
-    {
-      "@type": "ListItem",
-      position: 5,
-      name: "Competitive Moat Rater",
-      description: "Understand how defensible your position really is — and what threatens it. Strong / Moderate / Thin / Exposed rating.",
-      url: "https://summitstrategyadvisory.com/tools/moat",
-    },
-  ],
+  numberOfItems: PUBLIC_TOOLS.length,
+  itemListElement: PUBLIC_TOOLS.map((tool, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: tool.name,
+    description: tool.seo.description,
+    url: tool.seo.canonical,
+  })),
 };
 
 export default function ToolsPage() {

@@ -1,42 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { usePrompts } from "@/app/components/toolkit/hooks/usePrompts";
-import { useRubrics } from "@/app/components/toolkit/hooks/useRubrics";
 import SiteNav from "@/app/components/SiteNav";
 import ToolkitFooter from "@/app/components/toolkit/ToolkitFooter";
-import ICPEvaluator from "@/app/components/icp-evaluator";
-import PersonaTool from "@/app/components/toolkit/tools/PersonaTool";
-import ProblemTool from "@/app/components/toolkit/tools/ProblemTool";
-import PositioningTool from "@/app/components/toolkit/tools/PositioningTool";
-import MoatTool from "@/app/components/toolkit/tools/MoatTool";
+import ToolPage from "@/app/components/toolkit/ToolPage";
 import AccountIntelTool from "@/app/components/toolkit/tools/AccountIntelTool";
-import type { ToolSlug } from "./toolSlugs";
-
-const BOOK_URL =
-  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
+import { isToolPublic, type ToolSlug } from "@/app/lib/tools/registry";
 
 /**
  * Renders a single GTM tool inside the standard toolkit chrome
  * (site nav + back row + footer). Back link is a real anchor so the
- * browser back button / right-click-open-in-new-tab work natively.
+ * browser back button and open-in-new-tab work natively.
+ *
+ * Every public registry tool renders through ToolPage. Account Intelligence
+ * is hidden and keeps its own component; its route falls back to its own
+ * default prompt when the string is empty.
  *
  * Accepts optional children rendered between the tool and the footer
- * (e.g. the server-side FAQ section from the parent page).
+ * (for example the server-side FAQ section from the parent page).
  */
 export default function ToolRunner({ slug, children }: { slug: ToolSlug; children?: React.ReactNode }) {
-  const router = useRouter();
-  const { prompts } = usePrompts();
-  const { rubrics } = useRubrics();
-
-  const goToHub = () => router.push("/tools");
-
   return (
     <>
       <SiteNav activePage="tools" />
       <div className="page">
-        {/* Back row — mirrors the inner-back pattern from the rest of the site */}
         <div
           style={{
             background: "var(--forest)",
@@ -49,28 +36,8 @@ export default function ToolRunner({ slug, children }: { slug: ToolSlug; childre
           </Link>
         </div>
 
-        {slug === "icp" && (
-          <ICPEvaluator
-            onBack={goToHub}
-            onBookCall={() => window.open(BOOK_URL, "_blank")}
-          />
-        )}
-        {slug === "persona" && (
-          <PersonaTool systemPrompt={prompts.persona} rubric={rubrics.persona} />
-        )}
-        {slug === "problem" && (
-          <ProblemTool systemPrompt={prompts.problem} rubric={rubrics.problem} />
-        )}
-        {slug === "positioning" && (
-          <PositioningTool
-            systemPrompt={prompts.positioning}
-            rubric={rubrics.positioning}
-          />
-        )}
-        {slug === "moat" && (
-          <MoatTool systemPrompt={prompts.moat} rubric={rubrics.moat} />
-        )}
-        {slug === "account" && <AccountIntelTool systemPrompt={prompts.account} />}
+        {isToolPublic(slug) && <ToolPage slug={slug} />}
+        {slug === "account" && <AccountIntelTool systemPrompt="" />}
 
         {children}
         <ToolkitFooter />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getGrade } from "../data/dimensionConfig";
+import { getGrade } from "@/app/lib/tools/scoring";
 import { BRAND } from "@/app/lib/brand";
 
 function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {

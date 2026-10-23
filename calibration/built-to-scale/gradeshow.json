@@ -1,0 +1,26 @@
+{
+  "tool": "built-to-scale",
+  "name": "Gradeshow",
+  "source": "public information, worked example in the Built to Scale? spec, October 2026",
+  "agreedBy": "Anthony Stevenson",
+  "agreedOn": "2026-10-23",
+  "input": {
+    "pain": "TO FILL: the problem and who owns it, as drafted for the Gradeshow report.",
+    "routeToBuyer": "TO FILL: how the company reaches buyers.",
+    "unitOfValue": "TO FILL: how it delivers and prices.",
+    "valueEvidence": "TO FILL: how customers see the result.",
+    "abilityToProtect": "TO FILL: what protects the position."
+  },
+  "expected": {
+    "total": 10,
+    "band": "A good idea with an engine still to build",
+    "rows": {
+      "pain": 3,
+      "routeToBuyer": 2,
+      "unitOfValueConstraints": 1,
+      "valueEvidence": 2,
+      "abilityToProtect": 2
+    }
+  },
+  "note": "Scores from the spec's worked example. Inputs need writing before this case can run."
+}

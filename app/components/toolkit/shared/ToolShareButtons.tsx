@@ -1,7 +1,7 @@
 "use client";
 
 import { CSSProperties, useState, useSyncExternalStore } from "react";
-import type { ToolSlug } from "@/app/tools/[tool]/toolSlugs";
+import type { ToolSlug } from "@/app/lib/tools/registry";
 
 interface Props {
   slug: ToolSlug;
