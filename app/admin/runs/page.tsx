@@ -102,12 +102,17 @@ function RunDetail({ run }: { run: RunRecord }) {
             return (
               <div key={x.key} style={{ marginTop: 6 }}>
                 <div style={{ fontWeight: 600, color: "#053030" }}>{x.label}</div>
-                {Array.isArray(value) ? (
+                {typeof value === "string" ? (
+                  <div style={{ color: "#666" }}>{value}</div>
+                ) : Array.isArray(value) ? (
                   <ol style={{ margin: "2px 0 0", paddingLeft: 18 }}>
                     {value.map((item, i) => <li key={i}>{item}</li>)}
                   </ol>
                 ) : (
-                  <div style={{ color: "#666" }}>{value}</div>
+                  // A structured extra (the ceiling inputs): the raw object is the honest view of what was stored.
+                  <pre style={{ margin: "2px 0 0", fontSize: 12, fontFamily: "monospace", whiteSpace: "pre-wrap", color: "#666" }}>
+                    {JSON.stringify(value, null, 1)}
+                  </pre>
                 )}
               </div>
             );

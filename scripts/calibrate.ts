@@ -11,9 +11,11 @@
  *   2  configuration missing (the message names the variables); nothing ran
  *
  * Skipped means the case was not scored and counted neither way: its input
- * still contains the "TO FILL" placeholder, or its folder has no public
- * registry entry (the Release 2 tools). Skipped cases are still listed so a
- * half written set is visible, and a set with only skipped cases passes.
+ * still contains the "TO FILL" placeholder, its folder has no registry entry
+ * (built-to-scale), or its registry entry is hidden pending its Published
+ * rubric row and calibration (route-to-buyer and unit-of-value until Anthony
+ * flips them). Skipped cases are still listed so a half written set is
+ * visible, and a set with only skipped cases passes.
  *
  * Runs under Node's type stripping and imports the pipeline directly, no
  * HTTP. Calibration runs are not saved to the run store; they are logged to
@@ -24,6 +26,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { getTool } from "../app/lib/tools/registry.ts";
 import {
+  SKIP_REASON_HIDDEN,
+  SKIP_REASON_NO_ENTRY,
+  SKIP_REASON_TO_FILL,
   compareCase,
   formatTable,
   isCaseFillable,
@@ -50,8 +55,9 @@ function readCases(): { results: CaseResult[]; runnable: Map<string, Runnable[]>
     const files = readdirSync(join(CALIBRATION_DIR, folder)).filter((f) => f.endsWith(".json")).sort();
 
     if (!entry || entry.hidden) {
+      const reason = entry ? SKIP_REASON_HIDDEN : SKIP_REASON_NO_ENTRY;
       for (const file of files) {
-        results.push({ tool: folder, name: file.replace(/\.json$/, ""), file, status: "skipped", reason: "no registry entry, skipped" });
+        results.push({ tool: folder, name: file.replace(/\.json$/, ""), file, status: "skipped", reason });
       }
       continue;
     }
@@ -67,7 +73,7 @@ function readCases(): { results: CaseResult[]; runnable: Map<string, Runnable[]>
       }
       const name = data.name || file.replace(/\.json$/, "");
       if (!isCaseFillable(data)) {
-        results.push({ tool: folder, name, file, status: "skipped", reason: "input contains TO FILL" });
+        results.push({ tool: folder, name, file, status: "skipped", reason: SKIP_REASON_TO_FILL });
         continue;
       }
       if (!data.expected || typeof data.expected.grade !== "number") {

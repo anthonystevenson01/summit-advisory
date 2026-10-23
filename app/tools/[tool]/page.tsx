@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ToolRunner from "./ToolRunner";
-import { PUBLIC_TOOLS, getTool, isToolPublic } from "@/app/lib/tools/registry";
+import { PUBLIC_TOOLS, PUBLIC_TOOL_COUNT_WORD, getTool, isToolPublic } from "@/app/lib/tools/registry";
 
 type Params = Promise<{ tool: string }>;
 
@@ -146,7 +146,7 @@ export default async function ToolPage({ params }: { params: Params }) {
             <Link href="/tools" style={{ color: "#053030", fontWeight: 600 }}>
               Summit GTM Toolkit
             </Link>
-            : five free tools for teams selling into finite markets. Built by{" "}
+            : {PUBLIC_TOOL_COUNT_WORD} free tools for teams selling into finite markets. Built by{" "}
             <Link href="/" style={{ color: "#053030", fontWeight: 600 }}>
               Summit Strategy Advisory
             </Link>

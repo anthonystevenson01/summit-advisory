@@ -1,0 +1,17 @@
+{
+  "tool": "unit-of-value",
+  "name": "Tabletop exercises",
+  "source": "invented example written for calibration, October 2026",
+  "agreedBy": "Proposed by agentic-rig, to be confirmed by Anthony Stevenson",
+  "input": {
+    "delivery": "We run incident response tabletop exercises for mid-sized hospitals. One exercise is a one-day on-site session led by one of our facilitators, with about two days of preparation and one day of write-up. Each facilitator runs one exercise a week, forty weeks a year. We have three facilitators and thirty hospital customers.",
+    "pricing": "Priced per exercise at 9,500 CAD. A three exercise programme is 25,000 CAD. No retainer, no subscription.",
+    "cost": "A facilitator costs us about 140,000 CAD a year fully loaded. Preparation is mostly re-used templates now, so a new facilitator reaches full speed in six weeks. Margin per exercise is about 60 percent and has held at that level for two years; adding a facilitator adds the same margin again, no better.",
+    "renewal": "About half of hospitals book a second exercise within eighteen months, usually the same size. Two of thirty have bought a programme. We are building a self-serve scenario library that hospitals could run themselves between exercises, priced as an annual licence, with two pilot customers using it now."
+  },
+  "expected": {
+    "grade": 3,
+    "dimensions": { "ud": 2, "cu": 2, "mv": 3, "rr": 3, "vg": 3, "cb": 3 }
+  },
+  "note": "The unit is a facilitator day (mostly people, with templates cutting preparation), one facilitator serves one hospital at a time, margin holds at 60 percent but does not improve with volume, about half of customers rebook, value per unit grows a little through the programme, and the scenario library is a started lever with two pilots. The ceiling computes from one exercise a week at 9,500 CAD over forty weeks: 380,000 CAD per head per year. Weighted score 52, grade 3."
+}

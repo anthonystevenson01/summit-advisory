@@ -42,6 +42,11 @@ export interface CaseResult {
 
 export const TO_FILL_MARKER = "TO FILL";
 
+/** Skip reasons printed by scripts/calibrate.ts, pinned here so the table text has one source. */
+export const SKIP_REASON_TO_FILL = "input contains TO FILL";
+export const SKIP_REASON_NO_ENTRY = "no registry entry, skipped";
+export const SKIP_REASON_HIDDEN = "hidden in the registry pending its Published rubric row and calibration, skipped";
+
 /** False when any input value still contains the TO FILL placeholder. */
 export function isCaseFillable(c: Pick<CalibrationCase, "input">): boolean {
   const values = Object.values(c.input ?? {});

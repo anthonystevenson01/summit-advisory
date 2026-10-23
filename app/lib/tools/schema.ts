@@ -4,6 +4,13 @@
  * model text for braces.
  */
 import type { ToolEntry } from "./registry.ts";
+import {
+  CEILING_INPUT_KEYS,
+  CEILING_INPUT_LABELS,
+  type CeilingInput,
+  type CeilingInputKey,
+  type CeilingInputs,
+} from "../ceiling.ts";
 
 export type Confidence = "low" | "medium" | "high";
 
@@ -23,7 +30,8 @@ export interface RecommendationDraft {
   action: string;
 }
 
-export type ExtraValue = string | string[];
+/** A text extra, a list extra, or the three structured ceiling inputs (kind "ceiling"). */
+export type ExtraValue = string | string[] | CeilingInputs;
 
 export interface DetailsResult {
   reasoning: Record<string, string>;
@@ -88,6 +96,43 @@ export function scoringSchema(entry: ToolEntry): NamedSchema {
   };
 }
 
+const CEILING_VALUE_DESCRIPTIONS: Record<CeilingInputKey, string> = {
+  unitsPerPersonPerPeriod: "Units one person delivers in one period, as a number, or null when the text does not say.",
+  pricePerUnit: "Price of one unit in the currency the text uses, as a number, or null when the text does not say.",
+  periodsPerYear: "Periods in a year, as a number, or null when the text does not say.",
+};
+
+const CEILING_ASSUMPTION_DESCRIPTION =
+  "One sentence naming the figure and where in the text it comes from, or, when value is null, why the text does not support it.";
+
+/**
+ * The strict object schema for a "ceiling" extra: three required inputs,
+ * each a nullable number with the assumption behind it. The figure itself is
+ * computed in code (app/lib/ceiling.ts), never asked of the model.
+ */
+function ceilingSchema(ask: string): JsonSchema {
+  const inputProps: Record<string, JsonSchema> = {};
+  for (const key of CEILING_INPUT_KEYS) {
+    inputProps[key] = {
+      type: "object",
+      additionalProperties: false,
+      required: ["value", "assumption"],
+      description: CEILING_INPUT_LABELS[key],
+      properties: {
+        value: { type: ["number", "null"], description: CEILING_VALUE_DESCRIPTIONS[key] },
+        assumption: { type: "string", description: CEILING_ASSUMPTION_DESCRIPTION },
+      },
+    };
+  }
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: [...CEILING_INPUT_KEYS],
+    description: ask,
+    properties: inputProps,
+  };
+}
+
 export function detailsSchema(entry: ToolEntry): NamedSchema {
   const reasoningProps: Record<string, JsonSchema> = {};
   for (const d of entry.dimensions) {
@@ -98,10 +143,13 @@ export function detailsSchema(entry: ToolEntry): NamedSchema {
   }
   const extraProps: Record<string, JsonSchema> = {};
   for (const x of entry.extras) {
-    extraProps[x.key] =
-      x.kind === "list"
-        ? { type: "array", minItems: 1, maxItems: 5, items: { type: "string" }, description: x.ask }
-        : { type: "string", description: x.ask };
+    if (x.kind === "ceiling") {
+      extraProps[x.key] = ceilingSchema(x.ask);
+    } else if (x.kind === "list") {
+      extraProps[x.key] = { type: "array", minItems: 1, maxItems: 5, items: { type: "string" }, description: x.ask };
+    } else {
+      extraProps[x.key] = { type: "string", description: x.ask };
+    }
   }
   return {
     name: `${entry.slug}_details`,
@@ -177,6 +225,25 @@ export function parseScoring(entry: ToolEntry, raw: unknown): ScoringResult {
   };
 }
 
+/**
+ * Validates a "ceiling" extra. A value that is null or a finite number is
+ * kept as returned (zero and negatives included, so the run shows what the
+ * model said; the calculator treats them as unsupported). Anything else
+ * becomes null. A missing sub-object is a schema error.
+ */
+function parseCeilingInputs(key: string, raw: unknown): CeilingInputs {
+  if (!isRecord(raw)) throw new SchemaError(`extras.${key} is not an object`);
+  const parsed: Partial<Record<CeilingInputKey, CeilingInput>> = {};
+  for (const inputKey of CEILING_INPUT_KEYS) {
+    const input = raw[inputKey];
+    if (!isRecord(input)) throw new SchemaError(`extras.${key}.${inputKey} is missing`);
+    const value = typeof input.value === "number" && Number.isFinite(input.value) ? input.value : null;
+    const assumption = typeof input.assumption === "string" ? input.assumption.trim() : "";
+    parsed[inputKey] = { value, assumption };
+  }
+  return parsed as CeilingInputs;
+}
+
 export function parseDetails(entry: ToolEntry, raw: unknown): DetailsResult {
   if (!isRecord(raw)) throw new SchemaError("answer is not an object");
   if (!isRecord(raw.reasoning)) throw new SchemaError("reasoning is missing");
@@ -202,7 +269,9 @@ export function parseDetails(entry: ToolEntry, raw: unknown): DetailsResult {
   const extras: Record<string, ExtraValue> = {};
   for (const x of entry.extras) {
     const value = extrasRaw[x.key];
-    if (x.kind === "list") {
+    if (x.kind === "ceiling") {
+      extras[x.key] = parseCeilingInputs(x.key, value);
+    } else if (x.kind === "list") {
       if (!Array.isArray(value)) throw new SchemaError(`extras.${x.key} is not a list`);
       extras[x.key] = value.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean);
     } else {

@@ -13,10 +13,11 @@
  * are read server side by app/lib/rubrics.ts, never from the browser.
  *
  * `hidden: true` keeps a tool out of the hub, the static params and the three
- * generic routes. Flipping it is a code change and a deploy.
+ * generic routes. Flipping it is a code change and a deploy. The public tool
+ * count and its word form are exported here so copy never hard codes a number.
  */
 
-export type ToolSlug = "icp" | "persona" | "problem" | "positioning" | "moat" | "account";
+export type ToolSlug = "icp" | "persona" | "problem" | "positioning" | "moat" | "route-to-buyer" | "unit-of-value" | "account";
 
 export type InputKind = "textarea" | "text";
 
@@ -48,7 +49,8 @@ export interface ToolExtra {
   label: string;
   /** The instruction the details prompt gives for this extra. */
   ask: string;
-  kind: "text" | "list";
+  /** `ceiling` is the structured three input object for the revenue ceiling per head (see app/lib/ceiling.ts). */
+  kind: "text" | "list" | "ceiling";
 }
 
 export interface ToolFaq {
@@ -736,6 +738,316 @@ const MOAT: ToolEntry = {
 };
 
 /**
+ * Route to Buyer and Unit of Value ship hidden until their Notion rubric rows
+ * are Published and calibration passes. Flipping `hidden` is Anthony's call.
+ */
+const ROUTE_TO_BUYER: ToolEntry = {
+  slug: "route-to-buyer",
+  number: "06",
+  name: "Route to Buyer",
+  tagline: "Score how you reach the buyer across six dimensions. Find the one constraint between you and the people who can sign.",
+  outputDescription: "Score, grade, six scored dimensions, the gatekeeper whose no costs most, and the first channel move.",
+  inputs: [
+    {
+      key: "buyer",
+      label: "Who the buyer is",
+      placeholder:
+        "Who signs, who influences and who can say no. Role, company type, the budget line the money comes from, and roughly how many such buyers exist.",
+      example:
+        "The buyer is the Director of Fleet Operations at Canadian municipalities with 150 to 900 vehicles. There are about 110 of them. The CFO approves anything over 75,000 CAD and the procurement office runs the tender. Budget comes from the fleet replacement line, set each autumn.",
+      maxLength: 4000,
+      minLength: 50,
+      required: true,
+      kind: "textarea",
+    },
+    {
+      key: "route",
+      label: "How you reach them today",
+      placeholder:
+        "How a first conversation starts now. Outbound, referrals, partners, tenders, events, inbound. Who does it and how much of it depends on the founder.",
+      example:
+        "Most conversations start when a fleet manager we already serve mentions us to a peer at the Canadian Public Fleet Managers conference. The founder does every first call. We answer public tenders when we see them, usually too late.",
+      maxLength: 4000,
+      minLength: 50,
+      required: true,
+      kind: "textarea",
+    },
+    {
+      key: "cycle",
+      label: "Typical sales cycle",
+      placeholder: "First contact to signature: how long, and the steps in between.",
+      example: "Nine to fourteen months: pilot on ten vehicles, council budget approval, tender, legal review.",
+      maxLength: 600,
+      minLength: 0,
+      required: false,
+      kind: "text",
+    },
+    {
+      key: "channels",
+      label: "Partners and channels",
+      placeholder:
+        "Any partner, association, marketplace, community or event that already gathers these buyers, and whether you have a place in it.",
+      example:
+        "We sponsor the fleet managers conference and sit on its vendor panel. Two telematics installers refer us when a municipality asks about reporting. No marketplace listing.",
+      maxLength: 2000,
+      minLength: 0,
+      required: false,
+      kind: "textarea",
+    },
+  ],
+  dimensions: [
+    {
+      key: "bi",
+      name: "Buyer Identifiable",
+      weight: 0.2,
+      levels: { 1: "Absent", 2: "Vague", 3: "Named", 4: "Specific", 5: "Listable" },
+      standard: "You can name the buyer's role, the type of company they sit in and the budget line the purchase comes from, and you could list them by name.",
+    },
+    {
+      key: "ch",
+      name: "Channels That Gather Buyers",
+      weight: 0.2,
+      levels: { 1: "None", 2: "Possible", 3: "Present", 4: "Working", 5: "Owned" },
+      standard: "Partners, organisers, marketplaces, communities or events already concentrate these buyers somewhere the company reaches today, and the company has a working place in that channel.",
+    },
+    {
+      key: "gk",
+      name: "Gatekeeper Dependence",
+      weight: 0.15,
+      levels: { 1: "Captive", 2: "Heavy", 3: "Present", 4: "Light", 5: "None" },
+      standard: "No party sits between the company and the buyer whose single no can stop a sale, and a no from anyone else costs little.",
+    },
+    {
+      key: "ba",
+      name: "Buyer Attention",
+      weight: 0.1,
+      levels: { 1: "Wrong time", 2: "Unknown", 3: "Known", 4: "Timed", 5: "Triggered" },
+      standard: "The company knows when the buyer is able to act and reaches them on that trigger, not when they are busiest.",
+    },
+    {
+      key: "sc",
+      name: "Sales Cycle",
+      weight: 0.15,
+      levels: { 1: "Open-ended", 2: "Long", 3: "Defined", 4: "Short", 5: "Transactional" },
+      standard: "The steps from first contact to signature are few, defined and short enough to repeat many times a year.",
+    },
+    {
+      key: "cw",
+      name: "Cost to Win Against Deal Value",
+      weight: 0.2,
+      levels: { 1: "Founder heroics", 2: "Expensive", 3: "Covered", 4: "Repeatable", 5: "Efficient" },
+      standard: "Acquisition effort and spend are small against first-year value, and winning repeats without the founder in the room.",
+    },
+  ],
+  role: "a B2B go-to-market expert who has built sales motions for companies selling into finite, named-account markets",
+  extras: [
+    {
+      key: "gatekeeperRisk",
+      label: "Gatekeeper risk",
+      ask: "One line naming the party whose no costs this company most on the way to the buyer, and what that no costs in time, money or lost accounts.",
+      kind: "text",
+    },
+    {
+      key: "channelMove",
+      label: "First channel move",
+      ask: "The one channel move to make first, one sentence, specific to this business and naming the channel.",
+      kind: "text",
+    },
+  ],
+  seo: {
+    title: "Route to Buyer — Summit GTM Toolkit",
+    description:
+      "See whether you can name, reach and win your buyer without the founder in every deal. A score out of 100, a grade from 1 to 5 and six scored dimensions.",
+    about:
+      "The Route to Buyer scores how a company reaches the people who can sign: whether the buyer can be named, whether a channel already gathers them, how many gatekeepers sit in the way, whether the company reaches them when they can act, how long the cycle runs, and what it costs to win against what a deal is worth. It is built for teams selling into a finite market, where every buyer burned is one fewer to sell to.",
+    howItWorks: [
+      "Describe the buyer, how you reach them today, the typical cycle and any channels",
+      "The tool scores the route across six weighted dimensions",
+      "Receive a score out of 100, a grade from 1 to 5, a one-line verdict and the gatekeeper whose no costs most",
+      "Free, no signup, results in under 30 seconds",
+    ],
+    faqs: [
+      {
+        q: "What is a route to buyer?",
+        a: "A route to buyer is the path a first conversation takes from your company to the person who can sign: who starts it, which channel it runs through, who has to say yes on the way, and how long it takes. A strong route is one the company can repeat without the founder, through a channel that already gathers the buyers.",
+      },
+      {
+        q: "Why does the route matter more in a finite market?",
+        a: "When there are 110 buyers, not 110,000, every route that burns a buyer removes one you cannot replace. A route that depends on founder introductions or a gatekeeper's goodwill caps how many of those buyers you will ever reach. The check finds the constraint before you scale spend into it.",
+      },
+      {
+        q: "What are the six dimensions in the Route to Buyer?",
+        a: "Buyer Identifiable, Channels That Gather Buyers, Gatekeeper Dependence, Buyer Attention, Sales Cycle, and Cost to Win Against Deal Value. Each is scored from 1 to 5 and weighted into a score out of 100 and a grade from 1 to 5.",
+      },
+      {
+        q: "Is the Route to Buyer free?",
+        a: "Yes. It is free to use with no signup or account required. Results are generated in under 30 seconds.",
+      },
+    ],
+    canonical: "https://summitstrategyadvisory.com/tools/route-to-buyer",
+  },
+  hidden: true,
+  feeds: ["routeToBuyer"],
+  cta: {
+    heading: "Need help reaching the buyer?",
+    body: "Summit works alongside small teams selling to enterprise: finding the channels that gather buyers, shortening the cycle, and closing the gap between aspiration and pipeline reality.",
+  },
+  buttonLabel: "Check My Route",
+};
+
+const UNIT_OF_VALUE: ToolEntry = {
+  slug: "unit-of-value",
+  number: "07",
+  name: "Unit of Value",
+  tagline: "Score what one sale consumes and what caps it across six dimensions. See the revenue ceiling per head and the lever most likely to break it.",
+  outputDescription: "Score, grade, six scored dimensions, the annual revenue ceiling per head with its assumptions, and the lever to break it.",
+  inputs: [
+    {
+      key: "delivery",
+      label: "What you deliver and what one sale consumes",
+      placeholder:
+        "What the customer buys, and what delivering one of them uses up: hours, people, slots, seats, servers. Numbers where you have them.",
+      example:
+        "We run incident response tabletop exercises for mid-sized hospitals. One exercise is a one-day on-site session led by one of our facilitators, with about two days of preparation and one day of write-up. Each facilitator runs one exercise a week, forty weeks a year.",
+      maxLength: 4000,
+      minLength: 50,
+      required: true,
+      kind: "textarea",
+    },
+    {
+      key: "pricing",
+      label: "How it is priced",
+      placeholder: "Per what, at what price, in which currency. Tiers, usage, seats, retainers.",
+      example: "Priced per exercise at 9,500 CAD. A three exercise programme is 25,000 CAD. No retainer, no subscription.",
+      maxLength: 3000,
+      minLength: 20,
+      required: true,
+      kind: "textarea",
+    },
+    {
+      key: "cost",
+      label: "What a delivery takes in people and time",
+      placeholder: "Who does the work, how long it takes, and what it costs you to deliver one unit.",
+      example:
+        "A facilitator costs us about 140,000 CAD a year fully loaded. Preparation is mostly re-used templates now, so a new facilitator reaches full speed in six weeks.",
+      maxLength: 3000,
+      minLength: 0,
+      required: false,
+      kind: "textarea",
+    },
+    {
+      key: "renewal",
+      label: "How customers renew or expand",
+      placeholder: "What share of customers buy again, how often, and whether they buy more each time.",
+      example:
+        "About half of hospitals book a second exercise within eighteen months, usually the same size. Two of thirty have bought a programme.",
+      maxLength: 2000,
+      minLength: 0,
+      required: false,
+      kind: "textarea",
+    },
+  ],
+  dimensions: [
+    {
+      key: "ud",
+      name: "Unit of Delivery",
+      weight: 0.2,
+      levels: { 1: "People-bound", 2: "Mostly people", 3: "Mixed", 4: "Mostly product", 5: "Product" },
+      standard: "One sale consumes product capacity (seats, slots, servers) rather than people's hours.",
+    },
+    {
+      key: "cu",
+      name: "Capacity per Unit",
+      weight: 0.2,
+      levels: { 1: "One", 2: "Few", 3: "Many", 4: "Hundreds", 5: "Unbounded" },
+      standard: "One unit of capacity serves an unbounded number of customers at the same time.",
+    },
+    {
+      key: "mv",
+      name: "Margin at Volume",
+      weight: 0.2,
+      levels: { 1: "Erodes", 2: "Flat and thin", 3: "Holds", 4: "Improves", 5: "Compounds" },
+      standard: "Margin compounds as volume grows because each extra customer costs less to serve than the last.",
+    },
+    {
+      key: "rr",
+      name: "Repeat Revenue",
+      weight: 0.15,
+      levels: { 1: "None", 2: "Some", 3: "Partial", 4: "Majority", 5: "Compounding" },
+      standard: "Most of next year's revenue already exists through renewals or usage, and it grows without a new sale.",
+    },
+    {
+      key: "vg",
+      name: "Value Growth per Unit",
+      weight: 0.1,
+      levels: { 1: "Fixed", 2: "Limited", 3: "Growing", 4: "Tiered", 5: "Expanding" },
+      standard: "The value delivered per unit rises over time through tiers, usage or expansion rather than being fixed by the unit.",
+    },
+    {
+      key: "cb",
+      name: "Ceiling Breaker",
+      weight: 0.15,
+      levels: { 1: "None", 2: "Named", 3: "Started", 4: "Proven", 5: "Primary" },
+      standard: "A credible lever (software, channel or pricing) that moves growth off headcount is already the primary engine of growth.",
+    },
+  ],
+  role: "a B2B business model analyst who has scaled service and software companies",
+  extras: [
+    {
+      key: "ceilingInputs",
+      label: "Revenue ceiling per head",
+      ask: "Where the text supports it, the three inputs to the annual revenue ceiling per head, each as a number with the assumption behind it: unitsPerPersonPerPeriod (how many units one person delivers in one period, for example clients per evaluator per show), pricePerUnit (the price of one unit, in the currency the text uses), periodsPerYear (how many periods there are in a year). Return null for any input the text does not give. Never estimate a missing one. The code computes the figure.",
+      kind: "ceiling",
+    },
+    {
+      key: "lever",
+      label: "Ceiling breaker",
+      ask: "The one lever most likely to break the ceiling on this business, one sentence, specific to this business and naming whether it is software, channel or pricing.",
+      kind: "text",
+    },
+  ],
+  seo: {
+    title: "Unit of Value — Summit GTM Toolkit",
+    description:
+      "See what one sale consumes, what caps it, and the revenue ceiling per head. A score out of 100, a grade from 1 to 5 and six scored dimensions.",
+    about:
+      "The Unit of Value scores what a company sells as a unit: what one sale consumes, how many customers one unit of capacity serves, whether margin holds as volume grows, how much revenue repeats, whether value per unit can rise, and whether there is a credible lever to move growth off headcount. Where the input gives the numbers, it computes the annual revenue ceiling per head and shows the assumptions beside it.",
+    howItWorks: [
+      "Describe what you deliver, how it is priced, what a delivery takes and how customers renew",
+      "The tool scores the unit across six weighted dimensions",
+      "Receive a score out of 100, a grade from 1 to 5, a one-line verdict and, where the numbers allow, the revenue ceiling per head",
+      "Free, no signup, results in under 30 seconds",
+    ],
+    faqs: [
+      {
+        q: "What is a unit of value?",
+        a: "The unit of value is what a customer buys as one thing and what delivering it uses up: an hour, a day, a seat, a slot, a server. It decides whether revenue grows with headcount or without it. A business whose unit is people's time has a ceiling set by how many people it can hire and keep busy.",
+      },
+      {
+        q: "What is the revenue ceiling per head?",
+        a: "Units one person can deliver in a period, multiplied by the price of a unit, multiplied by the periods in a year. For a show-based business that is clients per evaluator per show, times price, times shows a year. The check computes it from the numbers in your input and never estimates a number you did not give.",
+      },
+      {
+        q: "What are the six dimensions in the Unit of Value?",
+        a: "Unit of Delivery, Capacity per Unit, Margin at Volume, Repeat Revenue, Value Growth per Unit, and Ceiling Breaker. Each is scored from 1 to 5 and weighted into a score out of 100 and a grade from 1 to 5.",
+      },
+      {
+        q: "Is the Unit of Value free?",
+        a: "Yes. It is free to use with no signup or account required. Results are generated in under 30 seconds.",
+      },
+    ],
+    canonical: "https://summitstrategyadvisory.com/tools/unit-of-value",
+  },
+  hidden: true,
+  feeds: ["unitOfValue"],
+  cta: {
+    heading: "Need help moving growth off headcount?",
+    body: "Summit works alongside small teams selling to enterprise: reshaping the unit, pricing for expansion, and closing the gap between aspiration and pipeline reality.",
+  },
+  buttonLabel: "Check My Unit",
+};
+
+/**
  * Account Intelligence is hidden site-wide: absent from the hub, routed to
  * 404, skipped by static params and blocked at the API. Its component owns
  * its own form, so the registry carries no inputs or dimensions for it.
@@ -779,11 +1091,26 @@ const ACCOUNT: ToolEntry = {
 };
 
 /** Every tool in number order. Hidden tools are included; use PUBLIC_TOOLS for the hub. */
-export const TOOLS: readonly ToolEntry[] = [ICP, PERSONA, PROBLEM, POSITIONING, MOAT, ACCOUNT];
+export const TOOLS: readonly ToolEntry[] = [ICP, PERSONA, PROBLEM, POSITIONING, MOAT, ROUTE_TO_BUYER, UNIT_OF_VALUE, ACCOUNT];
 
 export const TOOL_SLUGS = TOOLS.map((t) => t.slug) as readonly ToolSlug[];
 
 export const PUBLIC_TOOLS: readonly ToolEntry[] = TOOLS.filter((t) => !t.hidden);
+
+const COUNT_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+
+/** The word for a small count ("five"), or its digits above twelve. `capitalised` upper-cases the first letter. */
+export function countWord(n: number, capitalised = false): string {
+  const word = Number.isInteger(n) && n >= 0 && n < COUNT_WORDS.length ? COUNT_WORDS[n] : String(n);
+  return capitalised ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+}
+
+/** How many tools are public today. Copy reads this, never a literal. */
+export const PUBLIC_TOOL_COUNT: number = PUBLIC_TOOLS.length;
+
+export const PUBLIC_TOOL_COUNT_WORD: string = countWord(PUBLIC_TOOL_COUNT);
+
+export const PUBLIC_TOOL_COUNT_WORD_CAPITALISED: string = countWord(PUBLIC_TOOL_COUNT, true);
 
 export function isToolSlug(value: string): value is ToolSlug {
   return (TOOL_SLUGS as readonly string[]).includes(value);

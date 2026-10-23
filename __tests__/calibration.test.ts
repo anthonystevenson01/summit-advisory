@@ -9,6 +9,9 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  SKIP_REASON_HIDDEN,
+  SKIP_REASON_NO_ENTRY,
+  SKIP_REASON_TO_FILL,
   compareCase,
   formatTable,
   isCaseFillable,
@@ -73,12 +76,26 @@ describe("TO FILL cases", () => {
 
   test("a skipped case is reported and not compared", () => {
     const results: CaseResult[] = [
-      { tool: "moat", name: "Gradeshow", status: "skipped", reason: "input contains TO FILL" },
+      { tool: "moat", name: "Gradeshow", status: "skipped", reason: SKIP_REASON_TO_FILL },
       { tool: "moat", name: "Example", status: "run", comparison: compareCase(EXPECTED, { grade: 2, scores: EXPECTED.dimensions }) },
     ];
     const table = formatTable(results);
     assert.match(table, /Gradeshow\s+skipped\s+input contains TO FILL/);
     assert.match(table, /Example\s+pass/);
     assert.ok(results[0].comparison === undefined);
+  });
+});
+
+describe("skip reasons", () => {
+  test("a hidden entry reads differently from a missing one and names the gate", () => {
+    assert.notEqual(SKIP_REASON_HIDDEN, SKIP_REASON_NO_ENTRY);
+    assert.match(SKIP_REASON_HIDDEN, /hidden/);
+    assert.match(SKIP_REASON_HIDDEN, /Published/);
+    assert.equal(SKIP_REASON_TO_FILL, "input contains TO FILL");
+  });
+
+  test("formatTable prints the hidden reason for a skipped row", () => {
+    const table = formatTable([{ tool: "unit-of-value", name: "Oakridge", status: "skipped", reason: SKIP_REASON_HIDDEN }]);
+    assert.ok(table.includes(`skipped   ${SKIP_REASON_HIDDEN}`), table);
   });
 });

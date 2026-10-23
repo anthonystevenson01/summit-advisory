@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+// Relative with the .ts extension: __tests__/scale-up-advisory.test.ts loads this file under plain Node.
+import { PUBLIC_TOOLS } from "./lib/tools/registry.ts";
 
 const BASE = "https://summitstrategyadvisory.com";
 
@@ -12,11 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/scale-up-advisory/fractional-executive`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/scale-up-advisory/outsourced-sales`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/tools`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE}/tools/icp`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE}/tools/persona`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE}/tools/problem`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE}/tools/positioning`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE}/tools/moat`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    ...PUBLIC_TOOLS.map((tool) => ({
+      url: tool.seo.canonical,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     { url: `${BASE}/newsletter`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
   ];
 }
