@@ -38,3 +38,11 @@ Registry invariants, grade bands at every boundary, weighted maths, schema gener
 - Strict `json_schema` keywords `minimum`, `maximum`, `minItems`, `maxItems` have not been exercised against OpenRouter's Anthropic endpoint. If rejected, drop them from `schema.ts` (the parser already clamps) rather than changing the mode.
 - The hub card for positioning says "suggested rewrite if needed" while the page says the full view always includes one. Cosmetic.
 - Before merge the human should run the live smoke: score, details 403 before unlock, unlock, details full view, `/api/tools/account/score` 404, a body carrying `rubric` scores identically, plus the admin walk-through, since the Redis and OpenRouter paths have not run live.
+
+## Round 3: APPROVE (fix found by the live preview smoke test)
+
+Fault: every scoring call on the preview returned 502. Cause: the 5.x models run adaptive thinking by default and thinking tokens count against `max_tokens`; with the scoring route capped at 600 the model spent all 600 on reasoning and returned empty content. Proven by replaying the exact request: 600 tokens gave an empty answer after 599 reasoning tokens; reasoning off gave the answer in 151 tokens.
+
+Fix (`app/lib/llm.ts`, `app/api/tools/[tool]/errors.ts`): every call now sends an explicit `reasoning` field, `{ enabled: false }` unless the route sets an effort, so scoring and details run with thinking off and synthesis and extraction keep their default efforts; `DEFAULT_ROUTES.scoring.maxTokens` 600 to 1200; an empty answer with `finish_reason` "length" throws "model ran out of tokens before answering", mapped to the same 502 and logged to `ai:calls`. Verified: `scoreRun` for moat completed against production Redis, Notion and OpenRouter (score 67, grade 3, verdict and confidence). Gates re-run by the Reviewer and green.
+
+Additional notes for PR: consider extracting a pure `buildChatBody(route, args)` so a unit test can assert the reasoning field; runbook to state that turning reasoning on for a key needs a higher max tokens; the `admin:calibration` state is keyed by model, and any PATCH on a gated key marks it uncalibrated, including a reasoning change.

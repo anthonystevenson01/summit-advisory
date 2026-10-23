@@ -37,7 +37,7 @@ export type { ResolvedRoute, RouteConfig, RoutingTask };
 // GET https://openrouter.ai/api/v1/models on 23 October 2026.
 
 export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
-  scoring: { model: "anthropic/claude-haiku-5.5", maxTokens: 600 },
+  scoring: { model: "anthropic/claude-haiku-5.5", maxTokens: 1200 },
   details: { model: "anthropic/claude-sonnet-5.5", maxTokens: 3000 },
   synthesis: { model: "anthropic/claude-opus-5.5", reasoning: "medium", maxTokens: 4000, fallback: "anthropic/claude-sonnet-5.5" },
   extraction: { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 4000 },
@@ -335,6 +335,19 @@ function errorText(err: unknown): string {
  * The system prompt carries a cache_control marker so OpenRouter can cache
  * the rubric across calls; the user turn changes every time and is not marked.
  */
+/**
+ * One chat completion through OpenRouter with a strict JSON schema.
+ *
+ * Reasoning (extended thinking) is sent as `{ enabled: false }` unless the
+ * resolved route sets an effort. The Anthropic 5.x models think by default
+ * and their thinking tokens count against `max_tokens`, so with thinking on
+ * a small cap is spent on reasoning and the answer comes back empty. Off by
+ * default also keeps scoring and details deterministic alongside
+ * temperature 0. An admin who turns reasoning on for a key in /admin/models
+ * must raise that key's max tokens to cover the reasoning plus the answer
+ * (the scoring answer alone is about 150 tokens; thinking adds hundreds to
+ * thousands), or the call fails with "ran out of tokens".
+ */
 export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T>> {
   const route = await resolveRoute(args.routingKey);
   // The key whose config answered: the specific key when a per-tool override
@@ -361,7 +374,10 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
     response_format: { type: "json_schema", json_schema: args.schema },
   };
   if (typeof temperature === "number") body.temperature = temperature;
-  if (route.reasoning) body.reasoning = { effort: route.reasoning };
+  // Thinking is off unless the route sets an effort. The 5.x models think by
+  // default and thinking tokens count against max_tokens, so a small cap
+  // would be spent on reasoning and the content would come back empty.
+  body.reasoning = route.reasoning ? { effort: route.reasoning } : { enabled: false };
   if (route.fallback) body.models = [route.model, route.fallback];
   if (args.web) body.plugins = [{ id: "web" }];
 
@@ -373,8 +389,13 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
     const completion = await openai.chat.completions.create(body as unknown as ChatCompletionCreateParamsNonStreaming);
     answeredBy = completion.model || route.model;
     usage = readUsage(completion.usage);
-    const content = completion.choices?.[0]?.message?.content;
+    const choice = completion.choices?.[0];
+    const content = choice?.message?.content;
     if (typeof content !== "string" || content.trim().length === 0) {
+      const nativeFinish = (choice as { native_finish_reason?: string } | undefined)?.native_finish_reason;
+      if (choice?.finish_reason === "length" || nativeFinish === "max_tokens") {
+        throw new Error("model ran out of tokens before answering (max_tokens too low for this model's reasoning)");
+      }
       throw new Error("model returned an empty answer");
     }
     return content;

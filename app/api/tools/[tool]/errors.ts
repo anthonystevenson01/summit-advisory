@@ -36,7 +36,7 @@ export function errorResponse(err: unknown, context: string): NextResponse {
     return NextResponse.json({ error: "model provider not configured" }, { status: 503 });
   }
   const message = err instanceof Error ? err.message : String(err);
-  if (err instanceof SchemaError || /unusable answer|empty answer/.test(message)) {
+  if (err instanceof SchemaError || /unusable answer|empty answer|ran out of tokens/.test(message)) {
     console.error(`${context}: ${message}`);
     return NextResponse.json({ error: "The model returned an unusable answer. Please try again." }, { status: 502 });
   }
