@@ -44,7 +44,18 @@ const webAppSchema = {
   },
 };
 
-/** Static: reads no searchParams; the resume link is read on the client under Suspense. */
+/**
+ * /tools/project-builder: the public builder inside the toolkit chrome
+ * (SiteNav, the back link to /tools, ToolkitFooter) with the same metadata
+ * shape as the tool pages and a WebApplication ld+json block.
+ *
+ * Static on purpose: this page reads no searchParams, so the resume link's
+ * `b` and `t` and the `src` tag are read on the client by a loader under
+ * Suspense inside ProjectBuilderPage. A server read of the query would make
+ * every visit dynamic for the sake of the few that arrive from an email.
+ * The ld+json is the one `dangerouslySetInnerHTML` in the feature and holds
+ * a constant, never prospect or model text.
+ */
 export default function ProjectBuilderRoute() {
   return (
     <>

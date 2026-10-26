@@ -73,7 +73,21 @@ async function loadStats(days: string | undefined): Promise<{ t: StatsTables; er
   return { t: aggregateStats({ events, calls, briefs, window }), errors };
 }
 
-/** Plain tables from the event stream, the call log and the brief index. No client JavaScript, no chart. */
+/**
+ * /admin/stats: the builder funnel, saves and submits by source tag, helper
+ * use with the rules fallback count, model calls and spend per routing key,
+ * cost per submitted brief, briefs by status and the median time from
+ * submit to the first admin status change, for a window of 7, 30 or 90
+ * days (`?days=`, default 30). Plain tables, no chart, no client
+ * JavaScript.
+ *
+ * The page is a thin reader: the three sources are read with
+ * `Promise.allSettled` so one failing store leaves the other tables up, and
+ * every number comes from the pure `aggregateStats`, which is what the
+ * fixture test covers. Counts are events, not sessions, because events
+ * carry no session id by design; `ai:calls` keeps 2,000 entries, so a long
+ * window on a busy month under-reports spend and the page says so.
+ */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const { days } = await searchParams;
   const { t, errors } = await loadStats(days);

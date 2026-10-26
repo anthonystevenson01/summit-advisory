@@ -1,5 +1,31 @@
 "use client";
 
+/**
+ * The Project Builder client root. Owns the brief state (the prototype's
+ * flat state object, validated by `parseBriefState`), the pasted text, the
+ * status lines per helper, the one level Undo, the contact, the save record
+ * (id, token, times, counters), the save sheet, the dock and the phase
+ * (building, loading, submitting, done, locked).
+ *
+ * Every step renders from local state; only Save, the helpers and Submit
+ * touch the server, so the page keeps working while the API is down.
+ * Before the first save nothing leaves the browser except text sent to the
+ * read helper; progress goes to localStorage on every change so a refresh
+ * loses nothing. After the first save the token from the response rides on
+ * every call, and every step change PUTs the state (one request in flight,
+ * the latest state queued behind it, last write wins).
+ *
+ * The helpers return the whole new state rather than a patch so "fills
+ * blanks and adds, never overwrites" has one implementation on the server;
+ * the page snapshots the state and source before each call so Undo is a
+ * local restore. A 409 from any call means the brief was submitted
+ * elsewhere (another tab, or Anthony has it): the page switches to the
+ * read only view from the state it has, rather than looping on errors.
+ *
+ * Every JSON body carries `website: ""`: that top level field is the
+ * honeypot on every builder route, which is why the real website inputs
+ * are named `businessWebsite` and `companyWebsite`.
+ */
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { BRAND } from "@/app/lib/brand";
@@ -52,7 +78,11 @@ import DonePanel from "./DonePanel";
 import LinkRequest from "./LinkRequest";
 import { EMPTY_CONTACT, type ContactDraft } from "./ContactFields";
 
+// Versioned so a future change to the stored shape can start clean rather than
+// coerce an old entry; `parseBriefState` already tolerates missing fields.
 const STORAGE_KEY = "summit-project-builder-v3";
+// sessionStorage, so `builder_started` fires once per browser session and the
+// top of the funnel is close to a session count.
 const STARTED_KEY = "summit-project-builder-started";
 
 type Phase = "building" | "loading" | "submitting" | "done" | "locked";
@@ -168,13 +198,7 @@ function ResumeLoader({ onResume, onSrc }: { onResume: (id: string, token: strin
   return null;
 }
 
-/**
- * The client root: owns the brief state, the pasted text, the status lines,
- * Undo, the contact, the save record, the sheet, the dock and the phase.
- * Every step renders from local state; only Save, the helpers and Submit
- * touch the server. Progress goes to localStorage on every change, and
- * after the first save every step change PUTs the state.
- */
+/** The client root; see the header comment for what it owns and why. */
 export default function ProjectBuilderPage() {
   const [ready, setReady] = useState(false);
   const [state, setState] = useState<BriefState>(blank);
@@ -565,10 +589,14 @@ export default function ProjectBuilderPage() {
     }
   }, []);
 
+  // The first `?src=` seen wins and is kept until the first save; a tag on a
+  // later resume link is ignored, so the stored source is where they started.
   const onSrc = useCallback((tag: string) => {
     setSrcTag((current) => current || tag);
   }, []);
 
+  // The route answers the same way whatever the address, and so does the
+  // page: the fixed line never says whether a brief exists.
   const requestLink = async (email: string) => {
     try {
       await fetch("/api/project-builder/link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, website: "" }) });

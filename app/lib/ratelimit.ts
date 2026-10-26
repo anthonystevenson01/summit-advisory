@@ -123,6 +123,12 @@ export function builderDailyKey(now = new Date()): string {
  * (UTC), EXPIRE 48 h on the first increment, `ok` false over the cap. A
  * reservation is spent even when the model call then fails. Without Redis
  * every call is allowed, so a missing variable never blocks the helpers.
+ *
+ * The reservation happens before the call, not after, so the cap is a hard
+ * ceiling: one atomic INCR cannot let two concurrent requests both pass a
+ * read-then-check, and a call that fails has already cost money at the
+ * provider, so there is nothing honest to refund. The counter is a plain
+ * day key an admin can reset by hand (`DEL builder:calls:{day}`).
  */
 export async function reserveBuilderDailyCall(): Promise<{ ok: boolean; count: number }> {
   const redis = getRedisForRateLimit();

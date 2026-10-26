@@ -8,14 +8,21 @@
  * TTL rule: a draft expires 183 days after its last update (set on create
  * and refreshed by every write that moves `updatedAt`); a submit PERSISTs
  * the hash; an unlock back to draft sets the TTL again. The index does not
- * expire with the hash: `listBriefs` prunes ids whose hash is gone. The
- * source text keeps its 90 day TTL whatever the status, which is the
- * promise the paste box makes.
+ * expire with the hash: `listBriefs` prunes ids whose hash is gone.
+ *
+ * The pasted text lives at its own key rather than as a field on the hash
+ * because it has its own life: the paste box promises deletion after 90
+ * days whatever happens to the brief, a Redis TTL is per key, and a
+ * submitted brief persists while its source still has to go. Keeping it
+ * apart also keeps the hash small for the admin list, which reads every
+ * brief in pages.
  *
  * Ids are `brief_` plus 16 lowercase hex, so a brief id never matches the
- * run id pattern and the two stores cannot be confused. The serialise and
- * parse helpers follow runs.ts: nested values as JSON strings, null as the
- * string "null", both read shapes accepted.
+ * run id pattern and the two stores cannot be confused. That matters in
+ * `ai:calls`, where the brief id travels in the log's `runId` field (the
+ * one free text id on every entry) so cost per brief can be read from the
+ * log. The serialise and parse helpers follow runs.ts: nested values as
+ * JSON strings, null as the string "null", both read shapes accepted.
  */
 import { randomUUID } from "node:crypto";
 import { getRedis } from "./redis.ts";
@@ -282,6 +289,11 @@ export async function saveBriefState(id: string, state: BriefState, source?: str
  * Moves the status: `submittedAt` and PERSIST on `submitted`; the TTL back
  * on `draft`; `firstStatusChangeAt` on the first admin change after a
  * submit. Returns the updated record.
+ *
+ * The TTL comes back on an unlock because a reopened brief is a draft
+ * again: the prospect may never return, and a draft nobody touches should
+ * expire like any other rather than sit in the store for ever because it
+ * was once submitted. Every other status is a lead record and persists.
  */
 export async function setBriefStatus(id: string, status: BriefStatus, by: "prospect" | "admin"): Promise<BriefRecord | null> {
   const redis = getRedis();

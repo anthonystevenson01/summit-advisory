@@ -74,6 +74,16 @@ function Row({ b }: { b: BriefRecord }) {
   );
 }
 
+/**
+ * /admin/briefs: every brief from `briefs:by-updated`, newest first, in
+ * pages of 100, with a status chip filter and a link to the admin view and
+ * the Notion page. Behind the admin middleware; the email is shown in clear
+ * here because this is the one place a brief is readable without its token.
+ * The Must count is computed from the stored state through the engine, so
+ * it is the same number the prospect saw on the dock and the alert carried.
+ * The status filter is applied to the fetched page, not the index (the
+ * index is ordered by time only), so a filtered page can be short.
+ */
 export default async function BriefsPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string; deleted?: string }> }) {
   const { status: statusParam, page: pageParam, deleted } = await searchParams;
   const statusFilter = isBriefStatus(statusParam) ? statusParam : undefined;

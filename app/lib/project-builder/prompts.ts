@@ -12,6 +12,13 @@
  * down so a fresh run does not suggest them again. The pasted material is
  * data to analyse: every system prompt says so, and the read prompt fences
  * it between triple quotes after the guard line.
+ *
+ * Nothing a prospect typed ever sits in the system turn: not the business
+ * notes, not the company name, not the name of a system to look up. The
+ * system turn is where instructions live, so a string the prospect controls
+ * would be an instruction the model trusts; it all goes in the user turn,
+ * labelled as what they told us, under the data guard. The read prompt's
+ * system turn only says where to find the background.
  */
 import {
   COMPLIANCE,

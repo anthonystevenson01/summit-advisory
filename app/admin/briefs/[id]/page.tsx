@@ -55,6 +55,17 @@ async function callsFor(id: string): Promise<AiCallLog[]> {
   }
 }
 
+/**
+ * /admin/briefs/[id]: one brief read only (contact, timestamps, source tag,
+ * Notion and email outcomes, the counters, every answer by step, the
+ * requirements table in Notion order, the ideas added and passed on, the
+ * change request, the pasted material while its 90 day key still exists,
+ * and the model calls logged under this id), plus three plain form POSTs to
+ * `/api/admin/briefs/[id]`: the status select with Save, Unlock on a
+ * submitted brief, and Delete behind a confirm box. No client JavaScript,
+ * as on the rubrics page. Calls made before the first save carry no brief
+ * id in `ai:calls`, so the call list starts at the save; the page says so.
+ */
 export default async function BriefPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; unlocked?: string }> }) {
   const { id } = await params;
   const { saved, unlocked } = await searchParams;
