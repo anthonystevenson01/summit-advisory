@@ -31,6 +31,8 @@ const eslintConfig = defineConfig([
     // public/ holds static assets and design-spec prototypes (e.g.
     // public/specs/icp-evaluator-prototype.jsx) served verbatim, not app source.
     "public/**",
+    // The Claude desktop app creates git worktrees under .claude/worktrees/ for parallel sessions; they are other checkouts, not this tree's source.
+    ".claude/**",
   ]),
 ]);
 

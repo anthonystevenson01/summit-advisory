@@ -1,6 +1,8 @@
 /**
  * The run store: every scored run as a Redis hash at `run:{id}` plus the
- * index sorted set `runs:by-time` (score: createdAt in ms).
+ * index sorted set `runs:by-time` (score: createdAt in ms) and, for unlocked
+ * runs, the per-email set `runs:by-email:{emailHash}` that the emailed result
+ * and the delete-my-data flow read.
  *
  * TTL rule: a run is saved with a 30 day expiry and an unlock removes it
  * (PERSIST). A run without an unlock is an anonymous score nobody asked to
@@ -63,13 +65,23 @@ export interface RunRecord {
   routes: Record<string, string>;
   calibrated: Record<string, boolean>;
   unlock: RunUnlock | null;
+  /** Result email: "sent", "failed", or null when no send has been attempted. */
+  emailStatus: "sent" | "failed" | null;
+  emailedAt: string | null;
 }
+
+export type EmailStatus = NonNullable<RunRecord["emailStatus"]>;
 
 export const RUN_INDEX_KEY = "runs:by-time";
 const RUN_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 export function runKey(id: string): string {
   return `run:${id}`;
+}
+
+/** Set of run ids unlocked under one email hash. No TTL. */
+export function emailIndexKey(emailHash: string): string {
+  return `runs:by-email:${emailHash}`;
 }
 
 /** `run_` plus 16 lowercase hex characters. */
@@ -141,6 +153,8 @@ function deserialise(hash: Record<string, unknown>): RunRecord {
     routes: r.routes ?? {},
     calibrated: r.calibrated ?? {},
     unlock: r.unlock ?? null,
+    emailStatus: r.emailStatus === "sent" || r.emailStatus === "failed" ? r.emailStatus : null,
+    emailedAt: r.emailedAt ? String(r.emailedAt) : null,
   };
 }
 
@@ -159,18 +173,64 @@ export async function getRun(id: string): Promise<RunRecord | null> {
   return deserialise(hash);
 }
 
+/** One pipelined read; ids whose hash is gone are dropped. Order follows `ids`. */
+export async function getRuns(ids: string[]): Promise<RunRecord[]> {
+  const valid = ids.filter((id) => /^run_[0-9a-f]{16}$/.test(id));
+  if (valid.length === 0) return [];
+  const pipeline = getRedis().pipeline();
+  for (const id of valid) pipeline.hgetall(runKey(id));
+  const hashes = (await pipeline.exec()) as Array<Record<string, unknown> | null>;
+  const runs: RunRecord[] = [];
+  hashes.forEach((hash) => {
+    if (hash && Object.keys(hash).length > 0) runs.push(deserialise(hash));
+  });
+  return runs;
+}
+
 export async function updateRun(id: string, patch: Partial<RunRecord>): Promise<void> {
   const fields = serialise(patch);
   if (Object.keys(fields).length === 0) return;
   await getRedis().hset(runKey(id), fields);
 }
 
-/** Records the unlock on the run and removes its TTL. */
+/** Records the unlock on the run, removes its TTL and indexes the id under the email hash. */
 export async function markUnlocked(id: string, unlock: RunUnlock): Promise<void> {
   const redis = getRedis();
   const key = runKey(id);
   await redis.hset(key, serialise({ unlock }));
   await redis.persist(key);
+  await redis.sadd(emailIndexKey(unlock.emailHash), id);
+}
+
+export async function listRunIdsByEmail(emailHash: string): Promise<string[]> {
+  return getRedis().smembers(emailIndexKey(emailHash));
+}
+
+/**
+ * Deletes every run under the hash: the run hashes, their entries in
+ * `runs:by-time` and the per-email set itself. Returns how many run hashes
+ * actually existed; zero when the set is empty.
+ */
+export async function deleteRunsByEmail(emailHash: string): Promise<number> {
+  const redis = getRedis();
+  const indexKey = emailIndexKey(emailHash);
+  const ids = await redis.smembers(indexKey);
+  if (ids.length === 0) return 0;
+  const pipeline = redis.pipeline();
+  for (const id of ids) pipeline.del(runKey(id));
+  pipeline.zrem(RUN_INDEX_KEY, ...ids);
+  pipeline.del(indexKey);
+  const replies = (await pipeline.exec()) as unknown[];
+  let count = 0;
+  for (let i = 0; i < ids.length; i += 1) count += Number(replies[i] ?? 0);
+  return count;
+}
+
+/** Records the outcome of the result email; `emailedAt` is set on a send. */
+export async function recordEmailStatus(id: string, status: EmailStatus): Promise<void> {
+  const patch: Partial<RunRecord> = { emailStatus: status };
+  if (status === "sent") patch.emailedAt = new Date().toISOString();
+  await getRedis().hset(runKey(id), serialise(patch));
 }
 
 export interface ListRunsOptions {

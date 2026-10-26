@@ -1,10 +1,11 @@
-import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/app/lib/redis";
 import { isToolPublic } from "@/app/lib/tools/registry";
 import { validateUnlock } from "@/app/lib/tools/validate";
+import { hashEmail } from "@/app/lib/tools/unlock-token";
 import { getRun, markUnlocked } from "@/app/lib/runs";
 import { track } from "@/app/lib/events";
+import { UNLOCK_COOKIE, getUnlockSecret, issueUnlockCookie, unlockCookieOptions } from "@/app/lib/unlock";
 import { errorResponse } from "../errors";
 
 export const runtime = "nodejs";
@@ -12,6 +13,12 @@ export const dynamic = "force-dynamic";
 
 type Body = { runId?: unknown; name?: unknown; email?: unknown; company?: unknown; website?: unknown };
 
+/**
+ * Email-first unlock. Records the unlock on the run (which also indexes it
+ * by email hash), appends to the digest list with empty name and company
+ * when absent, and sets the 30 day unlock cookie when UNLOCK_SECRET is set.
+ * Without the secret the unlock still records per run and no cookie goes out.
+ */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
 
@@ -42,12 +49,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ too
     }
 
     const { name, email, company } = validated;
-    const emailHash = createHash("sha256").update(email.toLowerCase()).digest("hex");
+    const emailHash = hashEmail(email);
     const at = new Date().toISOString();
 
     await markUnlocked(run.id, { emailHash, email, name, company, at });
 
-    // The daily digest reads this list; same shape as before so it needs no change.
+    // The daily digest reads this list; same keys as before, empty strings where absent.
     try {
       await getRedis().rpush(
         "gtm-unlocks",
@@ -58,7 +65,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ too
     }
 
     void track("email_given", { tool, runId: run.id, emailHash });
-    return NextResponse.json({ ok: true });
+
+    const cookieValue = getUnlockSecret() ? issueUnlockCookie(emailHash) : null;
+    const res = NextResponse.json({ ok: true, unlocked: cookieValue !== null });
+    if (cookieValue) res.cookies.set(UNLOCK_COOKIE, cookieValue, unlockCookieOptions());
+    return res;
   } catch (err) {
     return errorResponse(err, `${tool} unlock`);
   }

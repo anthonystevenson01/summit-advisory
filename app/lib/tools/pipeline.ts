@@ -12,6 +12,11 @@
  *   5. persist the run with the rubric hash and the model that answered
  *   6. return the free view
  * detailRun repeats 2, 3 and 5 with the details model after an unlock check.
+ * A run is unlocked when the record carries an unlock, when the route passes
+ * verified cookie claims (the pipeline then records the unlock from the
+ * cookie, hash only), or when the saved-link token verified for this run.
+ * The pipeline never reads a cookie, header or env; the routes verify and
+ * pass plain claims in.
  *
  * The rubric is loaded here rather than sent by the page so that the text a
  * visitor is scored against is always the Published Notion row, can never be
@@ -26,7 +31,7 @@ import { scoringSchema } from "./schema.ts";
 import { calcScore, gradeFor, legacyLabelFor, type Grade } from "./scoring.ts";
 import { getRubric, type Rubric } from "../rubrics.ts";
 import { callModel } from "../llm.ts";
-import { getRun, newRunId, saveRun, updateRun, type Recommendation, type RunRecord } from "../runs.ts";
+import { getRun, markUnlocked, newRunId, saveRun, updateRun, type Recommendation, type RunRecord } from "../runs.ts";
 import { track } from "../events.ts";
 
 export class ToolNotFoundError extends Error {
@@ -60,6 +65,19 @@ export class UnlockRequiredError extends Error {
 export interface PipelineContext {
   source: "web" | "calibration";
   ip?: string;
+  /** Verified claims from the unlock cookie, passed in by the route. */
+  cookieUnlock?: { emailHash: string };
+  /** True when the saved-link token verified for this run id. */
+  linkVerified?: boolean;
+}
+
+export type UnlockVia = "form" | "cookie" | "link";
+
+export interface DetailResult {
+  full: FullView;
+  run: RunRecord;
+  /** True when this call produced the details; false on the stored early return. */
+  generated: boolean;
 }
 
 export interface FreeView {
@@ -74,6 +92,8 @@ export interface FreeView {
   confidence: RunRecord["confidence"];
   confidenceReason: string;
   scores: Record<string, number>;
+  /** True when the run record carries an unlock. The score route may also set it from the cookie. */
+  unlocked: boolean;
 }
 
 export interface FullView extends FreeView {
@@ -98,6 +118,7 @@ export function toFreeView(run: RunRecord): FreeView {
     confidence: run.confidence,
     confidenceReason: run.confidenceReason,
     scores: run.scores,
+    unlocked: run.unlock !== null,
   };
 }
 
@@ -227,6 +248,8 @@ export async function scoreRun(
     routes: { scoring: call.resolvedKey },
     calibrated: { scoring: call.calibrated },
     unlock: null,
+    emailStatus: null,
+    emailedAt: null,
   };
 
   if (isWeb) {
@@ -243,13 +266,29 @@ export async function scoreRun(
 
 // ── detailRun ────────────────────────────────────────────────────────────────
 
-export async function detailRun(runId: string, _ctx: PipelineContext): Promise<FullView> {
-  const run = await getRun(runId);
+export async function detailRun(runId: string, ctx: PipelineContext): Promise<DetailResult> {
+  let run = await getRun(runId);
   if (!run) throw new RunNotFoundError(runId);
-  if (!run.unlock) throw new UnlockRequiredError();
+
+  let via: UnlockVia;
+  if (run.unlock) {
+    via = "form";
+  } else if (ctx.cookieUnlock) {
+    // A cookie unlock is recorded on the run from the cookie: hash only, no
+    // name or company, so the run persists and is indexed by email hash.
+    const unlock = { emailHash: ctx.cookieUnlock.emailHash, email: "", name: "", company: "", at: new Date().toISOString() };
+    await markUnlocked(run.id, unlock);
+    run = { ...run, unlock };
+    via = "cookie";
+  } else if (ctx.linkVerified) {
+    via = "link";
+  } else {
+    throw new UnlockRequiredError();
+  }
+
   // Details are generated once per run. Re-opening serves the stored full
   // view, so a second request costs nothing and cannot drift from the first.
-  if (run.detailsAt) return toFullView(run);
+  if (run.detailsAt) return { full: toFullView(run), run, generated: false };
 
   const entry = getTool(run.tool);
   if (!entry) throw new ToolNotFoundError(run.tool);
@@ -292,7 +331,8 @@ export async function detailRun(runId: string, _ctx: PipelineContext): Promise<F
     calibrated: { ...run.calibrated, details: call.calibrated },
   };
   await updateRun(run.id, patch);
-  void track("full_view_opened", { tool: entry.slug, runId: run.id });
+  void track("full_view_opened", { tool: entry.slug, runId: run.id, via });
 
-  return toFullView({ ...run, ...patch } as RunRecord);
+  const updated = { ...run, ...patch } as RunRecord;
+  return { full: toFullView(updated), run: updated, generated: true };
 }
