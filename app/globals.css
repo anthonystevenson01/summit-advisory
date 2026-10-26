@@ -2772,3 +2772,30 @@ body {
   .tk-nl-bottom-grid { grid-template-columns: 1fr; gap: 24px; }
   .tk-nl-bottom-signup { padding: 40px 20px; }
 }
+
+/* ─── BUILT TO SCALE? SCORECARD ───
+   The row grid and the mobile rules for the dark scorecard panel. Fonts and
+   colours are inline BRAND styles in the Scorecard component. */
+.bts-panel { padding: 28px; }
+.bts-total { font-size: 72px; }
+.bts-rows { border-top: 1px solid rgba(255,255,255,0.12); }
+.bts-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.bts-row-comment { grid-column: 1 / -1; }
+.bts-dots { display: flex; align-items: center; gap: 6px; }
+.bts-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bts-table-wrap { overflow-x: auto; }
+.bts-form-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+@media (max-width: 480px) {
+  .bts-panel { padding: 16px; }
+  .bts-total { font-size: 56px; }
+  .bts-dots { width: 86px; }
+  .bts-pair { grid-template-columns: 1fr; }
+}

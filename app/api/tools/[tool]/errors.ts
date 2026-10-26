@@ -13,10 +13,22 @@ import {
   ToolNotFoundError,
   UnlockRequiredError,
 } from "@/app/lib/tools/pipeline";
+import { NoToolsAvailableError, SynthesisFailedError } from "@/app/lib/tools/built-to-scale";
 
 export function errorResponse(err: unknown, context: string): NextResponse {
   if (err instanceof ToolNotFoundError) {
     return NextResponse.json({ error: "This tool is not available." }, { status: 404 });
+  }
+  if (err instanceof SynthesisFailedError) {
+    console.error(`${context}: ${err.message}`);
+    return NextResponse.json(
+      { error: "The scorecard could not be written. Your tool results are saved. Please try again." },
+      { status: 502 },
+    );
+  }
+  if (err instanceof NoToolsAvailableError) {
+    console.error(`${context}: ${err.message}`);
+    return NextResponse.json({ error: "rubric not published" }, { status: 503 });
   }
   if (err instanceof RunNotFoundError) {
     return NextResponse.json({ error: "Run not found. It may have expired." }, { status: 404 });

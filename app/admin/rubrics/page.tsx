@@ -1,5 +1,6 @@
 import { PUBLIC_TOOLS } from "@/app/lib/tools/registry";
 import { getRubric, type Rubric } from "@/app/lib/rubrics";
+import { BUILT_TO_SCALE_TOOL } from "@/app/lib/tools/built-to-scale-method";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +31,15 @@ function formatDate(iso: string): string {
   return new Date(t).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+/** The public tools plus the Built to Scale? row the synthesis and the method page read. */
+const RUBRIC_ROWS: Array<{ slug: string; name: string }> = [
+  ...PUBLIC_TOOLS.map((t) => ({ slug: t.slug, name: t.name })),
+  { slug: BUILT_TO_SCALE_TOOL, name: "Built to Scale?" },
+];
+
 export default async function RubricsPage() {
   const rows: Row[] = await Promise.all(
-    PUBLIC_TOOLS.map(async (tool) => {
+    RUBRIC_ROWS.map(async (tool) => {
       try {
         const rubric = await getRubric(tool.slug);
         return { slug: tool.slug, name: tool.name, rubric, error: null };

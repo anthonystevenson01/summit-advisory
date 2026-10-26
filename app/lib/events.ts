@@ -12,7 +12,13 @@ export type EventName =
   | "full_view_opened"
   | "re_run"
   | "result_emailed"
-  | "data_deleted";
+  | "data_deleted"
+  | "bts_started"
+  | "bts_result_shown"
+  | "bts_full_view_opened"
+  | "bts_result_emailed"
+  | "score_whole_model_handoff"
+  | "tool_rerun_from_scorecard";
 
 export const EVENTS_KEY = "events";
 const EVENTS_MAX = 50_000;

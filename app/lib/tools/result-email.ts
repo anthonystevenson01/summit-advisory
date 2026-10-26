@@ -89,7 +89,8 @@ export function redactAddresses(message: string): string {
   return message.replace(/[^\s<>@"'()]+@[^\s<>@"'()]+/g, "[address]");
 }
 
-function escapeHtml(value: string): string {
+/** Shared with the Built to Scale? template so model text has one escaping path. */
+export function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 

@@ -11,11 +11,16 @@
  *   2  configuration missing (the message names the variables); nothing ran
  *
  * Skipped means the case was not scored and counted neither way: its input
- * still contains the "TO FILL" placeholder, its folder has no registry entry
- * (built-to-scale), or its registry entry is hidden pending its Published
- * rubric row and calibration (route-to-buyer and unit-of-value until Anthony
- * flips them). Skipped cases are still listed so a half written set is
+ * still contains the "TO FILL" placeholder, its folder has no registry entry,
+ * its registry entry is hidden pending its Published rubric row and
+ * calibration, or (for the built-to-scale folder) the composite rubric row is
+ * not Published. Skipped cases are still listed so a half written set is
  * visible, and a set with only skipped cases passes.
+ *
+ * The built-to-scale folder holds composite cases: five parts in, a total
+ * and a grade per part out. They run through scoreModel (every public tool
+ * plus one synthesis) in sequence after the tool folders, and compare the
+ * total and each row within one point.
  *
  * Runs under Node's type stripping and imports the pipeline directly, no
  * HTTP. Calibration runs are not saved to the run store; they are logged to
@@ -28,22 +33,28 @@ import { getTool } from "../app/lib/tools/registry.ts";
 import {
   SKIP_REASON_HIDDEN,
   SKIP_REASON_NO_ENTRY,
+  SKIP_REASON_NOT_PUBLISHED,
   SKIP_REASON_TO_FILL,
   compareCase,
+  compareCompositeCase,
   formatTable,
   isCaseFillable,
   type CalibrationCase,
   type CaseResult,
+  type CompositeCalibrationCase,
 } from "../app/lib/tools/calibration.ts";
+import { BTS_PART_KEYS, BUILT_TO_SCALE_TOOL } from "../app/lib/tools/built-to-scale-method.ts";
 
 const CALIBRATION_DIR = resolve(process.cwd(), "calibration");
 const REQUIRED_ENV = ["OPENROUTER_API_KEY", "NOTION_TOKEN", "NOTION_RUBRICS_DB_ID"] as const;
 
 type Runnable = { file: string; data: CalibrationCase };
+type CompositeRunnable = { file: string; data: CompositeCalibrationCase };
 
-function readCases(): { results: CaseResult[]; runnable: Map<string, Runnable[]> } {
+function readCases(): { results: CaseResult[]; runnable: Map<string, Runnable[]>; composite: CompositeRunnable[] } {
   const results: CaseResult[] = [];
   const runnable = new Map<string, Runnable[]>();
+  const composite: CompositeRunnable[] = [];
 
   const folders = readdirSync(CALIBRATION_DIR).filter((name) => {
     if (name.startsWith("_") || name.startsWith(".")) return false;
@@ -53,6 +64,35 @@ function readCases(): { results: CaseResult[]; runnable: Map<string, Runnable[]>
   for (const folder of folders.sort()) {
     const entry = getTool(folder);
     const files = readdirSync(join(CALIBRATION_DIR, folder)).filter((f) => f.endsWith(".json")).sort();
+
+    if (folder === BUILT_TO_SCALE_TOOL) {
+      for (const file of files) {
+        const path = join(CALIBRATION_DIR, folder, file);
+        let data: CompositeCalibrationCase;
+        try {
+          data = JSON.parse(readFileSync(path, "utf8")) as CompositeCalibrationCase;
+        } catch (err) {
+          results.push({ tool: folder, name: file, file, status: "error", reason: `unreadable: ${err instanceof Error ? err.message : String(err)}` });
+          continue;
+        }
+        const name = data.name || file.replace(/\.json$/, "");
+        if (!isCaseFillable(data)) {
+          results.push({ tool: folder, name, file, status: "skipped", reason: SKIP_REASON_TO_FILL });
+          continue;
+        }
+        const rowKeys = Object.keys(data.expected?.rows ?? {}).sort();
+        if (!data.expected || typeof data.expected.total !== "number") {
+          results.push({ tool: folder, name, file, status: "error", reason: "expected.total is missing" });
+          continue;
+        }
+        if (rowKeys.join(",") !== [...BTS_PART_KEYS].sort().join(",")) {
+          results.push({ tool: folder, name, file, status: "error", reason: "expected.rows keys must equal the five part keys" });
+          continue;
+        }
+        composite.push({ file, data });
+      }
+      continue;
+    }
 
     if (!entry || entry.hidden) {
       const reason = entry ? SKIP_REASON_HIDDEN : SKIP_REASON_NO_ENTRY;
@@ -86,7 +126,7 @@ function readCases(): { results: CaseResult[]; runnable: Map<string, Runnable[]>
     }
   }
 
-  return { results, runnable };
+  return { results, runnable, composite };
 }
 
 function missingEnv(): string[] {
@@ -115,8 +155,8 @@ function summarise(results: CaseResult[]): { run: number; skipped: number; faile
 }
 
 async function main(): Promise<number> {
-  const { results, runnable } = readCases();
-  const toRun = [...runnable.values()].reduce((n, list) => n + list.length, 0);
+  const { results, runnable, composite } = readCases();
+  const toRun = [...runnable.values()].reduce((n, list) => n + list.length, 0) + composite.length;
 
   if (toRun === 0) {
     console.log(formatTable(results));
@@ -156,6 +196,44 @@ async function main(): Promise<number> {
       }
     }),
   );
+
+  // Composite cases after the tool folders, one at a time: each is every
+  // public tool plus one synthesis. A Draft built-to-scale row skips them all.
+  if (composite.length > 0) {
+    const { getRubric, RubricNotPublishedError } = await import("../app/lib/rubrics.ts");
+    let published = true;
+    try {
+      await getRubric(BUILT_TO_SCALE_TOOL);
+    } catch (err) {
+      if (err instanceof RubricNotPublishedError) published = false;
+      else throw err;
+    }
+    if (!published) {
+      for (const { file, data } of composite) {
+        results.push({ tool: BUILT_TO_SCALE_TOOL, name: data.name || file, file, status: "skipped", reason: SKIP_REASON_NOT_PUBLISHED });
+      }
+    } else {
+      const { scoreModel } = await import("../app/lib/tools/built-to-scale.ts");
+      for (const { file, data } of composite) {
+        const name = data.name || file.replace(/\.json$/, "");
+        try {
+          const { run, children } = await scoreModel({ parts: data.input }, { source: "calibration" });
+          const rows: Record<string, number> = {};
+          for (const row of run.rows) rows[row.key] = row.grade;
+          const comparison = compareCompositeCase(data.expected, { total: run.total, rows });
+          results.push({ tool: BUILT_TO_SCALE_TOOL, name, file, status: "run", comparison });
+          seenRoutes.set(run.routes.synthesis, run.models.synthesis);
+          rubricHashes[BUILT_TO_SCALE_TOOL] = run.rubricHash;
+          for (const child of children) {
+            seenRoutes.set(child.routes.scoring, child.models.scoring);
+            rubricHashes[child.tool] = child.rubricHash;
+          }
+        } catch (err) {
+          results.push({ tool: BUILT_TO_SCALE_TOOL, name, file, status: "error", reason: err instanceof Error ? err.message.slice(0, 200) : String(err) });
+        }
+      }
+    }
+  }
 
   results.sort((a, b) => a.tool.localeCompare(b.tool) || a.name.localeCompare(b.name));
   console.log(formatTable(results));

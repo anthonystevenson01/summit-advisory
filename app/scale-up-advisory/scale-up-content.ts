@@ -222,6 +222,14 @@ export const TOOL_STAGE_MAP: readonly ToolStage[] = [
     summary: "Rates how defensible you are.",
     stageNote: "In WIN, that becomes battlecards and competitive handling.",
   },
+  {
+    slug: "unit-of-value",
+    name: "Unit of Value",
+    stage: "GROW",
+    href: "/tools/unit-of-value",
+    summary: "Scores what one sale consumes and what caps it.",
+    stageNote: "GROW is where repeat revenue and expansion move growth off headcount.",
+  },
 ];
 
 // ── Where to start: the AI Lead Engine Build ──

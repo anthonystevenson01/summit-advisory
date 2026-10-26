@@ -63,7 +63,7 @@ export const TASK_LABELS: Record<RoutingTask, string> = {
 export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
   scoring: "One call per tool per run. Scores every dimension 1 to 5 against the rubric and writes the verdict and confidence. Structured JSON at temperature 0. No fallback: a silent model switch here would move grades.",
   details: "The full view after unlock: per-dimension reasoning, recommendations for dimensions scoring 3 or below, and the tool's extras. Structured JSON at temperature 0.",
-  synthesis: "One call per Built to Scale? run that writes the five comments, verdict, strongest, weakest and one change. Release 3; nothing calls it yet. Has one fallback so an outage does not drop the headline.",
+  synthesis: "One call per Built to Scale? run that writes the five comments, verdict, strongest, weakest and one change. Live since Release 3a. Has one fallback so an outage does not drop the headline.",
   extraction: "Ask Summit: reads crawled pages and documents and drafts the five inputs. Release 3b; nothing calls it yet.",
 };
 

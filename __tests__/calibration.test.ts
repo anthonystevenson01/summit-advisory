@@ -11,8 +11,10 @@ import assert from "node:assert/strict";
 import {
   SKIP_REASON_HIDDEN,
   SKIP_REASON_NO_ENTRY,
+  SKIP_REASON_NOT_PUBLISHED,
   SKIP_REASON_TO_FILL,
   compareCase,
+  compareCompositeCase,
   formatTable,
   isCaseFillable,
   type CalibrationCase,
@@ -97,5 +99,52 @@ describe("skip reasons", () => {
   test("formatTable prints the hidden reason for a skipped row", () => {
     const table = formatTable([{ tool: "unit-of-value", name: "Oakridge", status: "skipped", reason: SKIP_REASON_HIDDEN }]);
     assert.ok(table.includes(`skipped   ${SKIP_REASON_HIDDEN}`), table);
+  });
+});
+
+describe("compareCompositeCase", () => {
+  const EXPECTED_COMPOSITE = {
+    total: 10,
+    rows: { pain: 3, routeToBuyer: 2, unitOfValue: 1, valueEvidence: 2, abilityToProtect: 2 },
+  };
+
+  test("an exact match passes with six rows", () => {
+    const result = compareCompositeCase(EXPECTED_COMPOSITE, { total: 10, rows: EXPECTED_COMPOSITE.rows });
+    assert.equal(result.pass, true);
+    assert.equal(result.rows.length, 6);
+    assert.equal(result.rows[0].key, "overall");
+    assert.ok(result.rows.every((r) => r.delta === 0));
+  });
+
+  test("a total off by one passes", () => {
+    const result = compareCompositeCase(EXPECTED_COMPOSITE, { total: 11, rows: { ...EXPECTED_COMPOSITE.rows, pain: 4 } });
+    assert.equal(result.pass, true);
+    assert.equal(result.rows.find((r) => r.key === "overall")?.delta, 1);
+  });
+
+  test("a total off by two fails", () => {
+    const result = compareCompositeCase(EXPECTED_COMPOSITE, { total: 12, rows: EXPECTED_COMPOSITE.rows });
+    assert.equal(result.pass, false);
+  });
+
+  test("a row off by two fails", () => {
+    const result = compareCompositeCase(EXPECTED_COMPOSITE, { total: 10, rows: { ...EXPECTED_COMPOSITE.rows, unitOfValue: 3 } });
+    assert.equal(result.pass, false);
+    assert.equal(result.rows.find((r) => r.key === "unitOfValue")?.delta, 2);
+  });
+
+  test("a missing row fails with a null actual", () => {
+    const { abilityToProtect: _dropped, ...rows } = EXPECTED_COMPOSITE.rows;
+    const result = compareCompositeCase(EXPECTED_COMPOSITE, { total: 10, rows });
+    assert.equal(result.pass, false);
+    assert.equal(result.rows.find((r) => r.key === "abilityToProtect")?.actual, null);
+  });
+
+  test("the not published skip reason prints and differs from the other three", () => {
+    assert.notEqual(SKIP_REASON_NOT_PUBLISHED, SKIP_REASON_HIDDEN);
+    assert.notEqual(SKIP_REASON_NOT_PUBLISHED, SKIP_REASON_NO_ENTRY);
+    assert.notEqual(SKIP_REASON_NOT_PUBLISHED, SKIP_REASON_TO_FILL);
+    const table = formatTable([{ tool: "built-to-scale", name: "Gradeshow", status: "skipped", reason: SKIP_REASON_NOT_PUBLISHED }]);
+    assert.ok(table.includes(`skipped   ${SKIP_REASON_NOT_PUBLISHED}`), table);
   });
 });

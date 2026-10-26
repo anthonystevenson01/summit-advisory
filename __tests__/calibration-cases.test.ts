@@ -15,7 +15,8 @@ import { join, resolve } from "node:path";
 
 import { getTool, type ToolEntry } from "../app/lib/tools/registry.ts";
 import { calcScore, gradeFor } from "../app/lib/tools/scoring.ts";
-import { isCaseFillable, type CalibrationCase } from "../app/lib/tools/calibration.ts";
+import { isCaseFillable, type CalibrationCase, type CompositeCalibrationCase } from "../app/lib/tools/calibration.ts";
+import { BTS_PART_KEYS, bandFor } from "../app/lib/tools/built-to-scale-method.ts";
 
 const CALIBRATION_DIR = resolve(process.cwd(), "calibration");
 
@@ -81,4 +82,37 @@ describe("calibration case files", () => {
       assert.ok(caseFiles(folder).length >= 3, `${folder} has fewer than three cases`);
     }
   });
+});
+
+describe("built-to-scale calibration case files", () => {
+  const folder = "built-to-scale";
+
+  test("the folder exists and holds at least one case", () => {
+    assert.ok(caseFiles(folder).length >= 1);
+  });
+
+  for (const file of caseFiles(folder)) {
+    const path = join(CALIBRATION_DIR, folder, file);
+
+    test(`${folder}/${file} is a consistent composite case`, () => {
+      const data = JSON.parse(readFileSync(path, "utf8")) as CompositeCalibrationCase;
+      assert.equal(data.tool, "built-to-scale");
+      assert.ok(typeof data.name === "string" && data.name.length > 0, "name is non-empty");
+      for (const key of Object.keys(data.input)) {
+        assert.ok((BTS_PART_KEYS as readonly string[]).includes(key), `input.${key} is not a part key`);
+      }
+      assert.ok(Number.isInteger(data.expected.total) && data.expected.total >= 5 && data.expected.total <= 25, "expected.total is 5 to 25");
+      assert.deepEqual(Object.keys(data.expected.rows).sort(), [...BTS_PART_KEYS].sort());
+      let sum = 0;
+      for (const [key, value] of Object.entries(data.expected.rows)) {
+        assert.ok(isGrade(value), `expected.rows.${key} is not an integer 1 to 5`);
+        sum += value;
+      }
+      assert.equal(sum, data.expected.total, "the rows sum to expected.total");
+      if (data.expected.band !== undefined) {
+        assert.equal(data.expected.band, bandFor(data.expected.total).label, "expected.band matches bandFor");
+      }
+      assert.ok(typeof data.agreedBy === "string" && data.agreedBy.length > 0, "agreedBy is non-empty");
+    });
+  }
 });

@@ -1,15 +1,17 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BRAND } from "@/app/lib/brand";
 import { getTool, type ToolSlug } from "@/app/lib/tools/registry";
-import { EMAIL_REGEX } from "@/app/lib/tools/validate";
 import GtmDimensionBar from "./shared/GtmDimensionBar";
 import ToolShareButtons from "./shared/ToolShareButtons";
 import CyclingLoader from "./shared/CyclingLoader";
 import ErrMsg from "./shared/ErrMsg";
 import ResultBlock, { type ConfidenceLevel } from "./shared/ResultBlock";
+import UnlockGate from "./shared/UnlockGate";
+import PrefillLoader, { type PrefillPayload } from "./shared/PrefillLoader";
 import { renderExtra, type ExtraValue } from "./shared/extras";
 
 const BOOK_URL =
@@ -160,14 +162,28 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
   const [full, setFull] = useState<FullView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorReturn, setErrorReturn] = useState<Phase>("input");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [rerunOf, setRerunOf] = useState<string | null>(null);
   const [savedMode, setSavedMode] = useState(false);
   const [emailed, setEmailed] = useState(false);
+  const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null);
   const resultsRef = useRef<HTMLElement>(null);
+
+  // The re-run hand-off from a Built to Scale? scorecard row: the child run's
+  // inputs fill the form and the next score records `re_run` with `rerunOf`.
+  const handlePrefill = useCallback((payload: PrefillPayload) => {
+    if (payload.tool !== slug) return;
+    const current = getTool(slug);
+    if (!current) return;
+    const next: Record<string, string> = {};
+    for (const input of current.inputs) {
+      const value = payload.inputs[input.key];
+      if (typeof value === "string" && value.length > 0) next[input.key] = value.slice(0, input.maxLength);
+    }
+    setValues((prev) => ({ ...prev, ...next }));
+    setRerunOf(payload.runId);
+    setPrefilledFrom(payload.runId);
+  }, [slug]);
 
   useEffect(() => {
     if (phase === "scored" || phase === "full") {
@@ -180,7 +196,6 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
 
   const inputsLocked = phase !== "input" && phase !== "error";
   const resultVisible = phase === "scored" || phase === "unlocking" || phase === "full";
-  const emailValid = EMAIL_REGEX.test(email.trim());
 
   const formValid = entry.inputs.every((input) => {
     const value = (values[input.key] ?? "").trim();
@@ -254,15 +269,15 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
     }
   };
 
-  const handleUnlock = async () => {
-    if (!free || !emailValid) return;
+  const handleUnlock = async (email: string, name: string, company: string) => {
+    if (!free) return;
     setPhase("unlocking");
     setError(null);
     try {
       const unlockRes = await fetch(`/api/tools/${entry.slug}/unlock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ runId: free.runId, name: name.trim(), email: email.trim(), company: company.trim(), website: honeypot }),
+        body: JSON.stringify({ runId: free.runId, name, email, company, website: honeypot }),
       });
       if (!unlockRes.ok) {
         fail(await readError(unlockRes), "scored");
@@ -304,6 +319,7 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
     <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "var(--font-dm-sans), sans-serif" }}>
       <Suspense fallback={null}>
         <SavedResultLoader slug={entry.slug} onLoaded={handleSavedResult} />
+        <PrefillLoader param="prefill" via="scorecard" onLoaded={handlePrefill} />
       </Suspense>
 
       {/* HERO */}
@@ -363,6 +379,11 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
       {/* INPUT: hidden while a saved result is shown, until "Score again" */}
       {!savedMode && (
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "8px 24px" }}>
+        {prefilledFrom && phase === "input" && (
+          <p style={{ fontSize: 13, color: BRAND.teal, margin: "0 0 16px", lineHeight: 1.5 }}>
+            Inputs loaded from your Built to Scale? run. Edit anything and score again.
+          </p>
+        )}
         <input
           type="text"
           name="website"
@@ -535,52 +556,18 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
               })}
             </div>
 
+            {(phase === "scored" || phase === "full") && (
+              <p style={{ fontSize: 13, color: BRAND.mid, margin: "4px 0 0", lineHeight: 1.55 }}>
+                Take this result into Built to Scale? and score all five dimensions.{" "}
+                <Link href={`/tools/built-to-scale?from=${encodeURIComponent(view.runId)}`} style={{ color: BRAND.teal, fontWeight: 600, textDecoration: "none" }}>
+                  Score the whole model
+                </Link>
+              </p>
+            )}
+
             {phase === "scored" && (
               <div style={{ marginTop: 24, borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
-                <div style={{ background: BRAND.white, borderRadius: 8, padding: 24, border: `1px solid ${BRAND.teal}30` }}>
-                  <div style={{ textAlign: "center", marginBottom: 20 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${BRAND.teal}15`, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BRAND.teal} strokeWidth="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" />
-                        <path d="M7 11V7a5 5 0 0110 0v4" />
-                      </svg>
-                    </div>
-                    <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock the full view</h3>
-                    <p style={{ fontSize: 13, color: BRAND.mid, margin: 0 }}>We use your email to send you this result and to unlock every tool for 30 days. Nothing else.</p>
-                  </div>
-                  {[
-                    { key: "email", label: "Email", value: email, set: setEmail, placeholder: "you@company.com", type: "email", required: true },
-                    { key: "name", label: "Name (optional)", value: name, set: setName, placeholder: "Your name", type: "text", required: false },
-                    { key: "company", label: "Company (optional)", value: company, set: setCompany, placeholder: "Your company", type: "text", required: false },
-                  ].map((f) => (
-                    <div key={f.key} style={{ marginBottom: 12 }}>
-                      <label htmlFor={`${entry.slug}-unlock-${f.key}`} style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 4 }}>{f.label}</label>
-                      <input
-                        id={`${entry.slug}-unlock-${f.key}`}
-                        type={f.type}
-                        value={f.value}
-                        required={f.required}
-                        onChange={(e) => f.set(e.target.value)}
-                        placeholder={f.placeholder}
-                        style={{ ...fieldStyle, padding: "10px 12px" }}
-                        onFocus={(e) => (e.target.style.borderColor = BRAND.teal)}
-                        onBlur={(e) => (e.target.style.borderColor = BRAND.border)}
-                      />
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={handleUnlock}
-                    disabled={!emailValid}
-                    style={{ width: "100%", padding: "12px", borderRadius: 6, border: "none", background: emailValid ? BRAND.brandGreen : BRAND.border, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, letterSpacing: "0.04em", marginTop: 8, cursor: emailValid ? "pointer" : "not-allowed" }}
-                  >
-                    Unlock and email my result
-                  </button>
-                  <p style={{ fontSize: 11, color: BRAND.mid, textAlign: "center", marginTop: 10, marginBottom: 0 }}>
-                    Your result arrives by email with a saved link and a delete-my-data link. No spam, no third-party sharing.{" "}
-                    <a href="mailto:privacy@summitstrategyadvisory.com" style={{ color: BRAND.teal, textDecoration: "none" }}>privacy@summitstrategyadvisory.com</a>.
-                  </p>
-                </div>
+                <UnlockGate idPrefix={entry.slug} onSubmit={handleUnlock} />
               </div>
             )}
 

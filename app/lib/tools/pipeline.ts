@@ -63,8 +63,10 @@ export class UnlockRequiredError extends Error {
 }
 
 export interface PipelineContext {
-  source: "web" | "calibration";
+  source: "web" | "calibration" | "built-to-scale";
   ip?: string;
+  /** The composite run this child belongs to, set by the Built to Scale? orchestration. */
+  parentId?: string;
   /** Verified claims from the unlock cookie, passed in by the route. */
   cookieUnlock?: { emailHash: string };
   /** True when the saved-link token verified for this run id. */
@@ -205,10 +207,11 @@ export async function scoreRun(
 
   // Calibration runs go through the same stages but are never persisted or
   // tracked: the admin runs table stays clean and only ai:calls (with a cal_
-  // id) records the spend.
-  const isWeb = ctx.source === "web";
-  const runId = isWeb ? newRunId() : `cal_${newRunId().slice(4)}`;
-  if (isWeb) void track("tool_started", { tool: entry.slug, source: ctx.source });
+  // id) records the spend. Web runs and Built to Scale? children are both
+  // persisted; the source and parentId on the record tell them apart.
+  const persisted = ctx.source !== "calibration";
+  const runId = persisted ? newRunId() : `cal_${newRunId().slice(4)}`;
+  if (persisted) void track("tool_started", { tool: entry.slug, source: ctx.source });
 
   const rubric = await getRubric(entry.slug);
 
@@ -228,7 +231,8 @@ export async function scoreRun(
     id: runId,
     tool: entry.slug,
     createdAt: new Date().toISOString(),
-    source: "web",
+    source: ctx.source === "calibration" ? "web" : ctx.source,
+    parentId: ctx.parentId ?? null,
     inputs,
     scores: call.data.scores,
     score,
@@ -252,13 +256,13 @@ export async function scoreRun(
     emailedAt: null,
   };
 
-  if (isWeb) {
+  if (persisted) {
     try {
       await saveRun(run);
     } catch (err) {
       console.error(`${entry.slug} score: run persist failed`, err instanceof Error ? err.message : err);
     }
-    void track("result_shown", { tool: entry.slug, runId, score, grade: grade.grade, confidence: run.confidence });
+    void track("result_shown", { tool: entry.slug, runId, score, grade: grade.grade, confidence: run.confidence, source: ctx.source });
   }
 
   return { run, free: toFreeView(run) };

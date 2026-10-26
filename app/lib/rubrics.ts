@@ -21,14 +21,31 @@
  * The hash (SHA-256 of rubric plus prompt) is returned with every load and the
  * pipeline writes it onto every run, so a stored score can always be tied to
  * the exact text that produced it. Never logs the token or the rubric text.
+ *
+ * Two modes read the same row. `getRubric` returns the text rendering the
+ * prompts use; `getRubricBlocks` returns the structured blocks the Built to
+ * Scale? method page renders, with the same hash (computed from the text
+ * rendering) so the page and the synthesis report one version. Each mode has
+ * its own cache keys (`rubric:{slug}`, `rubric-blocks:{slug}`).
  */
 import { createHash } from "node:crypto";
 import { getRedis } from "./redis.ts";
 import { TOOL_SLUGS } from "./tools/registry.ts";
+import { BUILT_TO_SCALE_TOOL } from "./tools/built-to-scale-method.ts";
+import { notionBlocksToStructured, richText, type NotionBlock, type NotionRichText, type RubricBlock } from "./rubric-blocks.ts";
+
+export type { NotionBlock, NotionRichText, RubricBlock };
 
 export interface Rubric {
   systemPrompt: string;
   rubric: string;
+  version: number;
+  hash: string;
+  fetchedAt: string;
+}
+
+export interface RubricBlocks {
+  blocks: RubricBlock[];
   version: number;
   hash: string;
   fetchedAt: string;
@@ -46,37 +63,17 @@ const REDIS_TTL_SECONDS = 600;
 const MEMORY_TTL_MS = 60_000;
 
 const memory = new Map<string, { value: Rubric; at: number }>();
+const blocksMemory = new Map<string, { value: RubricBlocks; at: number }>();
 
 export function rubricKey(slug: string): string {
   return `rubric:${slug}`;
 }
 
+export function rubricBlocksKey(slug: string): string {
+  return `rubric-blocks:${slug}`;
+}
+
 // ── Notion block to text ─────────────────────────────────────────────────────
-
-interface NotionRichText {
-  plain_text: string;
-}
-
-export interface NotionBlock {
-  id?: string;
-  type: string;
-  has_children?: boolean;
-  paragraph?: { rich_text: NotionRichText[] };
-  heading_1?: { rich_text: NotionRichText[] };
-  heading_2?: { rich_text: NotionRichText[] };
-  heading_3?: { rich_text: NotionRichText[] };
-  bulleted_list_item?: { rich_text: NotionRichText[] };
-  numbered_list_item?: { rich_text: NotionRichText[] };
-  quote?: { rich_text: NotionRichText[] };
-  table?: { has_column_header?: boolean };
-  table_row?: { cells: NotionRichText[][] };
-  /** Table rows, attached by the loader before conversion. */
-  rows?: NotionBlock[];
-}
-
-function richText(arr: NotionRichText[] | undefined): string {
-  return (arr ?? []).map((rt) => rt.plain_text).join("");
-}
 
 /**
  * Converts page blocks to plain text. Handles paragraph, headings, bullets,
@@ -178,7 +175,17 @@ async function findPublishedRow(slug: string, token: string, dbId: string): Prom
   return page;
 }
 
-async function loadFromNotion(slug: string): Promise<Rubric> {
+interface LoadedRow {
+  systemPrompt: string;
+  version: number;
+  blocks: NotionBlock[];
+  /** The text rendering of the blocks; the hash input for both modes. */
+  rubric: string;
+  hash: string;
+}
+
+/** The Published lookup and block fetch shared by both modes. */
+async function loadRow(slug: string): Promise<LoadedRow> {
   const token = process.env.NOTION_TOKEN;
   const dbId = process.env.NOTION_RUBRICS_DB_ID;
   if (!token || !dbId) throw new RubricNotPublishedError("rubric source not configured");
@@ -197,7 +204,17 @@ async function loadFromNotion(slug: string): Promise<Rubric> {
   if (!rubric) throw new RubricNotPublishedError(`rubric not published: ${slug}`);
 
   const hash = createHash("sha256").update(`${rubric}\n${systemPrompt}`).digest("hex");
-  return { systemPrompt, rubric, version, hash, fetchedAt: new Date().toISOString() };
+  return { systemPrompt, version, blocks, rubric, hash };
+}
+
+async function loadFromNotion(slug: string): Promise<Rubric> {
+  const row = await loadRow(slug);
+  return { systemPrompt: row.systemPrompt, rubric: row.rubric, version: row.version, hash: row.hash, fetchedAt: new Date().toISOString() };
+}
+
+async function loadBlocksFromNotion(slug: string): Promise<RubricBlocks> {
+  const row = await loadRow(slug);
+  return { blocks: notionBlocksToStructured(row.blocks), version: row.version, hash: row.hash, fetchedAt: new Date().toISOString() };
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -236,9 +253,51 @@ export async function getRubric(slug: string): Promise<Rubric> {
   return fresh;
 }
 
-/** Deletes `rubric:{slug}` for every registry slug and empties the memory map. */
+function isRubricBlocks(value: unknown): value is RubricBlocks {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return Array.isArray(v.blocks) && typeof v.hash === "string";
+}
+
+/**
+ * Structured mode: the row's blocks for the method page. Memory, then Redis
+ * (`rubric-blocks:{slug}`, 600 s), then Notion. Errors are not cached and
+ * are the same RubricNotPublishedError as the text mode. The hash is the
+ * text mode's hash for the same row, so the method page can state the
+ * version the synthesis reads; the admin refresh clears both caches.
+ */
+export async function getRubricBlocks(slug: string): Promise<RubricBlocks> {
+  const cached = blocksMemory.get(slug);
+  if (cached && Date.now() - cached.at < MEMORY_TTL_MS) return cached.value;
+
+  let redisHit: RubricBlocks | null = null;
+  try {
+    const raw = await getRedis().get<unknown>(rubricBlocksKey(slug));
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (isRubricBlocks(parsed)) redisHit = parsed;
+  } catch {
+    // Redis unavailable or malformed: fall through to Notion
+  }
+  if (redisHit) {
+    blocksMemory.set(slug, { value: redisHit, at: Date.now() });
+    return redisHit;
+  }
+
+  const fresh = await loadBlocksFromNotion(slug);
+  blocksMemory.set(slug, { value: fresh, at: Date.now() });
+  try {
+    await getRedis().set(rubricBlocksKey(slug), JSON.stringify(fresh), { ex: REDIS_TTL_SECONDS });
+  } catch {
+    // caching is best effort
+  }
+  return fresh;
+}
+
+/** Deletes `rubric:{slug}` and `rubric-blocks:{slug}` for every registry slug and built-to-scale, and empties both memory maps. */
 export async function clearRubricCache(): Promise<void> {
   memory.clear();
-  const keys = TOOL_SLUGS.map((slug) => rubricKey(slug));
+  blocksMemory.clear();
+  const slugs = [...TOOL_SLUGS, BUILT_TO_SCALE_TOOL];
+  const keys = slugs.flatMap((slug) => [rubricKey(slug), rubricBlocksKey(slug)]);
   await getRedis().del(...keys);
 }

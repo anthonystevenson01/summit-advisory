@@ -30,6 +30,17 @@ export function getDetailsLimiter() {
   });
 }
 
+// 2 Built to Scale? runs per IP per hour (seven scoring calls plus one synthesis per run)
+export function getBuiltToScaleLimiter() {
+  const redis = getRedisForRateLimit();
+  if (!redis) return null;
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(2, "1 h"),
+    prefix: "rl:bts",
+  });
+}
+
 // 20 admin login attempts per IP per 15 minutes (brute force protection)
 export function getLoginLimiter() {
   const redis = getRedisForRateLimit();
