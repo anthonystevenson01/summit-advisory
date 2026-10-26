@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRun, isRunId } from "@/app/lib/runs";
 import { isToolPublic } from "@/app/lib/tools/registry";
 import { track } from "@/app/lib/events";
+import { isValidSlug } from "@/app/lib/tools/report-model";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,8 +10,10 @@ export const dynamic = "force-dynamic";
 /**
  * The hand-off endpoint: a tool run's inputs and slug, nothing else (no
  * scores, reasoning, extras, unlock or email fields), for the Built to
- * Scale? form (`via=tool`) and for a tool page re-run from a scorecard row
- * (`via=scorecard`). A composite id, an unknown id or a hidden tool's run is
+ * Scale? form (`via=tool`), for a tool page re-run from a scorecard row
+ * (`via=scorecard`) and for a re-run from a prospect report's working
+ * (`via=report`, with the report slug carried into the event's props
+ * only). A composite id, an unknown id or a hidden tool's run is
  * 404. The response is never cached. Inputs only, because the hand-off needs
  * the text and nothing else, and a free view must never become a way to read
  * a stranger's scores. No token: the links that reach here (`?from=` and
@@ -35,6 +38,10 @@ export async function GET(req: NextRequest) {
     const props = { tool: run.tool, runId: run.id, ...(run.parentId ? { parentId: run.parentId } : {}) };
     if (via === "tool") void track("score_whole_model_handoff", props);
     else if (via === "scorecard") void track("tool_rerun_from_scorecard", props);
+    else if (via === "report") {
+      const report = params.get("report");
+      void track("tool_rerun_from_scorecard", { ...props, via: "report", ...(isValidSlug(report) ? { report } : {}) });
+    }
 
     return NextResponse.json({ runId: run.id, tool: run.tool, inputs: run.inputs }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {

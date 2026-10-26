@@ -6,6 +6,7 @@
  * House rules: British spelling, no dashes, no hype.
  */
 import { PUBLIC_TOOLS, PUBLIC_TOOL_COUNT_WORD_CAPITALISED } from "../lib/tools/registry.ts";
+import { CONTACT_EMAIL } from "../lib/brand.ts";
 
 const COUNT = PUBLIC_TOOL_COUNT_WORD_CAPITALISED;
 
@@ -43,8 +44,8 @@ export const HOW_IT_WORKS: readonly { num: string; title: string; body: string }
   },
 ];
 
-/** The address in the site's Organization schema. */
-export const CONTACT_EMAIL = "info@summitstrategyadvisory.com";
+/** The address in the site's Organization schema; one value with the report pages, held in brand.ts. */
+export { CONTACT_EMAIL };
 
 export interface EntryPath {
   title: string;

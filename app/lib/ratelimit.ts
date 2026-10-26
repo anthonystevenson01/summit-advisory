@@ -64,6 +64,17 @@ export function getAccountIntelLimiter() {
   });
 }
 
+// 10 report access-code attempts per IP per hour (Release 4; the hash cost is not the defence, this is)
+export function getReportAccessLimiter() {
+  const redis = getRedisForRateLimit();
+  if (!redis) return null;
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+    prefix: "rl:report-access",
+  });
+}
+
 // ── Project Builder ──────────────────────────────────────────────────────────
 
 function builderLimiter(limit: number, window: "1 h" | "24 h", prefix: string) {

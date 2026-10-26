@@ -89,7 +89,9 @@ export default function Scorecard({ view, label = AUTOMATED_LINE, renderWorking,
         <p style={{ fontFamily: CONDENSED, fontSize: 22, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", margin: "8px 0 0", color: BRAND.white }}>
           {view.band}
         </p>
-        <p style={{ fontSize: 17, lineHeight: 1.5, maxWidth: 640, margin: "12px 0 0", color: BRAND.white }}>{view.verdict}</p>
+        {view.verdict && (
+          <p style={{ fontSize: 17, lineHeight: 1.5, maxWidth: 640, margin: "12px 0 0", color: BRAND.white }}>{view.verdict}</p>
+        )}
         {view.quickMode && (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "10px 0 0", color: "rgba(255,255,255,0.7)" }}>{QUICK_NOTE}</p>
         )}

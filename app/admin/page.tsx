@@ -43,6 +43,7 @@ export default async function AdminDashboard() {
     { href: "/admin/runs", title: "Runs", body: "Every scored run: inputs, scores, reasoning, unlocks" },
     { href: "/admin/models", title: "Models", body: "Which model handles each call, with calibration state and spend" },
     { href: "/admin/rubrics", title: "Rubrics", body: "Live rubric versions from Notion, with a refresh" },
+    { href: "/admin/reports", title: "Reports", body: "Prospect reports built from Built to Scale? runs" },
     { href: "/admin/briefs", title: "Briefs", body: "Every Project Builder brief: answers, requirements, status, Notion" },
     { href: "/admin/stats", title: "Stats", body: "Builder funnel, helper use, model spend and briefs by status" },
   ];

@@ -2800,6 +2800,63 @@ body {
   .bts-pair { grid-template-columns: 1fr; }
 }
 
+/* ─── PROSPECT REPORT PAGES (Release 4) ───
+   The page gutters, the working panel and the CTA band for /report/{slug};
+   fonts and colours are inline BRAND styles in the page. */
+.report-page { max-width: 760px; margin: 0 auto; padding: 48px 24px; }
+.report-section { margin-top: 40px; }
+.report-working { background: #F0F7F4; border: 1px solid #D0D5D2; border-radius: 12px; padding: 16px; }
+.report-working .bts-row-comment { grid-column: 1 / -1; }
+.report-cta { background: #F0F7F4; border: 1px solid #D0D5D2; border-radius: 12px; padding: 28px 24px; text-align: center; }
+@media (max-width: 480px) {
+  .report-page { padding: 32px 16px; }
+  .report-section { margin-top: 32px; }
+  .report-working { padding: 12px; }
+}
+
+/* The one-slide summary at /report/{slug}/slide: a 16 by 9 stage sized in
+   container query units so one layout serves any width and the printed sheet. */
+.rs-page { background: #F0F7F4; min-height: 100vh; padding: 24px 16px 48px; }
+.rs-chrome { max-width: 1280px; margin: 0 auto 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.rs-stage {
+  container-type: inline-size;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  background: #053030;
+  color: #FFFFFF;
+  border-radius: 1cqw;
+  overflow: hidden;
+}
+.rs-slide { display: flex; flex-direction: column; height: 100%; padding: 3.2cqw 4cqw 2.4cqw; box-sizing: border-box; }
+.rs-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 2cqw; }
+.rs-company { font-family: var(--font-barlow-condensed), sans-serif; font-size: 3.2cqw; font-weight: 700; line-height: 1.05; margin: 0; }
+.rs-sub { font-size: 1.25cqw; color: rgba(255,255,255,0.6); margin: 0.4cqw 0 0; }
+.rs-mark { font-family: var(--font-barlow-condensed), sans-serif; font-size: 1.15cqw; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6EBF8B; white-space: nowrap; margin: 0.4cqw 0 0; }
+.rs-opening { font-size: 1.55cqw; line-height: 1.5; margin: 2cqw 0 0; max-height: 7cqw; overflow: hidden; }
+.rs-boxes { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 1.6cqw; margin-top: 2.2cqw; flex: 1; min-height: 0; }
+.rs-box { background: rgba(255,255,255,0.06); border-radius: 0.9cqw; padding: 1.6cqw 1.7cqw; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.rs-box-title { font-family: var(--font-barlow-condensed), sans-serif; font-size: 1.1cqw; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #6EBF8B; margin: 0 0 0.9cqw; }
+.rs-box-text { font-size: 1.2cqw; line-height: 1.5; margin: 0 0 0.8cqw; }
+.rs-total { display: flex; align-items: baseline; gap: 0.6cqw; }
+.rs-total-n { font-family: var(--font-barlow-condensed), sans-serif; font-size: 5.6cqw; font-weight: 700; line-height: 1; }
+.rs-total-of { font-size: 1.2cqw; color: rgba(255,255,255,0.6); }
+.rs-band { font-family: var(--font-barlow-condensed), sans-serif; font-size: 1.35cqw; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6EBF8B; margin: 0.5cqw 0 1cqw; line-height: 1.2; }
+.rs-rows { display: flex; flex-direction: column; gap: 0.35cqw; }
+.rs-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8cqw; font-size: 1.1cqw; padding: 0.35cqw 0; border-top: 1px solid rgba(255,255,255,0.12); }
+.rs-row-right { display: flex; align-items: center; gap: 0.8cqw; }
+.rs-dots { display: flex; gap: 0.4cqw; }
+.rs-dot { width: 0.85cqw; height: 0.85cqw; border-radius: 50%; box-sizing: border-box; border: 0.12cqw solid rgba(255,255,255,0.35); }
+.rs-dot-on { background: #319A65; border-color: #319A65; }
+.rs-grade { font-family: var(--font-barlow-condensed), sans-serif; font-size: 1.5cqw; font-weight: 700; min-width: 1.2cqw; text-align: right; }
+.rs-foot { font-size: 1cqw; color: rgba(255,255,255,0.55); margin: 1.6cqw 0 0; }
+@media print {
+  .rs-chrome { display: none; }
+  .rs-page { background: #FFFFFF; padding: 0; min-height: 0; }
+  .rs-stage { max-width: none; width: 100%; border-radius: 0; page-break-inside: avoid; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* ─── PROJECT BUILDER ───
    Layout only: the stepper grid and its progress line, the card grids, the
    two column blocks, the fixed dock and the mobile rules. Fonts and colours
