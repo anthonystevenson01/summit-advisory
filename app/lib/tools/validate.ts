@@ -41,17 +41,18 @@ export type UnlockValidation =
   | { ok: true; name: string; email: string; company: string }
   | { ok: false; error: string };
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/**
+ * Email is required; name and company are optional and come back as "" when
+ * absent so the run record and the daily digest keep their shape.
+ */
 export function validateUnlock(body: unknown): UnlockValidation {
   const source = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
   const name = typeof source.name === "string" ? source.name.trim() : "";
   const email = typeof source.email === "string" ? source.email.trim() : "";
   const company = typeof source.company === "string" ? source.company.trim() : "";
-  if (!name || !email || !company) {
-    return { ok: false, error: "Name, email, and company are required." };
-  }
-  if (!EMAIL_REGEX.test(email)) {
+  if (!email || !EMAIL_REGEX.test(email)) {
     return { ok: false, error: "Please enter a valid email address." };
   }
   return { ok: true, name, email, company };

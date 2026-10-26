@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { getRedis } from "@/app/lib/redis";
+import { sendMail } from "@/app/lib/mail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +32,15 @@ const TOOL_LABELS: Record<string, string> = {
   positioning: "Positioning",
   moat: "Moat",
 };
+
+/** "Name <email>, Company" with absent parts dropped; a missing name prints the email alone. */
+function formatLead(u: { name?: unknown; email?: unknown; company?: unknown }): string {
+  const name = typeof u.name === "string" ? u.name.trim() : "";
+  const email = typeof u.email === "string" ? u.email.trim() : "";
+  const company = typeof u.company === "string" ? u.company.trim() : "";
+  const who = name ? `${name} <${email}>` : email;
+  return company ? `${who}, ${company}` : who;
+}
 
 function formatStamp(iso: string): string {
   try {
@@ -118,7 +127,7 @@ export async function GET(req: NextRequest) {
     lines.push("──── ICP Unlocks ────");
     lines.push("");
     recentIcp.forEach((u, i) => {
-      lines.push(`${i + 1}. ${u.name} <${u.email}> — ${u.company}`);
+      lines.push(`${i + 1}. ${formatLead(u)}`);
       lines.push(`   ${formatStamp(u.unlockedAt)}`);
       lines.push("");
     });
@@ -129,7 +138,7 @@ export async function GET(req: NextRequest) {
     lines.push("");
     recentGtm.forEach((u, i) => {
       const toolLabel = u.tool && TOOL_LABELS[u.tool] ? TOOL_LABELS[u.tool] : (u.tool ?? "Unknown");
-      lines.push(`${i + 1}. ${u.name} <${u.email}> — ${u.company}`);
+      lines.push(`${i + 1}. ${formatLead(u)}`);
       lines.push(`   Tool: ${toolLabel} | ${formatStamp(u.unlockedAt)}`);
       lines.push("");
     });
@@ -141,17 +150,10 @@ export async function GET(req: NextRequest) {
   const text = lines.join("\n");
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: Number(SMTP_PORT),
-      secure: Number(SMTP_PORT) === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    });
-
-    await transporter.sendMail({
+    await sendMail({
       from: NOTIFY_EMAIL,
       to: NOTIFY_EMAIL,
-      subject: `Summit — ${total} new lead${total === 1 ? "" : "s"} yesterday`,
+      subject: `Summit: ${total} new lead${total === 1 ? "" : "s"} yesterday`,
       text,
     });
   } catch (mailErr) {

@@ -4,6 +4,7 @@ import { getTool, isToolPublic } from "@/app/lib/tools/registry";
 import { validateInputs } from "@/app/lib/tools/validate";
 import { scoreRun } from "@/app/lib/tools/pipeline";
 import { track } from "@/app/lib/events";
+import { UNLOCK_COOKIE, verifyUnlockCookie } from "@/app/lib/unlock";
 import { RATE_LIMIT_MESSAGE, errorResponse } from "../errors";
 
 export const runtime = "nodejs";
@@ -54,7 +55,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ too
     if (typeof body.rerunOf === "string" && body.rerunOf.length > 0) {
       void track("re_run", { tool, runId: free.runId, rerunOf: body.rerunOf });
     }
-    return NextResponse.json(free);
+    // A valid unlock cookie lets the page skip the gate; the unlock itself is
+    // recorded at details time, so nothing is written to the run here.
+    const claims = verifyUnlockCookie(req.cookies.get(UNLOCK_COOKIE)?.value);
+    return NextResponse.json({ ...free, unlocked: free.unlocked || claims !== null });
   } catch (err) {
     return errorResponse(err, `${tool} score`);
   }
