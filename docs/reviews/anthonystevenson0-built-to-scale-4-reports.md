@@ -28,3 +28,7 @@ Slug rules, row merge and the edited flag, bands at every boundary, expiry at an
 6. The access, event, expired and score routes each do one extra report read; fine at this volume.
 7. Five pre-existing pages still inline the calendar booking URL; only `ToolPage` reads the shared constant, as specified.
 8. Preview smoke before merge: real Upstash claim and rename, the access-code flow and cookie scoping, the limiter, SMTP on first open and re-run, the end-to-end re-run hook from a report link, open counting skipped for the admin session and a preview bot, the report page at 375 px, print to PDF, Gmail and LinkedIn previews.
+
+## Round 2: APPROVE (fix found by the live preview smoke)
+
+Fault: in the share image the engine band label ("A good idea with an engine still to build") wrapped to two lines and the second line overlapped the Pain row. Fix in `app/report/[slug]/opengraph-image.tsx` only: the band label sits in a fixed-height, overflow-hidden block sized for two lines at 18px and the rows start a fixed 8px below it. All four bands rendered locally; gates re-run by the Reviewer and green. The preview smoke otherwise passed in full: seed idempotence, draft invisibility, publish, the public page structure, bot and admin opens not counted, first-open and re-run emails, the access-code flow with path-scoped cookie and the attempt limiter, slide and image, the phone-width layout and unpublish.

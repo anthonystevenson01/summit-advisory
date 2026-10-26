@@ -11,6 +11,11 @@ const DARK = "#053030";
 const MINT = "#6EBF8B";
 const GREEN = "#319A65";
 
+/** The band label sits in a block sized for two lines at this size, so "A good idea with an engine still to build" can wrap without reaching the rows. */
+const BAND_FONT_SIZE = 18;
+const BAND_LINE_HEIGHT = 1.2;
+const BAND_BLOCK_HEIGHT = Math.ceil(2 * BAND_FONT_SIZE * BAND_LINE_HEIGHT);
+
 type Outcome = { kind: "slide"; data: ReportSlideView; company: string; asOfLabel: string } | { kind: "frame" } | { kind: "none" };
 
 /**
@@ -80,8 +85,11 @@ function Slide({ data, company, asOfLabel }: { data: ReportSlideView; company: s
                 <span style={{ fontSize: 96, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.02em" }}>{box.total}</span>
                 <span style={{ fontSize: 20, color: "rgba(255,255,255,0.55)", marginLeft: 10, marginBottom: 12 }}>of 25</span>
               </div>
-              <div style={{ fontSize: 20, color: MINT, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700, marginTop: 6, lineHeight: 1.2 }}>{box.band}</div>
-              <div style={{ display: "flex", flexDirection: "column", marginTop: 10 }}>
+              {/* A fixed two-line block: the longest band wraps, and Satori must not let a second line run into the rows. */}
+              <div style={{ display: "flex", height: BAND_BLOCK_HEIGHT, overflow: "hidden", marginTop: 6 }}>
+                <div style={{ fontSize: BAND_FONT_SIZE, lineHeight: BAND_LINE_HEIGHT, color: MINT, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700 }}>{box.band}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", marginTop: 8 }}>
                 {box.rows.map((row) => (
                   <div key={row.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderTop: "1px solid rgba(255,255,255,0.12)" }}>
                     <span style={{ fontSize: 16 }}>{row.name}</span>
