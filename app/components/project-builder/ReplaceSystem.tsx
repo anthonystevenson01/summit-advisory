@@ -15,6 +15,8 @@ export interface ReplaceSystemProps {
   update: (patch: Partial<BriefState>) => void;
   onLookup: (name: string) => void;
   onBuild: () => void;
+  canUndo: boolean;
+  onUndo: () => void;
 }
 
 const nextPri = (p: string): Priority | "" => (p === "Must" ? "Should" : p === "Should" ? "Could" : p === "Could" ? "" : "Must");
@@ -28,7 +30,7 @@ const sub = { margin: "0 0 12px", fontSize: 15, fontFamily: SANS, color: BRAND.t
  * Could, off, "Select what most teams use", the reasons, the switch over
  * chips and "Build my requirements list" (local, through the engine).
  */
-export default function ReplaceSystem({ state, busy, note, update, onLookup, onBuild }: ReplaceSystemProps) {
+export default function ReplaceSystem({ state, busy, note, update, onLookup, onBuild, canUndo, onUndo }: ReplaceSystemProps) {
   const R = state.rep;
   const [other, setOther] = useState(R.other);
   const cat = SYSTEM_CATEGORIES.find((x) => x.category === R.cat);
@@ -81,9 +83,12 @@ export default function ReplaceSystem({ state, busy, note, update, onLookup, onB
               placeholder={REPLACE.notListedPlaceholder}
               style={field}
             />
-            <button type="button" onClick={() => other.trim() && onLookup(other.trim())} disabled={busy} style={{ ...btnAlt, ...(busy ? btnDisabled : {}) }}>
-              {REPLACE.useThis}
-            </button>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <button type="button" onClick={() => other.trim() && onLookup(other.trim())} disabled={busy} style={{ ...btnAlt, ...(busy ? btnDisabled : {}) }}>
+                {REPLACE.useThis}
+              </button>
+              {canUndo && <button type="button" onClick={onUndo} style={btnAltSmall}>Undo</button>}
+            </div>
           </div>
         </div>
       </section>

@@ -4,7 +4,7 @@ import { BRAND } from "@/app/lib/brand";
 import { EXAMPLES, PATHS, type PathKey } from "@/app/lib/project-builder/catalogue";
 import type { BriefState } from "@/app/lib/project-builder/brief";
 import { HERO_TITLE, PASTE_NOTICE, PRIVACY_LABEL, PRIVACY_URL, START } from "@/app/lib/project-builder/copy";
-import { CONDENSED, SANS, btn, btnDisabled, field, fieldWrap, h2, hint, label, lede, path as pathStyle, pathTitle, status, textarea } from "./builder-styles";
+import { CONDENSED, SANS, btn, btnAltSmall, btnDisabled, field, fieldWrap, h2, hint, label, lede, path as pathStyle, pathTitle, status, textarea } from "./builder-styles";
 import Starters, { selectBlank } from "./Starters";
 import ReplaceSystem from "./ReplaceSystem";
 
@@ -20,6 +20,11 @@ export interface StepStartProps {
   onRead: () => void;
   onLookup: (name: string) => void;
   onBuild: () => void;
+  /** Undo for the document read. */
+  canUndo: boolean;
+  /** Undo for the system lookup, passed through to ReplaceSystem. */
+  lookupCanUndo: boolean;
+  onUndo: () => void;
 }
 
 /**
@@ -28,7 +33,7 @@ export interface StepStartProps {
  * block: the paste box with the file input and the notice (doc and built),
  * the one sentence field with the examples (idea), or the replace route.
  */
-export default function StepStart({ state, source, busy, readNote, repNote, update, setSource, onFile, onRead, onLookup, onBuild }: StepStartProps) {
+export default function StepStart({ state, source, busy, readNote, repNote, update, setSource, onFile, onRead, onLookup, onBuild, canUndo, lookupCanUndo, onUndo }: StepStartProps) {
   const p = state.path;
   const docLike = p === "doc" || p === "built";
   return (
@@ -85,13 +90,16 @@ export default function StepStart({ state, source, busy, readNote, repNote, upda
                 if (f) onFile(f);
                 e.target.value = "";
               }}
-              style={{ fontFamily: SANS, fontSize: 15, color: BRAND.darkGreen }}
+              style={{ display: "block", width: "100%", maxWidth: "100%", boxSizing: "border-box", fontFamily: SANS, fontSize: 15, color: BRAND.darkGreen }}
             />
           </div>
-          <button type="button" onClick={onRead} disabled={busy} style={{ ...btn, ...(busy ? btnDisabled : {}) }}>
-            <span aria-hidden="true" style={{ marginRight: 6 }}>&#10022;</span>
-            {p === "doc" ? START.readDoc : START.readNotes}
-          </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <button type="button" onClick={onRead} disabled={busy} style={{ ...btn, ...(busy ? btnDisabled : {}) }}>
+              <span aria-hidden="true" style={{ marginRight: 6 }}>&#10022;</span>
+              {p === "doc" ? START.readDoc : START.readNotes}
+            </button>
+            {canUndo && <button type="button" onClick={onUndo} style={btnAltSmall}>Undo</button>}
+          </div>
           <p style={status} role="status">{readNote}</p>
         </>
       )}
@@ -111,7 +119,7 @@ export default function StepStart({ state, source, busy, readNote, repNote, upda
         </div>
       )}
 
-      {p === "replace" && <ReplaceSystem state={state} busy={busy} note={repNote} update={update} onLookup={onLookup} onBuild={onBuild} />}
+      {p === "replace" && <ReplaceSystem state={state} busy={busy} note={repNote} update={update} onLookup={onLookup} onBuild={onBuild} canUndo={lookupCanUndo} onUndo={onUndo} />}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { callModel } from "@/app/lib/llm";
 import { getBuilderSuggestLimiter, reserveBuilderDailyCall } from "@/app/lib/ratelimit";
 import { getBriefSource, incrementBriefCounter, saveBriefState } from "@/app/lib/briefs";
 import { track } from "@/app/lib/events";
-import { SUGGEST_CAP_PER_BRIEF, isSuggestStep, parseBriefState } from "@/app/lib/project-builder/brief";
+import { SOURCE_MAX_CHARS, SUGGEST_CAP_PER_BRIEF, isSuggestStep, parseBriefState } from "@/app/lib/project-builder/brief";
 import { suggestPrompt } from "@/app/lib/project-builder/prompts";
 import { parseSuggest, suggestSchema } from "@/app/lib/project-builder/schemas";
 import { applySuggest } from "@/app/lib/project-builder/apply";
@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const state = parseBriefState(body.state);
+    if (typeof body.source === "string" && body.source.length > SOURCE_MAX_CHARS) {
+      return NextResponse.json({ error: "That is over 60,000 characters; trim it and try again." }, { status: 400 });
+    }
     if (!isSuggestStep(body.step)) return NextResponse.json({ error: "Unknown step." }, { status: 400 });
     const step = body.step;
 

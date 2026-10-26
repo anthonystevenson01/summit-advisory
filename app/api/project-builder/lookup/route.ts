@@ -3,7 +3,7 @@ import { callModel } from "@/app/lib/llm";
 import { getBuilderSuggestLimiter, reserveBuilderDailyCall } from "@/app/lib/ratelimit";
 import { getBriefSource, incrementBriefCounter, saveBriefState } from "@/app/lib/briefs";
 import { track } from "@/app/lib/events";
-import { SUGGEST_CAP_PER_BRIEF, parseBriefState } from "@/app/lib/project-builder/brief";
+import { SOURCE_MAX_CHARS, SUGGEST_CAP_PER_BRIEF, parseBriefState } from "@/app/lib/project-builder/brief";
 import { lookupPrompt } from "@/app/lib/project-builder/prompts";
 import { lookupSchema, parseLookup } from "@/app/lib/project-builder/schemas";
 import { applyLookup } from "@/app/lib/project-builder/apply";
@@ -29,6 +29,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const state = parseBriefState(body.state);
+    if (typeof body.source === "string" && body.source.length > SOURCE_MAX_CHARS) {
+      return NextResponse.json({ error: "That is over 60,000 characters; trim it and try again." }, { status: 400 });
+    }
     const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
     if (name.length < 2) return NextResponse.json({ error: "Type the name of the system, at least two characters." }, { status: 400 });
 

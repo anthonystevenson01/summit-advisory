@@ -254,7 +254,17 @@ export async function saveBriefState(id: string, state: BriefState, source?: str
   const patch: Partial<BriefRecord> = { state, updatedAt: now };
   if (contact) {
     const previousHash = await redis.hget<string>(key, "contact");
-    const previous = (typeof previousHash === "string" ? (JSON.parse(previousHash) as Partial<BriefContact>) : (previousHash as Partial<BriefContact> | null)) ?? {};
+    let previous: Partial<BriefContact> = {};
+    if (typeof previousHash === "string") {
+      try {
+        const parsed = JSON.parse(previousHash) as unknown;
+        if (parsed && typeof parsed === "object") previous = parsed as Partial<BriefContact>;
+      } catch {
+        // a corrupt stored contact: re-index under the new hash only
+      }
+    } else if (previousHash && typeof previousHash === "object") {
+      previous = previousHash as Partial<BriefContact>;
+    }
     if (previous.emailHash && previous.emailHash !== contact.emailHash) {
       await redis.srem(briefEmailIndexKey(previous.emailHash), id);
     }

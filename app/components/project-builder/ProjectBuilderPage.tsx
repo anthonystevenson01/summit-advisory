@@ -706,6 +706,9 @@ export default function ProjectBuilderPage() {
                 onRead={() => void readDoc()}
                 onLookup={(n) => void lookup(n)}
                 onBuild={buildReplacement}
+                canUndo={undo?.key === "read"}
+                lookupCanUndo={undo?.key === "rep"}
+                onUndo={doUndo}
               />
               <LinkRequest onSubmit={requestLink} answer={linkAnswer} />
             </>
