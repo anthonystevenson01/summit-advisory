@@ -18,7 +18,13 @@ export type EventName =
   | "bts_full_view_opened"
   | "bts_result_emailed"
   | "score_whole_model_handoff"
-  | "tool_rerun_from_scorecard";
+  | "tool_rerun_from_scorecard"
+  | "report_created"
+  | "report_published"
+  | "report_unpublished"
+  | "report_opened"
+  | "report_tool_rerun"
+  | "book_call_clicked";
 
 export const EVENTS_KEY = "events";
 const EVENTS_MAX = 50_000;
