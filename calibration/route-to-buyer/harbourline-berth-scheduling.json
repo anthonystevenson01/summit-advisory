@@ -1,0 +1,17 @@
+{
+  "tool": "route-to-buyer",
+  "name": "Harbourline",
+  "source": "invented example written for calibration, October 2026",
+  "agreedBy": "Proposed by agentic-rig, to be confirmed by Anthony Stevenson",
+  "input": {
+    "buyer": "We sell berth scheduling software to the seventeen Canadian port authorities. The buyer is the Director of Operations at each port. I can list all seventeen by name and I know which of them have a scheduling problem this year. The money comes from the port's capital budget, which the board approves each November. The CFO signs anything over 200,000 CAD. The harbour master influences the choice but does not hold the budget.",
+    "route": "First conversations start at the Association of Canadian Port Authorities operations working group, where we present twice a year. Our head of sales runs those sessions and does every first call. Two ports came to us through a referral from a port we already serve. I have not done a first call myself for eighteen months. We also get three or four inbound enquiries a year from the association newsletter.",
+    "cycle": "About six months: discovery call, a two week data review with the operations team, an IT security review, then board approval at the November meeting. Four steps, and we have run them the same way for the last three deals.",
+    "channels": "The association working group is the one channel that gathers all seventeen directors in one room. We have presented there four times and sit on its data standards committee. The port's IT security review is the one party that can stop a deal; it has delayed two deals by three months but has never killed one. No marketplace listing and no partner resells us."
+  },
+  "expected": {
+    "grade": 4,
+    "dimensions": { "bi": 5, "ch": 4, "gk": 3, "ba": 4, "sc": 3, "cw": 4 }
+  },
+  "note": "The buyer is named and listable (all seventeen) with a known budget line, and the association working group is a working channel the company already has a place in. One gatekeeper (the IT security review) is present but has not killed a deal, the November board cycle gives a known trigger, the cycle is defined but still six months, and the head of sales closes without the founder. Weighted score 78, grade 4."
+}

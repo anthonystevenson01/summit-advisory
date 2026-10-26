@@ -26,7 +26,7 @@
  */
 import { getTool, type ToolEntry, type ToolSlug } from "./registry.ts";
 import { renderInputs, validateInputs } from "./validate.ts";
-import { detailsSchema, parseDetails, parseScoring } from "./schema.ts";
+import { detailsSchema, parseDetails, parseScoring, type ExtraValue } from "./schema.ts";
 import { scoringSchema } from "./schema.ts";
 import { calcScore, gradeFor, legacyLabelFor, type Grade } from "./scoring.ts";
 import { getRubric, type Rubric } from "../rubrics.ts";
@@ -99,7 +99,7 @@ export interface FreeView {
 export interface FullView extends FreeView {
   reasoning: Record<string, string>;
   recommendations: Recommendation[];
-  extras: Record<string, string | string[]>;
+  extras: Record<string, ExtraValue>;
 }
 
 export function toFreeView(run: RunRecord): FreeView {

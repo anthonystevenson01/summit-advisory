@@ -8,6 +8,7 @@ import NewsletterCapture from "./shared/NewsletterCapture";
 import ToolkitFooter from "./ToolkitFooter";
 import SiteNav from "../SiteNav";
 import { PUBLIC_TOOLS, isToolHidden, isToolPublic } from "@/app/lib/tools/registry";
+import { HUB_LEAD, HUB_TAG } from "@/app/tools/hub-copy";
 
 // One surface and accent for every card.
 const CARD_SURFACE = "#0a1a14";
@@ -57,12 +58,9 @@ export default function ToolkitHub() {
           </Link>
           <div className="inner-eyebrow">Scale-Up Advisory</div>
           <h1 className="inner-title">Summit GTM Toolkit</h1>
-          <p className="inner-lead">
-            Five free AI diagnostic tools for teams selling into finite, named-account markets.
-            No signup. Results in under 30 seconds.
-          </p>
+          <p className="inner-lead">{HUB_LEAD}</p>
           <div style={{ display: "flex", gap: 8, marginTop: 28, flexWrap: "wrap", position: "relative" }}>
-            {["Five Free Tools", "For teams selling into a finite market", "No Signup Required"].map((tag) => (
+            {[HUB_TAG, "For teams selling into a finite market", "No Signup Required"].map((tag) => (
               <span key={tag} style={{
                 fontFamily: "var(--font-barlow-condensed), sans-serif",
                 fontSize: 11,
@@ -116,7 +114,7 @@ export default function ToolkitHub() {
             <div className="cards-label">The Tools</div>
             <div className="cards">
 
-              {/* Tools 01 to 05 from the registry */}
+              {/* Public tools from the registry, in number order */}
               {PUBLIC_TOOLS.map((tool) => (
                 <Link
                   key={tool.slug}

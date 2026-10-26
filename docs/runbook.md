@@ -300,3 +300,42 @@ npm run build     # strongest check: validates page exports, metadata and the re
 - Runs unlocked before this deploy are not in `runs:by-email`, so a delete link does not cover 1a-era runs. A backfill (iterate `runs:by-time`, SADD by `unlock.emailHash`) is a short script if wanted.
 - Owner decisions: the delete POST clears a matching unlock cookie (not in the spec); `gtm-unlocks` is not purged on delete (needs an LREM scan or a digest rebuilt from the run store).
 - No resend path for `emailStatus: failed`; `emailStatus` is not shown on `/admin/runs`.
+
+---
+
+## Route to Buyer and Unit of Value, two hidden GTM tools, added October 2026
+
+**Trigger:** A visitor runs Route to Buyer at `/tools/route-to-buyer` or Unit of Value at `/tools/unit-of-value` once Anthony flips `hidden` on their registry entries. Today nothing runs: both entries ship `hidden: true`, so the page calls `notFound()`, the score, details and unlock routes answer 404, and the hub, the sitemap and `generateStaticParams` do not list them. When live, both tools follow the pipeline in the entry above. The only new behaviour is the `ceilingInputs` extra on Unit of Value, which the details call returns as structured JSON and the code turns into a figure.
+
+**Service/Function:**
+- `app/lib/tools/registry.ts`: entries `ROUTE_TO_BUYER` (Tool 06) and `UNIT_OF_VALUE` (Tool 07) sit in `TOOLS` between `MOAT` and `ACCOUNT`, each with six dimensions carrying the Notion weights and short level labels, a role sentence, extras (`gatekeeperRisk` and `channelMove`; `ceilingInputs` and `lever`), SEO, cta, buttonLabel and feeds (`routeToBuyer`; `unitOfValue`). The same file exports the count helpers `countWord`, `PUBLIC_TOOL_COUNT`, `PUBLIC_TOOL_COUNT_WORD` and `PUBLIC_TOOL_COUNT_WORD_CAPITALISED`. Every piece of copy that states how many tools there are reads one of these; no page holds the word "five".
+- `app/lib/ceiling.ts`: the revenue ceiling per head calculator. Units per person per period, times price per unit, times periods per year, rounded to the nearest whole unit of currency and formatted as `CAD 380,000`. It has no imports, so it runs in client components, server components, tests and scripts. Any input that is null, zero, negative or not finite gives null; it never estimates a missing input. `isCeilingInputs` is the type guard the renderer uses on a stored value.
+- `app/lib/tools/schema.ts`: the `ceiling` extra kind. `detailsSchema` emits a strict object for it (three required inputs, each `{ value: number | null, assumption: string }`, no additional properties) and `parseDetails` stores the parsed object as the extra. The figure is never asked of the model. Text and list extras are unchanged.
+- `app/components/toolkit/shared/extras.tsx`: `Ceiling` renders `ceilingInputs` (the figure, the words "per person per year", and the three assumption rows beside it); `Risk` renders `gatekeeperRisk` with an amber border; `channelMove` and `lever` reuse `Priority`. `renderExtra` renders nothing for an object value with no keyed renderer. `/admin/runs` shows a structured extra as raw JSON.
+- `app/tools/hub-copy.ts`: a plain module inside `app/tools/`, not a route; it renders nothing on its own. It holds every hub string that states the count (metadata title and descriptions, the ItemList description, the hero lead and tag) and the schema.org ItemList. `app/tools/page.tsx` and `ToolkitHub.tsx` import from it. The FAQ footer in `app/tools/[tool]/page.tsx` and `HUB_TOOLS` in `app/scale-up-advisory/scale-up-content.ts` interpolate `PUBLIC_TOOL_COUNT_WORD` directly.
+- `app/sitemap.ts` maps `PUBLIC_TOOLS` to one `/tools/{slug}` entry each, so a tool appears in the sitemap the moment it is public and never before.
+- Calibration: `calibration/route-to-buyer/` and `calibration/unit-of-value/` hold three cases each, fully written, with `agreedBy` "Proposed by agentic-rig, to be confirmed by Anthony Stevenson" and no `agreedOn`. `scripts/calibrate.ts` reports them as skipped with `SKIP_REASON_HIDDEN` from `app/lib/tools/calibration.ts` (the three skip reasons are pinned there so the table, the README and the script header say the same thing). `__tests__/calibration-cases.test.ts` checks that every case file agrees with its registry entry (input keys, dimension keys, overall grade equal to the band of the weighted dimension grades); it does not judge whether the grades are right.
+
+**Failure mode:**
+- Hidden slug: 404 from the page and all three API routes, and absent from the hub, the sitemap and the static params. This is the designed state until the flip, not a fault.
+- A details answer that breaks the strict ceiling schema (a missing input object, an extra property, a non object where the extra should be): `SchemaError`, surfaced as 502 "The model returned an unusable answer. Please try again.", the same as any other extra. A string or NaN where a number should be is stored as null rather than rejected, so one bad field does not cost the whole answer.
+- An input the text did not support (null, zero or negative): no figure. The panel shows the plain sentence "The ceiling cannot be computed because the text did not give {inputs}." with the three assumption rows beneath it, each unsupported one marked "not supported by the text", so the reader sees what was missing and why.
+- A stored extra that is not a well formed ceiling object (a run scored before this release, or a hand edited value): `Ceiling` returns null and renders nothing. The page never throws on a bad extra.
+- Everything else (rubric not Published, missing keys, rate limits, timeouts, Redis down) is as in the entry above.
+
+**Template/Config:**
+- No new environment variables.
+- Notion "Tool Rubrics" database `dad404fc12af4207bd446e9e8be22330`: the rows `route-to-buyer` and `unit-of-value` exist as Draft, Version 1. The site reads Published rows only, so a hidden tool with a Draft row is gated twice; publishing the row alone changes nothing on the site.
+- Currency: `DEFAULT_CURRENCY` is `CAD` in `app/lib/ceiling.ts`. `computeCeiling` accepts a three letter code and falls back to CAD for anything else; the renderer passes none, so every rendered figure is CAD today. Per run currency is deferred.
+- Weights live in the registry; descriptors and system prompts live in Notion, as before.
+- To flip a tool on, do both tools together (the registry test requires public numbers to run 01, 02, 03 with no gap, so flipping 06 without 07 fails `npm test` on purpose):
+  1. In Notion, set the row's Status to Published (bump Version if the body changed) and press refresh on `/admin/rubrics`, or wait ten minutes.
+  2. Set `hidden: false` on both `ROUTE_TO_BUYER` and `UNIT_OF_VALUE` in `app/lib/tools/registry.ts` in your working tree. The calibrate script skips hidden entries, so this must come before the run.
+  3. Run `npm run calibrate`. The six cases now run. Read the table, confirm or correct the grades in each case file, and set `agreedBy` and `agreedOn` to your name and the date.
+  4. Add a `TOOL_STAGE_MAP` entry for each tool in `app/scale-up-advisory/scale-up-content.ts` (slug, name, stage, href, summary, stageNote) so the scale-up hub cards list them. The scale-up hygiene test bans the word "route" in exported copy and will match the `route-to-buyer` slug; adjust that test to allow the slug.
+  5. Run the four gates (`npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build`), commit, open a PR, deploy. The hub count, the metadata, the ItemList, the FAQ footer, the scale-up copy and the sitemap all move from five to seven with no copy edit.
+
+**To disable:**
+- Before the flip: nothing to do; both tools are already off.
+- After the flip, no deploy: set the tool's Notion row back to Draft and press refresh on `/admin/rubrics`. That tool answers 503 "rubric not published" until the row is Published again; the page still renders and the other tools are unaffected.
+- After the flip, with a deploy: set `hidden: true` on the entry (both entries, to keep the numbering contiguous) and deploy. The tool leaves the hub, the sitemap and the static params, the three routes answer 404, and the copy returns to the lower count on its own.

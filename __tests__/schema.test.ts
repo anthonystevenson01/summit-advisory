@@ -66,6 +66,35 @@ describe("detailsSchema", () => {
     assert.deepEqual(extras.properties, {});
     assert.deepEqual(extras.required, []);
   });
+
+  test("a ceiling extra becomes a strict three input object with nullable numbers", () => {
+    const unit = getTool("unit-of-value")!;
+    const extras = ((detailsSchema(unit).schema as Obj).properties as Obj).extras as Obj;
+    assert.deepEqual(Object.keys(extras.properties as Obj), ["ceilingInputs", "lever"]);
+    assert.deepEqual(extras.required, ["ceilingInputs", "lever"]);
+    const ceiling = (extras.properties as Obj).ceilingInputs as Obj;
+    assert.equal(ceiling.type, "object");
+    assert.equal(ceiling.additionalProperties, false);
+    assert.deepEqual(ceiling.required, ["unitsPerPersonPerPeriod", "pricePerUnit", "periodsPerYear"]);
+    for (const key of ["unitsPerPersonPerPeriod", "pricePerUnit", "periodsPerYear"]) {
+      const input = (ceiling.properties as Obj)[key] as Obj;
+      assert.equal(input.type, "object");
+      assert.equal(input.additionalProperties, false);
+      assert.deepEqual(input.required, ["value", "assumption"]);
+      assert.deepEqual(((input.properties as Obj).value as Obj).type, ["number", "null"]);
+      assert.equal(((input.properties as Obj).assumption as Obj).type, "string");
+    }
+    assert.equal(((extras.properties as Obj).lever as Obj).type, "string");
+  });
+
+  test("the route to buyer extras are two strings", () => {
+    const route = getTool("route-to-buyer")!;
+    const extras = ((detailsSchema(route).schema as Obj).properties as Obj).extras as Obj;
+    assert.deepEqual(Object.keys(extras.properties as Obj), ["gatekeeperRisk", "channelMove"]);
+    for (const value of Object.values(extras.properties as Obj)) {
+      assert.equal((value as Obj).type, "string");
+    }
+  });
 });
 
 describe("parseScoring", () => {
@@ -129,5 +158,50 @@ describe("parseDetails", () => {
 
   test("rejects a missing extra", () => {
     assert.throws(() => parseDetails(positioning, { reasoning, recommendations: [], extras: {} }), SchemaError);
+  });
+});
+
+describe("parseDetails with a ceiling extra", () => {
+  const unit = getTool("unit-of-value")!;
+  const reasoning: Record<string, string> = {};
+  for (const d of unit.dimensions) reasoning[d.key] = `About ${d.name}.`;
+  const ceilingInputs = {
+    unitsPerPersonPerPeriod: { value: 1, assumption: "  One exercise a week per facilitator.  " },
+    pricePerUnit: { value: 9500, assumption: "9,500 CAD per exercise." },
+    periodsPerYear: { value: null, assumption: "The text does not say how many weeks a year." },
+  };
+  const lever = "Software: the self-serve scenario library priced as an annual licence.";
+
+  test("stores the parsed object with trimmed assumptions and keeps the lever string", () => {
+    const parsed = parseDetails(unit, { reasoning, recommendations: [], extras: { ceilingInputs, lever } });
+    assert.deepEqual(parsed.extras.ceilingInputs, {
+      unitsPerPersonPerPeriod: { value: 1, assumption: "One exercise a week per facilitator." },
+      pricePerUnit: { value: 9500, assumption: "9,500 CAD per exercise." },
+      periodsPerYear: { value: null, assumption: "The text does not say how many weeks a year." },
+    });
+    assert.equal(parsed.extras.lever, lever);
+  });
+
+  test("a string value becomes null", () => {
+    const withString = { ...ceilingInputs, pricePerUnit: { value: "9500", assumption: "Quoted as text." } };
+    const parsed = parseDetails(unit, { reasoning, recommendations: [], extras: { ceilingInputs: withString, lever } });
+    const stored = parsed.extras.ceilingInputs as Record<string, { value: number | null }>;
+    assert.equal(stored.pricePerUnit.value, null);
+  });
+
+  test("a missing sub-object throws", () => {
+    const { periodsPerYear: _dropped, ...partial } = ceilingInputs;
+    assert.throws(
+      () => parseDetails(unit, { reasoning, recommendations: [], extras: { ceilingInputs: partial, lever } }),
+      SchemaError,
+    );
+  });
+
+  test("a missing or non-object ceilingInputs throws", () => {
+    assert.throws(() => parseDetails(unit, { reasoning, recommendations: [], extras: { lever } }), SchemaError);
+    assert.throws(
+      () => parseDetails(unit, { reasoning, recommendations: [], extras: { ceilingInputs: "CAD 380,000", lever } }),
+      SchemaError,
+    );
   });
 });

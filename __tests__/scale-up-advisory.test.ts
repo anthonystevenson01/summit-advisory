@@ -32,7 +32,7 @@ import {
   outsourcedServiceSchema,
   scaleUpServiceSchema,
 } from "../app/scale-up-advisory/scale-up-content.ts";
-import { TOOL_SEO, TOOL_SLUGS, isToolPublic } from "../app/tools/[tool]/toolSlugs.ts";
+import { PUBLIC_TOOL_COUNT, TOOL_SEO, TOOL_SLUGS, isToolPublic } from "../app/tools/[tool]/toolSlugs.ts";
 import sitemap from "../app/sitemap.ts";
 import nextConfig from "../next.config.ts";
 
@@ -90,9 +90,9 @@ describe("tool-to-stage map", () => {
   const slugs = TOOL_STAGE_MAP.map((t) => t.slug);
   const stageIds = PACKAGE_STAGES.map((s) => s.id);
 
-  test("has five entries with unique slugs", () => {
-    assert.equal(TOOL_STAGE_MAP.length, 5);
-    assert.equal(new Set(slugs).size, 5);
+  test("has one entry per public tool with unique slugs", () => {
+    assert.equal(TOOL_STAGE_MAP.length, PUBLIC_TOOL_COUNT);
+    assert.equal(new Set(slugs).size, PUBLIC_TOOL_COUNT);
   });
 
   test("every tool is public and links to its tool page", () => {

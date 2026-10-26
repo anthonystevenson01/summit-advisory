@@ -1,0 +1,17 @@
+{
+  "tool": "route-to-buyer",
+  "name": "Northfield",
+  "source": "invented example written for calibration, October 2026",
+  "agreedBy": "Proposed by agentic-rig, to be confirmed by Anthony Stevenson",
+  "input": {
+    "buyer": "We supply catering to independent schools in Ontario. The buyer is the bursar or the head, depending on the school. There are about 300 independent schools in the province and roughly half of them outsource catering. The money comes from the operating budget, which the board sets in the spring for the September term. We have not listed the schools by name; we work from the association directory when we need to.",
+    "route": "Most first conversations come from my own network. I taught at one of these schools for nine years and I still know a lot of the heads. We also take a stand at the Ontario independent schools conference each April, which brings in two or three serious conversations a year. I do every first meeting and every pitch myself. Our two account managers look after existing schools but do not open new ones.",
+    "cycle": "Five to nine months. A tasting, a meeting with the bursar, a procurement committee that meets once a term, then the board signs off on the budget in spring. The steps vary by school and we have had deals stall for a full term waiting for a committee date.",
+    "channels": "The April conference is the one event that gathers the heads and bursars, and we have had a stand there for three years. The schools association runs a preferred supplier list but we are not on it yet. No partner refers us. The procurement committee and the board sign-off are the two parties that can stop a deal; a no from the committee means waiting a term to try again."
+  },
+  "expected": {
+    "grade": 3,
+    "dimensions": { "bi": 3, "ch": 3, "gk": 3, "ba": 2, "sc": 3, "cw": 2 }
+  },
+  "note": "The buyer is named (bursar or head) but not listed and the budget line is only loosely known. The conference is a present channel without a working place in it, the committee and board are gatekeepers that cost a term each, timing is known in outline but the company does not reach schools on the spring budget trigger, the cycle has steps but they vary, and the founder opens and closes every deal. Weighted score 54, grade 3."
+}

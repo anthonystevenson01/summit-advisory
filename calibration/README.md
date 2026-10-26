@@ -8,7 +8,7 @@ The set lives in the repo on purpose. Rubrics are editable at runtime; this set 
 
 1. Copy `_template.json` into the tool's folder and name it after the company or scenario.
 2. Paste the input exactly as a visitor would type it into the tool. The `input` keys are the tool's registry input keys (for example `position` and `competitors` for moat, `icp` for the ICP evaluator).
-3. Agree the grade per dimension (1 to 5) and the overall grade, and record who agreed it and when.
+3. Agree the grade per dimension (1 to 5) and the overall grade, and record who agreed it and when. A case proposed by the pipeline carries `agreedBy` "Proposed by agentic-rig, to be confirmed by Anthony Stevenson" and no `agreedOn` until Anthony confirms it, at which point both fields are set to his name and the date.
 4. Where the case is a real company, score from public information only and say so in `source`.
 
 Aim for 10 to 15 cases per tool, spread across the grade bands. Gradeshow is the first case for every tool it touches.
@@ -32,7 +32,7 @@ Aim for 10 to 15 cases per tool, spread across the grade bands. Gradeshow is the
 
 ## The TO FILL convention
 
-A case whose `input` still contains the text `TO FILL` is a placeholder. The script reports it as skipped and never scores it, so a case can be committed before its input is written. Folders for tools not yet in the registry (`built-to-scale`, `route-to-buyer`, `unit-of-value`) are reported as "no registry entry, skipped".
+A case whose `input` still contains the text `TO FILL` is a placeholder. The script reports it as skipped and never scores it, so a case can be committed before its input is written. A folder with no registry entry (`built-to-scale`) is reported as "no registry entry, skipped". A folder whose registry entry is hidden (`route-to-buyer` and `unit-of-value` until Anthony flips them) is reported as "hidden in the registry pending its Published rubric row and calibration, skipped".
 
 ## Running
 

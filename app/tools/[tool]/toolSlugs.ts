@@ -6,10 +6,18 @@
  */
 // Relative with the .ts extension: the untouched scale-up test loads this
 // file under plain Node, where the @/ alias does not resolve.
-import { TOOLS, TOOL_SLUGS, isToolHidden, isToolPublic, isToolSlug } from "../../lib/tools/registry.ts";
+import {
+  PUBLIC_TOOL_COUNT,
+  PUBLIC_TOOL_COUNT_WORD,
+  TOOLS,
+  TOOL_SLUGS,
+  isToolHidden,
+  isToolPublic,
+  isToolSlug,
+} from "../../lib/tools/registry.ts";
 import type { ToolFaq, ToolSeo, ToolSlug } from "../../lib/tools/registry.ts";
 
-export { TOOL_SLUGS, isToolHidden, isToolPublic, isToolSlug };
+export { PUBLIC_TOOL_COUNT, PUBLIC_TOOL_COUNT_WORD, TOOL_SLUGS, isToolHidden, isToolPublic, isToolSlug };
 export type { ToolFaq, ToolSlug };
 
 export const TOOL_SEO: Record<ToolSlug, ToolSeo> = Object.fromEntries(

@@ -1,0 +1,17 @@
+{
+  "tool": "unit-of-value",
+  "name": "Ledgerline",
+  "source": "invented example written for calibration, October 2026",
+  "agreedBy": "Proposed by agentic-rig, to be confirmed by Anthony Stevenson",
+  "input": {
+    "delivery": "Ledgerline is payroll software for Canadian credit unions. One hosted platform serves all 160 customers; a new customer is a tenant on the same system, not a new server. What one sale consumes is an onboarding project of about three weeks from one implementation specialist, after which the customer runs payroll themselves. Support is a shared team of four for all 160 customers.",
+    "pricing": "Priced per employee per month in CAD, 4.50 per employee at the entry tier, 6.00 at the compliance tier and 8.00 at the full tier with multi-province reporting. A typical credit union pays about 2,400 CAD a month. Annual contracts, invoiced monthly.",
+    "cost": "Hosting costs us about 11 CAD per customer per month. Each implementation specialist can onboard fourteen customers a year. Gross margin was 71 percent three years ago and is 84 percent now; every cohort of customers costs less to serve than the last because the onboarding runbooks and the support knowledge base have been built once.",
+    "renewal": "Net revenue retention is 94 percent on logos and 118 percent on revenue. Customers move up a tier as they grow; last year 31 of 160 moved up. A third of new revenue now comes through the two core banking vendors who refer and resell us, which did not exist two years ago."
+  },
+  "expected": {
+    "grade": 5,
+    "dimensions": { "ud": 5, "cu": 4, "mv": 4, "rr": 5, "vg": 4, "cb": 4 }
+  },
+  "note": "The unit is product capacity on one hosted platform, one unit of capacity serves hundreds of customers, margin has improved with each cohort, revenue compounds through retention above 100 percent and tier moves, value per unit rises through tiers, and a partner channel is already proven at a third of new revenue. Weighted score 87, grade 5."
+}

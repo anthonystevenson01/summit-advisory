@@ -5,11 +5,12 @@
  *   /scale-up-advisory/fractional-executive  (hire a fractional executive)
  *   /scale-up-advisory/outsourced-sales      (outsource your sales: pitch summary)
  *
- * Keep this module free of runtime imports (`import type` only). The tests in
- * __tests__/scale-up-advisory.test.ts load it directly with Node's type
- * stripping, which cannot resolve the `@/` alias or pull in React/Next.
+ * Runtime imports are allowed only from toolSlugs.ts by relative `.ts` path.
+ * The tests in __tests__/scale-up-advisory.test.ts load this module directly
+ * with Node's type stripping, which cannot resolve the `@/` alias or pull in
+ * React/Next. The registry behind toolSlugs.ts is plain data, so it is safe.
  */
-import type { ToolSlug } from "@/app/tools/[tool]/toolSlugs";
+import { PUBLIC_TOOL_COUNT_WORD, type ToolSlug } from "../tools/[tool]/toolSlugs.ts";
 
 // ── URLs and dates ──
 
@@ -77,10 +78,10 @@ export const HUB_OPTIONS_LABEL = "Two ways in";
 export const HUB_TOOLS = {
   label: "Free GTM tools",
   heading: "We know AI. We've built free tools to help you.",
-  body: "Summit uses AI every day, in our own sales and in the engines we build for clients. Along the way we've built five free GTM tools that put some of that to work for you: score your ICP, validate the problem, pressure-test a persona, grade your positioning, rate your moat. No sign-up. Try them before you talk to us.",
+  body: `Summit uses AI every day, in our own sales and in the engines we build for clients. Along the way we've built ${PUBLIC_TOOL_COUNT_WORD} free GTM tools that put some of that to work for you. Each one scores a part of your go-to-market and tells you what to fix first. No sign-up. Try them before you talk to us.`,
   cardTag: "Free tool",
   cardCta: "Try it free",
-  hubLink: "See all five tools",
+  hubLink: `See all ${PUBLIC_TOOL_COUNT_WORD} tools`,
 } as const;
 
 // ── Outsource your sales: pitch summary (the deck narrative is on main at 0912fd5) ──

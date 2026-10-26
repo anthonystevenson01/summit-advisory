@@ -1,0 +1,17 @@
+{
+  "tool": "route-to-buyer",
+  "name": "Pennant",
+  "source": "invented example written for calibration, October 2026",
+  "agreedBy": "Proposed by agentic-rig, to be confirmed by Anthony Stevenson",
+  "input": {
+    "buyer": "Pennant is an AI assistant for any small business. The buyer is the owner. Any company with fewer than fifty staff could use it, so the market is millions of businesses in Canada and the United States. We have not narrowed it to a sector or a role yet because the product works for everyone. There is no particular budget line; the owner pays from whatever they have.",
+    "route": "I send cold emails from a list I bought, about 400 a week, and I post on LinkedIn three times a week. Replies come in at about one a week. I do every call and every demo myself. We have no partners and nobody refers us. I have tried two Facebook groups for small business owners but the posts get removed as advertising.",
+    "cycle": "There is no fixed cycle. Some owners sign up the same day after a demo, some go quiet for four months and come back, most never reply again. We have no defined steps between the first reply and the sale.",
+    "channels": "None. No association, marketplace or event gathers our buyers because they are every kind of small business. I looked at listing on an app marketplace but we do not integrate with anything yet. A deal is worth about 1,200 CAD a year and it takes me months of chasing to win one."
+  },
+  "expected": {
+    "grade": 1,
+    "dimensions": { "bi": 1, "ch": 1, "gk": 2, "ba": 2, "sc": 1, "cw": 1 }
+  },
+  "note": "The buyer is absent (any small business, the owner) and no channel gathers them, so the route runs through cold email and founder chasing with no defined cycle and deals of 1,200 CAD a year that cost months to win. Gatekeeper dependence is scored 2 rather than 1 because no single party can stop a deal, only the owner's indifference; attention is 2 because the company does not know when an owner can act. Weighted score 25, grade 1."
+}
