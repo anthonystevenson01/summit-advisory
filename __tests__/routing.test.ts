@@ -21,12 +21,16 @@ const DEFAULTS: Record<RoutingTask, RouteConfig> = {
   details: { model: "vendor/medium", maxTokens: 3000 },
   synthesis: { model: "vendor/large", reasoning: "medium", maxTokens: 4000, fallback: "vendor/medium" },
   extraction: { model: "vendor/medium", reasoning: "low", maxTokens: 4000 },
+  "builder-read": { model: "vendor/small", maxTokens: 6000, fallback: "vendor/medium" },
+  "builder-suggest": { model: "vendor/small", maxTokens: 1500 },
+  "builder-ideas": { model: "vendor/medium", reasoning: "low", maxTokens: 3000 },
 };
 
 describe("parseRoutingKey", () => {
   test("accepts a task and a task:tool", () => {
     assert.deepEqual(parseRoutingKey("scoring"), { task: "scoring" });
     assert.deepEqual(parseRoutingKey("scoring:icp"), { task: "scoring", tool: "icp" });
+    assert.deepEqual(parseRoutingKey("builder-read"), { task: "builder-read" });
   });
 
   test("rejects an unknown tool and an unknown task", () => {
@@ -97,5 +101,11 @@ describe("isCalibrationGated", () => {
     assert.equal(isCalibrationGated("details:moat"), false);
     assert.equal(isCalibrationGated("extraction"), false);
     assert.equal(isCalibrationGated("banana"), false);
+  });
+
+  test("the three builder keys are not gated", () => {
+    assert.equal(isCalibrationGated("builder-read"), false);
+    assert.equal(isCalibrationGated("builder-suggest"), false);
+    assert.equal(isCalibrationGated("builder-ideas"), false);
   });
 });

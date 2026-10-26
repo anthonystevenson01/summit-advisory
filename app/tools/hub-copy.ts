@@ -78,6 +78,15 @@ export const ENTRY_PATHS: readonly EntryPath[] = [
   },
 ];
 
+/** The Project Builder block above the newsletter capture on /tools. */
+export const BUILDER_BLOCK = {
+  label: "Project Builder",
+  title: "Building something?",
+  body: "Define your project and Summit will send you a brief.",
+  href: "/tools/project-builder",
+  cta: "Start your brief",
+} as const;
+
 /**
  * The schema.org ItemList for /tools. It lives here rather than in
  * app/tools/page.tsx so __tests__/gtm-toolkit.test.ts can check numberOfItems

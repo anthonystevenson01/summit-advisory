@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/app/lib/redis";
-import { sendMail } from "@/app/lib/mail";
+import { isMailConfigured, resultFromAddress, sendMail } from "@/app/lib/mail";
+import { deleteBrief, listBriefsUpdatedBetween, listStaleDrafts, updateBrief, type BriefRecord } from "@/app/lib/briefs";
+import { getUnlockSecret, issueBriefDeleteToken, issueBriefLinkToken } from "@/app/lib/unlock";
+import { archiveBriefPage } from "@/app/lib/project-builder-notion";
+import { BRIEF_DRAFT_TTL_SECONDS, statusLabel } from "@/app/lib/project-builder/brief";
+import { renderReminderEmail } from "@/app/lib/project-builder/emails";
+import { buildRequirements, countByPriority, projectName } from "@/app/lib/project-builder/requirements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // Invoked by Vercel Cron once per day at 00:00 UTC.
-// Reads the last 24h of ICP + GTM unlocks and emails a digest to NOTIFY_EMAIL.
-// Skips sending entirely on zero-lead days.
+// Reads the last 24h of ICP + GTM unlocks and the Project Builder briefs saved
+// or submitted in the same window, and emails a digest to NOTIFY_EMAIL. Skips
+// sending when there is nothing to report. Then, outside the digest, sends one
+// reminder to each draft brief untouched for three days that has not had one,
+// and purges drafts untouched for six months whose TTL has not removed them.
 
 type IcpUnlock = {
   id: string | null;
@@ -40,6 +50,59 @@ function formatLead(u: { name?: unknown; email?: unknown; company?: unknown }): 
   const company = typeof u.company === "string" ? u.company.trim() : "";
   const who = name ? `${name} <${email}>` : email;
   return company ? `${who}, ${company}` : who;
+}
+
+const REMINDER_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
+const PURGE_AFTER_MS = BRIEF_DRAFT_TTL_SECONDS * 1000;
+const REMINDER_CAP = 50;
+const REMINDER_TIMEOUT_MS = 10_000;
+
+function siteOrigin(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") || "https://summitstrategyadvisory.com";
+}
+
+function briefLine(b: BriefRecord): string {
+  const must = countByPriority(buildRequirements(b.state)).Must;
+  return `${projectName(b.state)}, ${b.contact.company}, ${b.contact.name}, ${statusLabel(b.status)}, Must ${must}, ${siteOrigin()}/admin/briefs/${b.id}`;
+}
+
+/** One reminder per stale draft that has not had one; `lastRemindedAt` is set only on a successful send and never moves `updatedAt`. */
+async function sendReminders(now: number): Promise<number> {
+  if (!getUnlockSecret() || !isMailConfigured()) return 0;
+  const drafts = (await listStaleDrafts(now - REMINDER_AFTER_MS)).filter((b) => b.lastRemindedAt === null).slice(0, REMINDER_CAP);
+  let sent = 0;
+  for (const b of drafts) {
+    const token = issueBriefLinkToken(b.id);
+    const deleteToken = issueBriefDeleteToken(b.contact.emailHash);
+    if (!token || !deleteToken || !b.contact.email) continue;
+    const origin = siteOrigin();
+    const email = renderReminderEmail({
+      state: b.state,
+      resumeUrl: `${origin}/tools/project-builder?b=${encodeURIComponent(b.id)}&t=${encodeURIComponent(token)}`,
+      deleteUrl: `${origin}/api/project-builder/delete?e=${encodeURIComponent(b.contact.emailHash)}&t=${encodeURIComponent(deleteToken)}`,
+    });
+    try {
+      await sendMail({ from: resultFromAddress(), to: b.contact.email, subject: email.subject, text: email.text, html: email.html, timeoutMs: REMINDER_TIMEOUT_MS });
+      await updateBrief(b.id, { lastRemindedAt: new Date().toISOString() });
+      sent += 1;
+    } catch (err) {
+      console.error(`daily-report: reminder failed for ${b.contact.emailHash.slice(0, 12)}`, err instanceof Error ? err.message.replace(/[^\s@]+@[^\s@]+/g, "[address]") : err);
+    }
+  }
+  return sent;
+}
+
+/** Drafts untouched for six months: the index entries and any hash whose TTL was lost. */
+async function purgeStaleDrafts(now: number): Promise<number> {
+  const stale = await listStaleDrafts(now - PURGE_AFTER_MS);
+  let purged = 0;
+  for (const b of stale) {
+    const deleted = await deleteBrief(b.id);
+    if (!deleted) continue;
+    purged += 1;
+    if (deleted.notionPageId) await archiveBriefPage(deleted.notionPageId);
+  }
+  return purged;
 }
 
 function formatStamp(iso: string): string {
@@ -98,9 +161,38 @@ export async function GET(req: NextRequest) {
 
   const total = recentIcp.length + recentGtm.length;
 
-  if (total === 0) {
-    // Silent on zero-lead days — per the user's spec.
-    return NextResponse.json({ ok: true, count: 0, skipped: "no leads in last 24h" });
+  // Project Builder briefs saved or submitted in the window.
+  let recentBriefs: BriefRecord[] = [];
+  try {
+    recentBriefs = (await listBriefsUpdatedBetween(cutoff, Date.now())).filter(
+      (b) => Date.parse(b.savedAt) >= cutoff || (b.submittedAt !== null && Date.parse(b.submittedAt) >= cutoff),
+    );
+  } catch (err) {
+    console.error("daily-report: brief read failed", err instanceof Error ? err.message : err);
+  }
+
+  /** The reminder and purge passes run after the digest and never fail the response. */
+  const housekeeping = async () => {
+    const now = Date.now();
+    let reminders = 0;
+    let purged = 0;
+    try {
+      reminders = await sendReminders(now);
+    } catch (err) {
+      console.error("daily-report: reminder pass failed", err instanceof Error ? err.message : err);
+    }
+    try {
+      purged = await purgeStaleDrafts(now);
+    } catch (err) {
+      console.error("daily-report: purge pass failed", err instanceof Error ? err.message : err);
+    }
+    return { reminders, purged };
+  };
+
+  if (total === 0 && recentBriefs.length === 0) {
+    // Nothing to report: no digest, but the reminders and the purge still run.
+    const { reminders, purged } = await housekeeping();
+    return NextResponse.json({ ok: true, count: 0, briefs: 0, reminders, purged, skipped: "nothing to report in last 24h" });
   }
 
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, NOTIFY_EMAIL } = process.env;
@@ -144,6 +236,15 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  if (recentBriefs.length > 0) {
+    lines.push("──── Project briefs ────");
+    lines.push("");
+    recentBriefs.forEach((b, i) => {
+      lines.push(`${i + 1}. ${briefLine(b)}`);
+      lines.push("");
+    });
+  }
+
   lines.push("─".repeat(30));
   lines.push("View all: https://summitstrategyadvisory.com/admin");
 
@@ -153,7 +254,7 @@ export async function GET(req: NextRequest) {
     await sendMail({
       from: NOTIFY_EMAIL,
       to: NOTIFY_EMAIL,
-      subject: `Summit: ${total} new lead${total === 1 ? "" : "s"} yesterday`,
+      subject: `Summit: ${total} new lead${total === 1 ? "" : "s"} and ${recentBriefs.length} brief${recentBriefs.length === 1 ? "" : "s"} yesterday`,
       text,
     });
   } catch (mailErr) {
@@ -164,5 +265,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, count: total, icp: recentIcp.length, gtm: recentGtm.length });
+  const { reminders, purged } = await housekeeping();
+  return NextResponse.json({ ok: true, count: total, icp: recentIcp.length, gtm: recentGtm.length, briefs: recentBriefs.length, reminders, purged });
 }

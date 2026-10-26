@@ -58,7 +58,7 @@ export class RubricNotPublishedError extends Error {
   }
 }
 
-const NOTION_VERSION = "2022-06-28";
+export const NOTION_VERSION = "2022-06-28";
 const REDIS_TTL_SECONDS = 600;
 const MEMORY_TTL_MS = 60_000;
 

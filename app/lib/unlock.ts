@@ -1,7 +1,8 @@
 /**
  * Server helper for the unlock gate: the one reader of UNLOCK_SECRET, the
- * cookie name and options, and typed issue and verify helpers for the three
- * signed artefacts (cookie, saved link, delete link). Routes import this and
+ * cookie name and options, and typed issue and verify helpers for the five
+ * signed artefacts (cookie, saved link, delete link, the Project Builder
+ * brief link and the brief delete link). Routes import this and
  * never touch the secret or the token module directly, so "where is the
  * secret read" has one answer and the pure token module stays testable
  * with no env.
@@ -15,6 +16,7 @@
  * environment is visible in the function log without flooding it.
  */
 import { signToken, verifyToken } from "./tools/unlock-token.ts";
+import { BRIEF_DELETE_PURPOSE, BRIEF_LINK_MAX_AGE_SECONDS, BRIEF_LINK_PURPOSE } from "./project-builder/brief.ts";
 
 export const UNLOCK_COOKIE = "summit_unlock";
 /**
@@ -89,5 +91,34 @@ export function verifyDeleteToken(token: unknown, emailHash: string): boolean {
   const secret = getUnlockSecret();
   if (!secret || typeof token !== "string" || token.length === 0) return false;
   const r = verifyToken(secret, PURPOSE_DELETE, token);
+  return r.ok && r.claims.eh === emailHash;
+}
+
+// ── Project Builder ──────────────────────────────────────────────────────────
+
+/** The resume and view link for a brief: claim `b`, 30 days at verification. A fresh one is minted for every email. */
+export function issueBriefLinkToken(briefId: string): string | null {
+  const secret = getUnlockSecret();
+  return secret ? signToken(secret, BRIEF_LINK_PURPOSE, { b: briefId }) : null;
+}
+
+/** True only when the token was signed for exactly this brief id and is under 30 days old. */
+export function verifyBriefLinkToken(token: unknown, briefId: string): boolean {
+  const secret = getUnlockSecret();
+  if (!secret || typeof token !== "string" || token.length === 0) return false;
+  const r = verifyToken(secret, BRIEF_LINK_PURPOSE, token, { maxAgeSeconds: BRIEF_LINK_MAX_AGE_SECONDS });
+  return r.ok && r.claims.b === briefId;
+}
+
+/** No expiry: bound to the email hash, so it can only ever delete the briefs under its own address. */
+export function issueBriefDeleteToken(emailHash: string): string | null {
+  const secret = getUnlockSecret();
+  return secret ? signToken(secret, BRIEF_DELETE_PURPOSE, { eh: emailHash }) : null;
+}
+
+export function verifyBriefDeleteToken(token: unknown, emailHash: string): boolean {
+  const secret = getUnlockSecret();
+  if (!secret || typeof token !== "string" || token.length === 0) return false;
+  const r = verifyToken(secret, BRIEF_DELETE_PURPOSE, token);
   return r.ok && r.claims.eh === emailHash;
 }

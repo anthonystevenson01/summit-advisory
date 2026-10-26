@@ -2799,3 +2799,87 @@ body {
   .bts-dots { width: 86px; }
   .bts-pair { grid-template-columns: 1fr; }
 }
+
+/* ─── PROJECT BUILDER ───
+   Layout only: the stepper grid and its progress line, the card grids, the
+   two column blocks, the fixed dock and the mobile rules. Fonts and colours
+   are inline BRAND styles in app/components/project-builder; the line
+   colours come through the --pb-line and --pb-accent variables set inline. */
+.pb-page { padding-bottom: 96px; }
+.pb-rail {
+  position: sticky;
+  top: 64px;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 14px 0 12px;
+  margin-bottom: 24px;
+}
+.pb-steps {
+  --p: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  position: relative;
+}
+.pb-steps::before, .pb-steps::after {
+  content: "";
+  position: absolute;
+  top: 17px;
+  height: 3px;
+  left: calc(100% / 12);
+}
+.pb-steps::before { right: calc(100% / 12); background: var(--pb-line); }
+.pb-steps::after { width: calc(100% * 5 / 6 * var(--p)); background: var(--pb-accent); transition: width 0.35s ease; }
+.pb-steps li { display: flex; justify-content: center; min-width: 0; }
+.pb-step-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; font-size: 13px; line-height: 1.15; padding: 0 2px; text-align: center; min-width: 0; }
+.pb-step-dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; position: relative; z-index: 1; }
+.pb-now { display: none; grid-column: 1 / -1; margin: 0; text-align: center; font-size: 15px; font-weight: 700; }
+.pb-paths { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 22px; }
+.pb-feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.pb-sysgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin-top: 14px; }
+.pb-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.pb-adder { display: grid; grid-template-columns: 1fr 150px auto; gap: 8px; margin-top: 6px; }
+.pb-adder-2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 6px; }
+.pb-sum { display: grid; grid-template-columns: 200px 1fr; margin: 0 0 26px; }
+.pb-sum dt, .pb-sum dd { margin: 0; padding: 9px 0; }
+.pb-opts { display: grid; gap: 10px; }
+.pb-ideas { display: grid; gap: 12px; }
+.pb-items { list-style: none; margin: 16px 0 0; padding: 0; }
+.pb-items li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; }
+.pb-checks { list-style: none; margin: 0 0 26px; padding: 0; }
+.pb-checks li { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.pb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pb-dock-bar { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 1240px; margin: 0 auto; padding: 12px 24px; background: none; border: 0; color: inherit; cursor: pointer; text-align: left; font-size: 15px; box-sizing: border-box; }
+.pb-dock-panel { padding: 6px 24px 22px; max-width: 1240px; margin: 0 auto; max-height: min(62vh, 600px); overflow: auto; box-sizing: border-box; }
+.pb-dock-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 36px; }
+.pb-mdots { display: flex; gap: 3px; flex-wrap: wrap; max-width: 200px; }
+.pb-modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 50; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.pb-sheet { max-width: 500px; width: 100%; max-height: 100%; overflow: auto; padding: 24px; box-sizing: border-box; }
+@media (max-width: 760px) {
+  .pb-dock-grid { grid-template-columns: 1fr; gap: 12px; }
+  .pb-dock-k, .pb-dock-pc { display: none; }
+  .pb-mdots { max-width: 90px; }
+}
+@media (max-width: 700px) {
+  .pb-paths { grid-template-columns: 1fr; }
+  .pb-step-lbl, .pb-arrow-t { display: none; }
+  .pb-step-dot { width: 26px; height: 26px; font-size: 13px; }
+  .pb-steps::before, .pb-steps::after { top: 12px; }
+  .pb-now { display: block; }
+}
+@media (max-width: 620px) {
+  .pb-two { grid-template-columns: 1fr; }
+  .pb-adder { grid-template-columns: 1fr 1fr; }
+  .pb-adder input { grid-column: 1 / -1; }
+  .pb-sum { grid-template-columns: 1fr; }
+  .pb-sum dt { padding-bottom: 0; }
+}
+@media (max-width: 480px) {
+  .pb-feats { grid-template-columns: 1fr; }
+  .pb-sysgrid { grid-template-columns: 1fr 1fr; }
+}
