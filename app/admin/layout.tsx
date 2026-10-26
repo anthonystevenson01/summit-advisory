@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Oswald } from "next/font/google";
 
 const oswald = Oswald({
@@ -48,6 +49,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <a href="/admin/rubrics" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             Rubrics
           </a>
+          <Link href="/admin/reports" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Reports
+          </Link>
         </div>
         <form action="/api/admin/logout" method="POST">
           <button

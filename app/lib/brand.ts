@@ -17,3 +17,10 @@ export const BRAND = {
 } as const;
 
 export type BrandColor = keyof typeof BRAND;
+
+/** The Google Calendar booking page behind every "Book a Call" and "Book 30 minutes" button. */
+export const BOOK_CALL_URL =
+  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
+
+/** The address in the site's Organization schema, the hub's "Ask Summit" card and the report's correction line. */
+export const CONTACT_EMAIL = "info@summitstrategyadvisory.com";

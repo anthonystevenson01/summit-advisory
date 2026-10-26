@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { BRAND } from "@/app/lib/brand";
+import { BOOK_CALL_URL, BRAND } from "@/app/lib/brand";
 import { getTool, type ToolSlug } from "@/app/lib/tools/registry";
 import GtmDimensionBar from "./shared/GtmDimensionBar";
 import ToolShareButtons from "./shared/ToolShareButtons";
@@ -13,9 +13,6 @@ import ResultBlock, { type ConfidenceLevel } from "./shared/ResultBlock";
 import UnlockGate from "./shared/UnlockGate";
 import PrefillLoader, { type PrefillPayload } from "./shared/PrefillLoader";
 import { renderExtra, type ExtraValue } from "./shared/extras";
-
-const BOOK_URL =
-  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
 type Phase = "input" | "scoring" | "scored" | "unlocking" | "full" | "error";
 
@@ -167,10 +164,14 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
   const [savedMode, setSavedMode] = useState(false);
   const [emailed, setEmailed] = useState(false);
   const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null);
+  // The prospect report the re-run link came from, kept across "Score again"
+  // so a second run from the same page still counts on the report.
+  const [reportSlug, setReportSlug] = useState<string | null>(null);
   const resultsRef = useRef<HTMLElement>(null);
 
-  // The re-run hand-off from a Built to Scale? scorecard row: the child run's
-  // inputs fill the form and the next score records `re_run` with `rerunOf`.
+  // The re-run hand-off from a Built to Scale? scorecard row or a report's
+  // working: the child run's inputs fill the form and the next score records
+  // `re_run` with `rerunOf` (and `report` when the link named one).
   const handlePrefill = useCallback((payload: PrefillPayload) => {
     if (payload.tool !== slug) return;
     const current = getTool(slug);
@@ -183,6 +184,7 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
     setValues((prev) => ({ ...prev, ...next }));
     setRerunOf(payload.runId);
     setPrefilledFrom(payload.runId);
+    setReportSlug(payload.report ?? null);
   }, [slug]);
 
   useEffect(() => {
@@ -245,7 +247,7 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
       const res = await fetch(`/api/tools/${entry.slug}/score`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputs: values, website: honeypot, ...(rerunOf ? { rerunOf } : {}) }),
+        body: JSON.stringify({ inputs: values, website: honeypot, ...(rerunOf ? { rerunOf } : {}), ...(rerunOf && reportSlug ? { report: reportSlug } : {}) }),
       });
       if (!res.ok) {
         fail(await readError(res), "input");
@@ -381,7 +383,9 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "8px 24px" }}>
         {prefilledFrom && phase === "input" && (
           <p style={{ fontSize: 13, color: BRAND.teal, margin: "0 0 16px", lineHeight: 1.5 }}>
-            Inputs loaded from your Built to Scale? run. Edit anything and score again.
+            {reportSlug
+              ? "Inputs loaded from the Summit report. Edit anything and score again."
+              : "Inputs loaded from your Built to Scale? run. Edit anything and score again."}
           </p>
         )}
         <input
@@ -614,7 +618,7 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
                   <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.white, margin: "0 0 8px" }}>{entry.cta.heading}</h3>
                   <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", margin: "0 0 18px" }}>{entry.cta.body}</p>
                   <a
-                    href={BOOK_URL}
+                    href={BOOK_CALL_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ display: "inline-block", padding: "12px 32px", borderRadius: 6, background: BRAND.brandGreen, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, cursor: "pointer", letterSpacing: "0.03em", textDecoration: "none" }}
