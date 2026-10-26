@@ -4,8 +4,10 @@ import { CSSProperties, useState, useSyncExternalStore } from "react";
 import type { ToolSlug } from "@/app/lib/tools/registry";
 
 interface Props {
-  slug: ToolSlug;
+  slug: ToolSlug | "built-to-scale";
   title: string;
+  /** When given, replaces `/tools/{slug}` in the built URL (a result page, for example). */
+  path?: string;
   /**
    * Horizontal alignment of the buttons within their container.
    * Defaults to "center" — matches the gradient-hero tool pages.
@@ -31,7 +33,7 @@ const getCanNativeShareServer = () => false;
  * Intended to sit inside a dark-background hero — white text on a
  * semi-transparent white chip.
  */
-export default function ToolShareButtons({ slug, title, align = "center" }: Props) {
+export default function ToolShareButtons({ slug, title, path, align = "center" }: Props) {
   const [copied, setCopied] = useState(false);
   const canNativeShare = useSyncExternalStore(
     subscribeNoop,
@@ -41,7 +43,7 @@ export default function ToolShareButtons({ slug, title, align = "center" }: Prop
 
   const buildUrl = () => {
     if (typeof window === "undefined") return "";
-    return `${window.location.origin}/tools/${slug}`;
+    return `${window.location.origin}${path ?? `/tools/${slug}`}`;
   };
 
   const handleCopy = async () => {
@@ -72,7 +74,7 @@ export default function ToolShareButtons({ slug, title, align = "center" }: Prop
         type="button"
         onClick={handleCopy}
         style={BUTTON_STYLE}
-        aria-label="Copy link to this tool"
+        aria-label={path ? "Copy link to this result" : "Copy link to this tool"}
       >
         <CopyIcon />
         {copied ? "Link copied!" : "Copy link"}
@@ -82,7 +84,7 @@ export default function ToolShareButtons({ slug, title, align = "center" }: Prop
           type="button"
           onClick={handleShare}
           style={BUTTON_STYLE}
-          aria-label="Share this tool"
+          aria-label={path ? "Share this result" : "Share this tool"}
         >
           <ShareIcon />
           Share

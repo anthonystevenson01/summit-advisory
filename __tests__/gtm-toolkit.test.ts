@@ -14,7 +14,7 @@ import {
   TOOLS,
   isToolPublic,
 } from "../app/lib/tools/registry.ts";
-import { HUB_LEAD, HUB_TAG, HUB_TITLE, itemListSchema } from "../app/tools/hub-copy.ts";
+import { CONTACT_EMAIL, ENTRY_PATHS, HOW_IT_WORKS, HUB_INTRO, HUB_LEAD, HUB_TAG, HUB_TITLE, itemListSchema } from "../app/tools/hub-copy.ts";
 import { HUB_TOOLS } from "../app/scale-up-advisory/scale-up-content.ts";
 import sitemap from "../app/sitemap.ts";
 import { ISSUES } from "../app/components/newsletter/data/issues.ts";
@@ -54,10 +54,9 @@ describe("Hub cards", () => {
     assert.ok(!PUBLIC_TOOLS.some((t) => t.slug === "account"), "account is a hidden tool");
   });
 
-  test("the hidden Release 2 tools are absent from PUBLIC_TOOLS", () => {
-    for (const slug of ["route-to-buyer", "unit-of-value"]) {
-      assert.ok(!PUBLIC_TOOLS.some((t) => t.slug === slug), `${slug} is a hidden tool`);
-    }
+  test("Unit of Value is in PUBLIC_TOOLS and Route to Buyer is not", () => {
+    assert.ok(PUBLIC_TOOLS.some((t) => t.slug === "unit-of-value"), "unit-of-value is a public tool");
+    assert.ok(!PUBLIC_TOOLS.some((t) => t.slug === "route-to-buyer"), "route-to-buyer is hidden pending calibration");
   });
 });
 
@@ -89,6 +88,42 @@ describe("Count copy derives from the registry", () => {
   test("the scale-up hub copy carries the count word", () => {
     assert.ok(HUB_TOOLS.body.includes(PUBLIC_TOOL_COUNT_WORD), HUB_TOOLS.body);
     assert.ok(HUB_TOOLS.hubLink.includes(PUBLIC_TOOL_COUNT_WORD), HUB_TOOLS.hubLink);
+  });
+});
+
+// ─── three paths and method copy ─────────────────────────────────────────────
+
+describe("Three paths and method copy", () => {
+  const DASH_RE = /[\u2013\u2014]| - /;
+
+  test("ENTRY_PATHS has the three titles, hrefs and the coming next flag", () => {
+    assert.deepEqual(ENTRY_PATHS.map((p) => p.title), ["Use a tool", "Score your own model", "Ask Summit to score it"]);
+    assert.equal(ENTRY_PATHS[0].href, "#tools");
+    assert.equal(ENTRY_PATHS[1].href, "/tools/built-to-scale");
+    assert.ok(ENTRY_PATHS[2].href.startsWith(`mailto:${CONTACT_EMAIL}`), ENTRY_PATHS[2].href);
+    assert.equal(ENTRY_PATHS[2].comingNext, true);
+    assert.equal(ENTRY_PATHS[0].comingNext, undefined);
+    assert.equal(ENTRY_PATHS[1].comingNext, undefined);
+    assert.ok(ENTRY_PATHS[0].body.startsWith(PUBLIC_TOOL_COUNT_WORD_CAPITALISED), ENTRY_PATHS[0].body);
+    for (const p of ENTRY_PATHS) assert.ok(p.cta.length > 0);
+  });
+
+  test("HOW_IT_WORKS has three steps numbered 01 to 03", () => {
+    assert.deepEqual(HOW_IT_WORKS.map((s) => s.num), ["01", "02", "03"]);
+    for (const step of HOW_IT_WORKS) assert.ok(step.title.length > 0 && step.body.length > 0);
+  });
+
+  test("the hub copy carries no dashes and the lead still opens with the count word", () => {
+    for (const text of [HUB_LEAD, HUB_INTRO, ...HOW_IT_WORKS.map((s) => s.body), ...ENTRY_PATHS.map((p) => p.body)]) {
+      assert.doesNotMatch(text, DASH_RE, text);
+    }
+    assert.ok(HUB_LEAD.startsWith(PUBLIC_TOOL_COUNT_WORD_CAPITALISED));
+  });
+
+  test("the sitemap lists the Built to Scale? page and its method page", () => {
+    const urls = sitemap().map((e) => e.url);
+    assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/built-to-scale"));
+    assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/built-to-scale/method"));
   });
 });
 

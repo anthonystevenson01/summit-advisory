@@ -3,7 +3,8 @@ import { getRedis } from "@/app/lib/redis";
 import { isToolPublic } from "@/app/lib/tools/registry";
 import { validateUnlock } from "@/app/lib/tools/validate";
 import { hashEmail } from "@/app/lib/tools/unlock-token";
-import { getRun, markUnlocked } from "@/app/lib/runs";
+import { getCompositeRun, getRun, markCompositeUnlocked, markUnlocked } from "@/app/lib/runs";
+import { BUILT_TO_SCALE_TOOL } from "@/app/lib/tools/built-to-scale-method";
 import { track } from "@/app/lib/events";
 import { UNLOCK_COOKIE, getUnlockSecret, issueUnlockCookie, unlockCookieOptions } from "@/app/lib/unlock";
 import { errorResponse } from "../errors";
@@ -18,6 +19,9 @@ type Body = { runId?: unknown; name?: unknown; email?: unknown; company?: unknow
  * by email hash), appends to the digest list with empty name and company
  * when absent, and sets the 30 day unlock cookie when UNLOCK_SECRET is set.
  * Without the secret the unlock still records per run and no cookie goes out.
+ *
+ * `tool` is a public registry slug or `built-to-scale`. For a composite the
+ * unlock is written onto the composite and every child run together.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
@@ -32,7 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ too
   if (typeof body.website === "string" && body.website.length > 0) {
     return NextResponse.json({ ok: true });
   }
-  if (!isToolPublic(tool)) {
+  const isComposite = tool === BUILT_TO_SCALE_TOOL;
+  if (!isComposite && !isToolPublic(tool)) {
     return NextResponse.json({ error: "This tool is not available." }, { status: 404 });
   }
 
@@ -43,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ too
   const runId = typeof body.runId === "string" ? body.runId.trim() : "";
 
   try {
-    const run = await getRun(runId);
+    const run = isComposite ? await getCompositeRun(runId) : await getRun(runId);
     if (!run || run.tool !== tool) {
       return NextResponse.json({ error: "Run not found. It may have expired." }, { status: 404 });
     }
@@ -52,7 +57,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ too
     const emailHash = hashEmail(email);
     const at = new Date().toISOString();
 
-    await markUnlocked(run.id, { emailHash, email, name, company, at });
+    const unlock = { emailHash, email, name, company, at };
+    if (run.tool === BUILT_TO_SCALE_TOOL) {
+      await markCompositeUnlocked(run.id, Object.values(run.children), unlock);
+    } else {
+      await markUnlocked(run.id, unlock);
+    }
 
     // The daily digest reads this list; same keys as before, empty strings where absent.
     try {

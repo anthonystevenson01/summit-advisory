@@ -24,6 +24,8 @@ import {
 /** Every entry that is scored: hidden entries are held to the same invariants as public ones. */
 const SCORED_TOOLS = TOOLS.filter((t) => t.dimensions.length > 0);
 
+const PART_KEYS = ["pain", "routeToBuyer", "unitOfValue", "valueEvidence", "abilityToProtect"] as const;
+
 describe("registry", () => {
   test("slugs are unique", () => {
     assert.equal(new Set(TOOL_SLUGS).size, TOOL_SLUGS.length);
@@ -46,15 +48,16 @@ describe("registry", () => {
   test("TOOLS is in the agreed order", () => {
     assert.deepEqual(
       TOOLS.map((t) => t.slug),
-      ["icp", "persona", "problem", "positioning", "moat", "route-to-buyer", "unit-of-value", "account"],
+      ["icp", "persona", "problem", "positioning", "moat", "unit-of-value", "route-to-buyer", "account"],
     );
   });
 
-  test("the Release 2 tools are hidden and numbered 06 and 07", () => {
+  test("Unit of Value is public as 06 and Route to Buyer hidden as 07, both scored", () => {
     const expected = [
       {
         slug: "route-to-buyer",
-        number: "06",
+        number: "07",
+        hidden: true,
         dims: ["bi", "ch", "gk", "ba", "sc", "cw"],
         weights: [0.2, 0.2, 0.15, 0.1, 0.15, 0.2],
         inputs: ["buyer", "route", "cycle", "channels"],
@@ -63,7 +66,8 @@ describe("registry", () => {
       },
       {
         slug: "unit-of-value",
-        number: "07",
+        number: "06",
+        hidden: false,
         dims: ["ud", "cu", "mv", "rr", "vg", "cb"],
         weights: [0.2, 0.2, 0.2, 0.15, 0.1, 0.15],
         inputs: ["delivery", "pricing", "cost", "renewal"],
@@ -75,10 +79,10 @@ describe("registry", () => {
     for (const want of expected) {
       const tool = getTool(want.slug);
       assert.ok(tool, `${want.slug} is in the registry`);
-      assert.equal(tool.hidden, true);
-      assert.equal(isToolHidden(want.slug), true);
-      assert.equal(isToolPublic(want.slug), false);
-      assert.ok(!PUBLIC_TOOLS.some((t) => t.slug === want.slug), `${want.slug} is absent from PUBLIC_TOOLS`);
+      assert.equal(tool.hidden, want.hidden);
+      assert.equal(isToolHidden(want.slug), want.hidden);
+      assert.equal(isToolPublic(want.slug), !want.hidden);
+      assert.equal(PUBLIC_TOOLS.some((t) => t.slug === want.slug), !want.hidden, `${want.slug} public listing`);
       assert.equal(tool.number, want.number);
       assert.equal(tool.dimensions.length, 6);
       assert.deepEqual(tool.dimensions.map((d) => d.key), [...want.dims]);
@@ -192,6 +196,52 @@ describe("registry", () => {
       const keys = tool.extras.map((x) => x.key);
       assert.equal(new Set(keys).size, keys.length, `${tool.slug} has duplicate extras`);
     }
+  });
+
+  test("every scored tool maps its inputs to Built to Scale? parts, keyed by input key", () => {
+    for (const tool of SCORED_TOOLS) {
+      assert.deepEqual(
+        Object.keys(tool.builtToScale).sort(),
+        tool.inputs.map((i) => i.key).sort(),
+        `${tool.slug}.builtToScale keys must equal its input keys`,
+      );
+      for (const [inputKey, parts] of Object.entries(tool.builtToScale)) {
+        for (const part of parts) {
+          assert.ok((PART_KEYS as readonly string[]).includes(part), `${tool.slug}.${inputKey} maps unknown part ${part}`);
+        }
+        assert.equal(new Set(parts).size, parts.length, `${tool.slug}.${inputKey} names a part twice`);
+      }
+      for (const input of tool.inputs) {
+        if (input.required) {
+          assert.ok((tool.builtToScale[input.key] ?? []).length > 0, `${tool.slug}.${input.key} is required but maps no part`);
+        }
+      }
+    }
+    assert.deepEqual(getTool("account")?.builtToScale, {});
+  });
+
+  test("every part key is mapped by at least one scored tool and fed by at least one", () => {
+    for (const part of PART_KEYS) {
+      assert.ok(
+        SCORED_TOOLS.some((t) => Object.values(t.builtToScale).some((parts) => parts.includes(part))),
+        `${part} fills no tool input`,
+      );
+      assert.ok(SCORED_TOOLS.some((t) => t.feeds.includes(part)), `${part} is fed by no tool`);
+    }
+  });
+
+  test("feeds deep-equals the Notion method table", () => {
+    const feeds = Object.fromEntries(TOOLS.map((t) => [t.slug, t.feeds]));
+    assert.deepEqual(feeds, {
+      icp: ["routeToBuyer"],
+      persona: ["routeToBuyer", "pain"],
+      problem: ["pain", "valueEvidence"],
+      positioning: ["valueEvidence"],
+      moat: ["abilityToProtect"],
+      "route-to-buyer": ["routeToBuyer"],
+      "unit-of-value": ["unitOfValue"],
+      account: [],
+    });
   });
 
   test("slug helpers", () => {

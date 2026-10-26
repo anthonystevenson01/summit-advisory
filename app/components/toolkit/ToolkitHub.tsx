@@ -8,7 +8,7 @@ import NewsletterCapture from "./shared/NewsletterCapture";
 import ToolkitFooter from "./ToolkitFooter";
 import SiteNav from "../SiteNav";
 import { PUBLIC_TOOLS, isToolHidden, isToolPublic } from "@/app/lib/tools/registry";
-import { HUB_LEAD, HUB_TAG } from "@/app/tools/hub-copy";
+import { ENTRY_PATHS, HOW_IT_WORKS, HUB_INTRO, HUB_LEAD, HUB_TAG } from "@/app/tools/hub-copy";
 
 // One surface and accent for every card.
 const CARD_SURFACE = "#0a1a14";
@@ -86,16 +86,62 @@ export default function ToolkitHub() {
             </p>
           </div>
 
+          {/* Three ways in: the entry block above the grid */}
+          <div className="cards-section" style={{ paddingBottom: 0 }}>
+            <div className="cards-label">Three ways in</div>
+            <div className="cards">
+              {ENTRY_PATHS.map((path, i) => {
+                const num = String(i + 1).padStart(2, "0");
+                const top = (
+                  <div className="card-icon-wrap" style={{ background: CARD_SURFACE, minHeight: 64, alignItems: "flex-end", justifyContent: "space-between", paddingBottom: 16 }}>
+                    <span style={{
+                      fontFamily: "var(--font-barlow-condensed), sans-serif",
+                      fontSize: 11, fontWeight: 700,
+                      letterSpacing: "0.18em", textTransform: "uppercase",
+                      color: CARD_ACCENT,
+                    }}>{num}</span>
+                    {path.comingNext && (
+                      <span style={{
+                        fontFamily: "var(--font-barlow-condensed), sans-serif",
+                        fontSize: 11, fontWeight: 700,
+                        letterSpacing: "0.14em", textTransform: "uppercase",
+                        color: "#D4A017",
+                        border: "1px solid rgba(212,160,23,0.5)",
+                        borderRadius: 2, padding: "2px 8px",
+                      }}>Coming next</span>
+                    )}
+                  </div>
+                );
+                const body = (
+                  <div className="card-body" style={{ borderTopColor: CARD_ACCENT }}>
+                    <div className="card-title">{path.title}</div>
+                    <p className="card-desc">{path.body}</p>
+                    <div className="card-link" style={{ marginTop: "auto", paddingTop: 16 }}>
+                      {path.cta} →
+                    </div>
+                  </div>
+                );
+                return path.href.startsWith("mailto:") ? (
+                  <a key={path.title} href={path.href} className="card" aria-label={path.cta}>
+                    {top}
+                    {body}
+                  </a>
+                ) : (
+                  <Link key={path.title} href={path.href} className="card" aria-label={path.cta}>
+                    {top}
+                    {body}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
           {/* How It Works — full width, 3-column */}
           <div style={{ padding: "56px 48px 64px" }}>
             <div className="section-label">How It Works</div>
-            <p className="section-intro" style={{ marginBottom: 40 }}>Three steps. No account required. Results in under 30 seconds.</p>
+            <p className="section-intro" style={{ marginBottom: 40 }}>{HUB_INTRO}</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3 }}>
-              {[
-                { num: "01", title: "Describe context", body: "Paste your positioning statement, problem description, persona, or target account name. The more specific you are, the more useful the output." },
-                { num: "02", title: "Get scored", body: "The AI evaluates your input across six dimensions with scores, observations, and specific gaps. No flattery — honest analysis." },
-                { num: "03", title: "Fix the right things", body: "Each dimension tells you exactly what to improve and why it matters for a team selling into a finite, named-account market." },
-              ].map((step) => (
+              {HOW_IT_WORKS.map((step) => (
                 <div key={step.num} className="feature">
                   <div style={{
                     fontFamily: "var(--font-barlow-condensed), sans-serif",
@@ -110,7 +156,7 @@ export default function ToolkitHub() {
           </div>
 
           {/* Tool cards — uses homepage .cards-section pattern */}
-          <div className="cards-section">
+          <div className="cards-section" id="tools">
             <div className="cards-label">The Tools</div>
             <div className="cards">
 

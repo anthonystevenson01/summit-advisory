@@ -17,7 +17,7 @@
     "rows": {
       "pain": 3,
       "routeToBuyer": 2,
-      "unitOfValueConstraints": 1,
+      "unitOfValue": 1,
       "valueEvidence": 2,
       "abilityToProtect": 2
     }

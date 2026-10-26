@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDetailsLimiter, getClientIp } from "@/app/lib/ratelimit";
 import { getTool, isToolPublic } from "@/app/lib/tools/registry";
-import { getRun, getRuns, listRunIdsByEmail, recordEmailStatus, type RunRecord } from "@/app/lib/runs";
+import { findAddressForHash, getRun, recordEmailStatus, type RunRecord } from "@/app/lib/runs";
 import { detailRun, toFullView, type FullView } from "@/app/lib/tools/pipeline";
 import { redactAddresses, renderResultEmail } from "@/app/lib/tools/result-email";
 import { resultFromAddress, sendMail } from "@/app/lib/mail";
@@ -140,7 +140,7 @@ async function emailResult(req: NextRequest, tool: string, run: RunRecord, full:
 
   if (!run.unlock || !getUnlockSecret()) return fail("UNLOCK_SECRET is not set");
 
-  const address = await resolveAddress(run);
+  const address = run.unlock.email || (await findAddressForHash(run.unlock.emailHash, run.id));
   if (!address) return fail("no address on record for hash");
 
   const entry = getTool(tool);
@@ -187,19 +187,4 @@ async function emailResult(req: NextRequest, tool: string, run: RunRecord, full:
   }
   void track("result_emailed", { tool, runId: run.id, emailHash });
   return true;
-}
-
-/**
- * The address for a form unlock is on the run. A cookie unlock stores the
- * hash only, so the address comes from the newest sibling run under the
- * same hash that carries one. Null when nothing is on record.
- */
-async function resolveAddress(run: RunRecord): Promise<string | null> {
-  if (!run.unlock) return null;
-  if (run.unlock.email) return run.unlock.email;
-  const ids = await listRunIdsByEmail(run.unlock.emailHash);
-  const siblings = await getRuns(ids.filter((id) => id !== run.id));
-  siblings.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  const withAddress = siblings.find((r) => r.unlock?.email);
-  return withAddress?.unlock?.email ?? null;
 }

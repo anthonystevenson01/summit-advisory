@@ -15,6 +15,10 @@
  * `hidden: true` keeps a tool out of the hub, the static params and the three
  * generic routes. Flipping it is a code change and a deploy. The public tool
  * count and its word form are exported here so copy never hard codes a number.
+ *
+ * `builtToScale` and `feeds` are the only description of how the five Built
+ * to Scale? parts reach a tool (which parts fill each of its inputs) and which
+ * dimension its result informs in the synthesis.
  */
 
 export type ToolSlug = "icp" | "persona" | "problem" | "positioning" | "moat" | "route-to-buyer" | "unit-of-value" | "account";
@@ -89,6 +93,12 @@ export interface ToolEntry {
   seo: ToolSeo;
   hidden: boolean;
   feeds: BuiltToScaleDimension[];
+  /**
+   * How the five Built to Scale? parts fill this tool's inputs: one key per
+   * input key, each value the ordered parts concatenated into that input. An
+   * empty list means the orchestration leaves the input empty.
+   */
+  builtToScale: Record<string, BuiltToScaleDimension[]>;
   cta: { heading: string; body: string };
   buttonLabel: string;
 }
@@ -218,6 +228,7 @@ const ICP: ToolEntry = {
   },
   hidden: false,
   feeds: ["routeToBuyer"],
+  builtToScale: { icp: ["pain", "routeToBuyer"] },
   cta: {
     heading: "Need help building a better ICP?",
     body: "Summit works alongside small teams selling to enterprise: refining targeting, building account strategies, and closing the gap between aspiration and pipeline reality.",
@@ -347,7 +358,8 @@ const PERSONA: ToolEntry = {
     canonical: "https://summitstrategyadvisory.com/tools/persona",
   },
   hidden: false,
-  feeds: ["routeToBuyer"],
+  feeds: ["routeToBuyer", "pain"],
+  builtToScale: { persona: ["routeToBuyer", "pain"], tamSize: [] },
   cta: {
     heading: "Need help building a stronger persona?",
     body: "Summit works alongside small teams selling to enterprise: refining targeting, building account strategies, and closing the gap between aspiration and pipeline reality.",
@@ -481,7 +493,8 @@ const PROBLEM: ToolEntry = {
     canonical: "https://summitstrategyadvisory.com/tools/problem",
   },
   hidden: false,
-  feeds: ["pain"],
+  feeds: ["pain", "valueEvidence"],
+  builtToScale: { problem: ["pain"], evidence: ["valueEvidence"], tamSize: [] },
   cta: {
     heading: "Need help validating your market?",
     body: "Summit works alongside small teams selling to enterprise: sharpening problem definition, refining targeting, and closing the gap between aspiration and pipeline reality.",
@@ -605,6 +618,7 @@ const POSITIONING: ToolEntry = {
   },
   hidden: false,
   feeds: ["valueEvidence"],
+  builtToScale: { statement: ["valueEvidence"], context: [] },
   cta: {
     heading: "Need help sharpening your positioning?",
     body: "Summit works alongside small teams selling to enterprise: refining positioning, building account strategies, and closing the gap between aspiration and pipeline reality.",
@@ -730,6 +744,7 @@ const MOAT: ToolEntry = {
   },
   hidden: false,
   feeds: ["abilityToProtect"],
+  builtToScale: { position: ["abilityToProtect"], competitors: [] },
   cta: {
     heading: "Need help building a stronger moat?",
     body: "Summit works alongside small teams selling to enterprise: sharpening competitive positioning, building account strategies, and closing the gap between aspiration and pipeline reality.",
@@ -738,12 +753,16 @@ const MOAT: ToolEntry = {
 };
 
 /**
- * Route to Buyer and Unit of Value ship hidden until their Notion rubric rows
- * are Published and calibration passes. Flipping `hidden` is Anthony's call.
+ * Route to Buyer and Unit of Value shipped hidden in Release 2. Unit of
+ * Value passed calibration and is public from Release 3a (Tool 06). Route to
+ * Buyer failed three calibration cases on single dimension moves and stays
+ * hidden (Tool 07) pending the owner's judgement of those cases; while hidden
+ * it is absent from the Built to Scale? run and named as such in the
+ * synthesis prompt. Flipping it is Anthony's call.
  */
 const ROUTE_TO_BUYER: ToolEntry = {
   slug: "route-to-buyer",
-  number: "06",
+  number: "07",
   name: "Route to Buyer",
   tagline: "Score how you reach the buyer across six dimensions. Find the one constraint between you and the people who can sign.",
   outputDescription: "Score, grade, six scored dimensions, the gatekeeper whose no costs most, and the first channel move.",
@@ -888,6 +907,7 @@ const ROUTE_TO_BUYER: ToolEntry = {
   },
   hidden: true,
   feeds: ["routeToBuyer"],
+  builtToScale: { buyer: ["routeToBuyer", "pain"], route: ["routeToBuyer"], cycle: [], channels: [] },
   cta: {
     heading: "Need help reaching the buyer?",
     body: "Summit works alongside small teams selling to enterprise: finding the channels that gather buyers, shortening the cycle, and closing the gap between aspiration and pipeline reality.",
@@ -897,7 +917,7 @@ const ROUTE_TO_BUYER: ToolEntry = {
 
 const UNIT_OF_VALUE: ToolEntry = {
   slug: "unit-of-value",
-  number: "07",
+  number: "06",
   name: "Unit of Value",
   tagline: "Score what one sale consumes and what caps it across six dimensions. See the revenue ceiling per head and the lever most likely to break it.",
   outputDescription: "Score, grade, six scored dimensions, the annual revenue ceiling per head with its assumptions, and the lever to break it.",
@@ -1038,8 +1058,9 @@ const UNIT_OF_VALUE: ToolEntry = {
     ],
     canonical: "https://summitstrategyadvisory.com/tools/unit-of-value",
   },
-  hidden: true,
+  hidden: false,
   feeds: ["unitOfValue"],
+  builtToScale: { delivery: ["unitOfValue"], pricing: ["unitOfValue"], cost: [], renewal: [] },
   cta: {
     heading: "Need help moving growth off headcount?",
     body: "Summit works alongside small teams selling to enterprise: reshaping the unit, pricing for expansion, and closing the gap between aspiration and pipeline reality.",
@@ -1083,6 +1104,7 @@ const ACCOUNT: ToolEntry = {
   },
   hidden: true,
   feeds: [],
+  builtToScale: {},
   cta: {
     heading: "Need help with account strategy?",
     body: "Summit works alongside small teams selling to enterprise: building account strategies and closing the gap between aspiration and pipeline reality.",
@@ -1091,7 +1113,7 @@ const ACCOUNT: ToolEntry = {
 };
 
 /** Every tool in number order. Hidden tools are included; use PUBLIC_TOOLS for the hub. */
-export const TOOLS: readonly ToolEntry[] = [ICP, PERSONA, PROBLEM, POSITIONING, MOAT, ROUTE_TO_BUYER, UNIT_OF_VALUE, ACCOUNT];
+export const TOOLS: readonly ToolEntry[] = [ICP, PERSONA, PROBLEM, POSITIONING, MOAT, UNIT_OF_VALUE, ROUTE_TO_BUYER, ACCOUNT];
 
 export const TOOL_SLUGS = TOOLS.map((t) => t.slug) as readonly ToolSlug[];
 

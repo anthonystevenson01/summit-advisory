@@ -30,9 +30,26 @@ Aim for 10 to 15 cases per tool, spread across the grade bands. Gradeshow is the
 
 `expected.grade` is the overall grade 1 to 5 (the 85/70/50/30 bands of the score out of 100). `expected.dimensions` is keyed by the tool's dimension keys from `app/lib/tools/registry.ts`.
 
+## Composite cases (`built-to-scale/`)
+
+A Built to Scale? case is five-part only (never a quick description). `input` is keyed by the five part keys (`pain`, `routeToBuyer`, `unitOfValue`, `valueEvidence`, `abilityToProtect`), each 40 to 2000 characters. `expected.total` is the agreed total out of 25, `expected.rows` the agreed grade 1 to 5 per part key (all five, summing to the total), and `expected.band` is optional and must match the band for the total (`A hard model` 5 to 9, `A good idea with an engine still to build` 10 to 14, `Built to scale, with work to do` 15 to 19, `Built to scale` 20 to 25).
+
+```json
+{
+  "tool": "built-to-scale",
+  "name": "Example Co",
+  "agreedBy": "Anthony Stevenson",
+  "input": { "pain": "...", "routeToBuyer": "...", "unitOfValue": "...", "valueEvidence": "...", "abilityToProtect": "..." },
+  "expected": { "total": 10, "band": "A good idea with an engine still to build", "rows": { "pain": 3, "routeToBuyer": 2, "unitOfValue": 1, "valueEvidence": 2, "abilityToProtect": 2 } },
+  "note": "Why these grades."
+}
+```
+
+Each composite case runs every public tool plus one synthesis call through `scoreModel`, after the tool folders and one at a time. The total is compared as the `overall` row and each part grade within one point. When the `built-to-scale` Notion row is not Published every composite case is reported as skipped with "built-to-scale rubric row not Published, skipped".
+
 ## The TO FILL convention
 
-A case whose `input` still contains the text `TO FILL` is a placeholder. The script reports it as skipped and never scores it, so a case can be committed before its input is written. A folder with no registry entry (`built-to-scale`) is reported as "no registry entry, skipped". A folder whose registry entry is hidden (`route-to-buyer` and `unit-of-value` until Anthony flips them) is reported as "hidden in the registry pending its Published rubric row and calibration, skipped".
+A case whose `input` still contains the text `TO FILL` is a placeholder. The script reports it as skipped and never scores it, so a case can be committed before its input is written. A folder with no registry entry is reported as "no registry entry, skipped" (the `built-to-scale` folder is the exception: it is the composite set above). A folder whose registry entry is hidden is reported as "hidden in the registry pending its Published rubric row and calibration, skipped".
 
 ## Running
 
@@ -50,4 +67,4 @@ Exit codes:
 - `1`: a grade moved by more than one point, or a case threw.
 - `2`: configuration missing. The message names the variables.
 
-On a full pass with at least one case run, the script records the pass in Redis (`admin:calibration`) for every scoring routing key it used, with the model id and the rubric hash per tool. /admin/models then shows "Passed with {model} on {date}" for that row. Changing the model for `scoring`, `scoring:{tool}` or `synthesis` in /admin marks the row uncalibrated until the script passes again.
+On a full pass with at least one case run, the script records the pass in Redis (`admin:calibration`) for every scoring routing key it used (and for `synthesis` when a composite case ran), with the model id and the rubric hash per tool. /admin/models then shows "Passed with {model} on {date}" for that row. Changing the model for `scoring`, `scoring:{tool}` or `synthesis` in /admin marks the row uncalibrated until the script passes again.

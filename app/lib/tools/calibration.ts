@@ -46,6 +46,24 @@ export const TO_FILL_MARKER = "TO FILL";
 export const SKIP_REASON_TO_FILL = "input contains TO FILL";
 export const SKIP_REASON_NO_ENTRY = "no registry entry, skipped";
 export const SKIP_REASON_HIDDEN = "hidden in the registry pending its Published rubric row and calibration, skipped";
+export const SKIP_REASON_NOT_PUBLISHED = "built-to-scale rubric row not Published, skipped";
+
+/** A Built to Scale? case: five parts in, a total and a grade per part out. */
+export interface CompositeCalibrationCase {
+  tool: "built-to-scale";
+  name: string;
+  source?: string;
+  agreedBy?: string;
+  agreedOn?: string;
+  input: Record<string, string>;
+  expected: { total: number; band?: string; rows: Record<string, number> };
+  note?: string;
+}
+
+export interface CompositeCalibrationActual {
+  total: number;
+  rows: Record<string, number>;
+}
 
 /** False when any input value still contains the TO FILL placeholder. */
 export function isCaseFillable(c: Pick<CalibrationCase, "input">): boolean {
@@ -70,6 +88,37 @@ export function compareCase(expected: CalibrationCase["expected"], actual: Calib
   });
   for (const [key, want] of Object.entries(expected.dimensions ?? {})) {
     const got = actual.scores[key];
+    const present = typeof got === "number" && Number.isFinite(got);
+    rows.push({
+      key,
+      expected: want,
+      actual: present ? got : null,
+      delta: present ? got - want : null,
+    });
+  }
+  const pass = rows.every((r) => r.delta !== null && Math.abs(r.delta) <= 1);
+  return { pass, rows };
+}
+
+/**
+ * Compares the total (as the `overall` row) and each expected part grade.
+ * Passes when every |delta| is at most 1; a part the run did not grade is
+ * reported with a null actual and fails the case.
+ */
+export function compareCompositeCase(
+  expected: CompositeCalibrationCase["expected"],
+  actual: CompositeCalibrationActual,
+): Comparison {
+  const rows: ComparisonRow[] = [];
+  const total = Number.isFinite(actual.total) ? actual.total : null;
+  rows.push({
+    key: "overall",
+    expected: expected.total,
+    actual: total,
+    delta: total === null ? null : total - expected.total,
+  });
+  for (const [key, want] of Object.entries(expected.rows ?? {})) {
+    const got = actual.rows[key];
     const present = typeof got === "number" && Number.isFinite(got);
     rows.push({
       key,

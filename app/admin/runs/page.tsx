@@ -1,9 +1,11 @@
-import { PUBLIC_TOOLS, getTool, isToolPublic, type ToolSlug } from "@/app/lib/tools/registry";
-import { listRuns, type RunRecord } from "@/app/lib/runs";
+import { PUBLIC_TOOLS, getTool } from "@/app/lib/tools/registry";
+import { getCompositeRun, getRun, isCompositeRun, isRunId, listRuns, type CompositeRunRecord, type RunRecord, type StoredRun } from "@/app/lib/runs";
+import { BTS_PARTS, BUILT_TO_SCALE_TOOL } from "@/app/lib/tools/built-to-scale-method";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 100;
+const BTS_LABEL = "Built to Scale?";
 
 const TOOL_COLOURS: Record<string, string> = {
   icp: "#D4A017",
@@ -11,6 +13,9 @@ const TOOL_COLOURS: Record<string, string> = {
   problem: "#7c3aed",
   positioning: "#16a34a",
   moat: "#005A66",
+  "route-to-buyer": "#b45309",
+  "unit-of-value": "#0f766e",
+  [BUILT_TO_SCALE_TOOL]: "#319A65",
 };
 
 function scoreColour(score0to100: number): string {
@@ -44,6 +49,19 @@ const td = {
   verticalAlign: "top" as const,
 };
 
+const preStyle = {
+  margin: "4px 0 0",
+  fontSize: 11,
+  lineHeight: 1.5,
+  whiteSpace: "pre-wrap" as const,
+  wordBreak: "break-word" as const,
+  background: "#F5F7F6",
+  padding: 10,
+  borderRadius: 4,
+  maxHeight: 300,
+  overflow: "auto",
+};
+
 const chipStyle = (active: boolean, colour: string) => ({
   display: "inline-flex",
   alignItems: "center",
@@ -58,6 +76,30 @@ const chipStyle = (active: boolean, colour: string) => ({
   color: active ? colour : "#666",
 });
 
+function runLink(id: string): string {
+  return `/admin/runs?id=${encodeURIComponent(id)}`;
+}
+
+function Footer({ run }: { run: StoredRun }) {
+  return (
+    <div style={{ marginTop: 12, borderTop: "1px solid #E8ECE9", paddingTop: 8, color: "#666" }}>
+      <div>Run {run.id}</div>
+      {!isCompositeRun(run) && run.parentId && (
+        <div>
+          child of <a href={runLink(run.parentId)} style={{ color: "#005A66" }}>{run.parentId}</a>
+        </div>
+      )}
+      <div>
+        Rubric hash {run.rubricHash.slice(0, 12)}
+        {!isCompositeRun(run) && run.detailsRubricHash ? ` (details ${run.detailsRubricHash.slice(0, 12)})` : ""}
+      </div>
+      <div>Routes {Object.entries(run.routes).map(([k, v]) => `${k}: ${v}`).join(", ") || "none"}</div>
+      <div>Calibrated {Object.entries(run.calibrated).map(([k, v]) => `${k}: ${v ? "yes" : "no"}`).join(", ") || "none"}</div>
+      {run.confidenceReason && <div>Confidence reason: {run.confidenceReason}</div>}
+    </div>
+  );
+}
+
 function RunDetail({ run }: { run: RunRecord }) {
   const entry = getTool(run.tool);
   return (
@@ -69,9 +111,7 @@ function RunDetail({ run }: { run: RunRecord }) {
         return (
           <div key={input.key} style={{ marginTop: 6 }}>
             <div style={{ fontWeight: 600, color: "#053030" }}>{input.label}</div>
-            <pre style={{ margin: "4px 0 0", fontSize: 11, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word", background: "#F5F7F6", padding: 10, borderRadius: 4, maxHeight: 300, overflow: "auto" }}>
-              {value}
-            </pre>
+            <pre style={preStyle}>{value}</pre>
           </div>
         );
       })}
@@ -134,33 +174,142 @@ function RunDetail({ run }: { run: RunRecord }) {
         </div>
       )}
 
-      <div style={{ marginTop: 12, borderTop: "1px solid #E8ECE9", paddingTop: 8, color: "#666" }}>
-        <div>Run {run.id}</div>
-        <div>Rubric hash {run.rubricHash.slice(0, 12)}{run.detailsRubricHash ? ` (details ${run.detailsRubricHash.slice(0, 12)})` : ""}</div>
-        <div>Routes {Object.entries(run.routes).map(([k, v]) => `${k}: ${v}`).join(", ") || "none"}</div>
-        <div>Calibrated {Object.entries(run.calibrated).map(([k, v]) => `${k}: ${v ? "yes" : "no"}`).join(", ") || "none"}</div>
-        {run.confidenceReason && <div>Confidence reason: {run.confidenceReason}</div>}
-      </div>
+      <Footer run={run} />
     </div>
+  );
+}
+
+function CompositeDetail({ run }: { run: CompositeRunRecord }) {
+  return (
+    <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.6 }}>
+      <strong style={{ color: "#053030" }}>Inputs{run.quickMode ? " (quick mode)" : ""}</strong>
+      {run.quickMode ? (
+        <div style={{ marginTop: 6 }}>
+          <div style={{ fontWeight: 600, color: "#053030" }}>Business description</div>
+          <pre style={preStyle}>{run.inputs.description ?? ""}</pre>
+        </div>
+      ) : (
+        BTS_PARTS.map((part) => {
+          const value = run.inputs[part.key];
+          if (!value) return null;
+          return (
+            <div key={part.key} style={{ marginTop: 6 }}>
+              <div style={{ fontWeight: 600, color: "#053030" }}>{part.label}</div>
+              <pre style={preStyle}>{value}</pre>
+            </div>
+          );
+        })
+      )}
+
+      <div style={{ marginTop: 12, borderTop: "1px solid #E8ECE9", paddingTop: 8 }}>
+        <strong style={{ color: "#053030" }}>Rows</strong>
+        {BTS_PARTS.map((part) => {
+          const row = run.rows.find((r) => r.key === part.key);
+          return (
+            <div key={part.key} style={{ marginTop: 6 }}>
+              <span style={{ fontWeight: 600, color: "#053030" }}>{part.name}</span>{" "}
+              <span style={{ color: scoreColour((row?.grade ?? 0) * 20), fontWeight: 600 }}>{row?.grade ?? "?"} of 5</span>
+              {row?.comment && <div style={{ color: "#666", marginTop: 2 }}>{row.comment}</div>}
+            </div>
+          );
+        })}
+        <div style={{ marginTop: 8 }}><strong>Strongest:</strong> {run.strongest}</div>
+        <div><strong>Weakest:</strong> {run.weakest}</div>
+        <div><strong>One change:</strong> {run.oneChange}</div>
+      </div>
+
+      <div style={{ marginTop: 12, borderTop: "1px solid #E8ECE9", paddingTop: 8 }}>
+        <strong style={{ color: "#053030" }}>Children</strong>
+        {Object.entries(run.children).map(([slug, childId]) => (
+          <div key={slug} style={{ marginTop: 4 }}>
+            {getTool(slug)?.name ?? slug}: <a href={runLink(childId)} style={{ color: "#005A66" }}>{childId}</a>
+          </div>
+        ))}
+        {run.absentTools.length > 0 && (
+          <div style={{ marginTop: 6, color: "#666" }}>
+            Absent tools: {run.absentTools.map((slug) => getTool(slug)?.name ?? slug).join(", ")}
+          </div>
+        )}
+      </div>
+
+      <Footer run={run} />
+    </div>
+  );
+}
+
+function RunRow({ run }: { run: StoredRun }) {
+  const composite = isCompositeRun(run);
+  const colour = TOOL_COLOURS[run.tool] ?? "#666";
+  const name = composite ? BTS_LABEL : getTool(run.tool)?.name ?? run.tool;
+  return (
+    <tr>
+      <td style={{ ...td, whiteSpace: "nowrap", fontSize: 12, color: "#666" }}>{formatDate(run.createdAt)}</td>
+      <td style={td}>
+        <span style={{ display: "inline-block", fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 4, background: `${colour}18`, color: colour }}>
+          {name}
+        </span>
+      </td>
+      <td style={{ ...td, textAlign: "center" }}>
+        {composite ? (
+          <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 16, color: scoreColour(run.total * 4) }}>
+            {run.total}<span style={{ fontSize: 11, color: "#666", fontWeight: 400 }}>/25</span>
+          </span>
+        ) : (
+          <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 16, color: scoreColour(run.score) }}>{run.score}</span>
+        )}
+      </td>
+      <td style={{ ...td, textAlign: composite ? "left" : "center", fontSize: composite ? 12 : 13 }}>{composite ? run.band : `${run.grade}/5`}</td>
+      <td style={td}>{run.confidence}</td>
+      <td style={{ ...td, fontSize: 12, color: "#666" }}>v{run.rubricVersion}</td>
+      <td style={{ ...td, fontSize: 12, color: "#666" }}>{composite ? run.models.synthesis ?? "" : run.models.scoring ?? ""}</td>
+      <td style={td}>
+        {run.unlock ? (
+          <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+            <div style={{ fontWeight: 600 }}>{run.unlock.name}</div>
+            <div style={{ color: "#005A66" }}>{run.unlock.email}</div>
+            <div style={{ color: "#666" }}>{run.unlock.company}</div>
+          </div>
+        ) : (
+          <span style={{ fontSize: 12, color: "#999" }}>Not unlocked</span>
+        )}
+      </td>
+      <td style={{ ...td, fontSize: 12, color: run.detailsAt ? "#27ae60" : "#999" }}>{run.detailsAt ? "Yes" : "No"}</td>
+      <td style={{ ...td, minWidth: 320 }}>
+        <details>
+          <summary style={{ cursor: "pointer", color: "#005A66", fontSize: 12, fontWeight: 600 }}>
+            {run.verdict ? run.verdict.slice(0, 80) : "View"}
+          </summary>
+          {composite ? <CompositeDetail run={run} /> : <RunDetail run={run} />}
+        </details>
+      </td>
+    </tr>
   );
 }
 
 export default async function RunsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tool?: string; page?: string }>;
+  searchParams: Promise<{ tool?: string; page?: string; id?: string }>;
 }) {
-  const { tool: toolParam, page: pageParam } = await searchParams;
-  const toolFilter: ToolSlug | undefined = toolParam && isToolPublic(toolParam) ? toolParam : undefined;
+  const { tool: toolParam, page: pageParam, id: idParam } = await searchParams;
+  const publicSlugs = new Set<string>(PUBLIC_TOOLS.map((t) => t.slug));
+  const toolFilter = toolParam && (publicSlugs.has(toolParam) || toolParam === BUILT_TO_SCALE_TOOL) ? toolParam : undefined;
   const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+  const singleId = isRunId(idParam) ? idParam : undefined;
 
-  let runs: RunRecord[] = [];
+  let runs: StoredRun[] = [];
   let total = 0;
   let loadError = false;
   try {
-    const result = await listRuns({ tool: toolFilter, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
-    runs = result.runs;
-    total = result.total;
+    if (singleId) {
+      const run = (await getRun(singleId)) ?? (await getCompositeRun(singleId));
+      runs = run ? [run] : [];
+      total = runs.length;
+    } else {
+      const result = await listRuns({ tool: toolFilter, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+      runs = result.runs;
+      total = result.total;
+    }
   } catch (err) {
     console.error("Admin runs Redis error", err instanceof Error ? err.message : err);
     loadError = true;
@@ -176,6 +325,8 @@ export default async function RunsPage({
     return `/admin/runs${qs ? `?${qs}` : ""}`;
   };
 
+  const filterName = toolFilter === BUILT_TO_SCALE_TOOL ? BTS_LABEL : toolFilter ? getTool(toolFilter)?.name : undefined;
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
@@ -183,23 +334,32 @@ export default async function RunsPage({
           Runs
         </h1>
         <span style={{ fontSize: 13, color: "#666" }}>
-          {total.toLocaleString()} in the store &middot; page {page}
+          {singleId ? (
+            <a href="/admin/runs" style={{ color: "#005A66", fontWeight: 600 }}>All runs</a>
+          ) : (
+            <>{total.toLocaleString()} in the store &middot; page {page}</>
+          )}
         </span>
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
-        <a href={query({ tool: "" })} style={chipStyle(!toolFilter, "#053030")}>All</a>
+        <a href={query({ tool: "" })} style={chipStyle(!toolFilter && !singleId, "#053030")}>All</a>
         {PUBLIC_TOOLS.map((t) => (
           <a key={t.slug} href={query({ tool: t.slug })} style={chipStyle(toolFilter === t.slug, TOOL_COLOURS[t.slug] ?? "#053030")}>
             {t.name}
           </a>
         ))}
+        <a href={query({ tool: BUILT_TO_SCALE_TOOL })} style={chipStyle(toolFilter === BUILT_TO_SCALE_TOOL, TOOL_COLOURS[BUILT_TO_SCALE_TOOL])}>
+          {BTS_LABEL}
+        </a>
       </div>
 
       {loadError ? (
         <p style={{ color: "#C0392B", fontSize: 14 }}>The run store could not be read. Check the Upstash variables.</p>
       ) : runs.length === 0 ? (
-        <p style={{ color: "#666", fontSize: 14 }}>{toolFilter ? `No runs for ${getTool(toolFilter)?.name} yet.` : "No runs yet."}</p>
+        <p style={{ color: "#666", fontSize: 14 }}>
+          {singleId ? `Run ${singleId} was not found. It may have expired.` : filterName ? `No runs for ${filterName} yet.` : "No runs yet."}
+        </p>
       ) : (
         <div style={{ background: "#fff", borderRadius: 10, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
           <div style={{ overflowX: "auto" }}>
@@ -219,57 +379,19 @@ export default async function RunsPage({
                 </tr>
               </thead>
               <tbody>
-                {runs.map((run) => {
-                  const colour = TOOL_COLOURS[run.tool] ?? "#666";
-                  const name = getTool(run.tool)?.name ?? run.tool;
-                  return (
-                    <tr key={run.id}>
-                      <td style={{ ...td, whiteSpace: "nowrap", fontSize: 12, color: "#666" }}>{formatDate(run.createdAt)}</td>
-                      <td style={td}>
-                        <span style={{ display: "inline-block", fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 4, background: `${colour}18`, color: colour }}>
-                          {name}
-                        </span>
-                      </td>
-                      <td style={{ ...td, textAlign: "center" }}>
-                        <span style={{ fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 16, color: scoreColour(run.score) }}>{run.score}</span>
-                      </td>
-                      <td style={{ ...td, textAlign: "center" }}>{run.grade}/5</td>
-                      <td style={td}>{run.confidence}</td>
-                      <td style={{ ...td, fontSize: 12, color: "#666" }}>v{run.rubricVersion}</td>
-                      <td style={{ ...td, fontSize: 12, color: "#666" }}>{run.models.scoring ?? ""}</td>
-                      <td style={td}>
-                        {run.unlock ? (
-                          <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-                            <div style={{ fontWeight: 600 }}>{run.unlock.name}</div>
-                            <div style={{ color: "#005A66" }}>{run.unlock.email}</div>
-                            <div style={{ color: "#666" }}>{run.unlock.company}</div>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: "#999" }}>Not unlocked</span>
-                        )}
-                      </td>
-                      <td style={{ ...td, fontSize: 12, color: run.detailsAt ? "#27ae60" : "#999" }}>{run.detailsAt ? "Yes" : "No"}</td>
-                      <td style={{ ...td, minWidth: 320 }}>
-                        <details>
-                          <summary style={{ cursor: "pointer", color: "#005A66", fontSize: 12, fontWeight: 600 }}>
-                            {run.verdict ? run.verdict.slice(0, 80) : "View"}
-                          </summary>
-                          <RunDetail run={run} />
-                        </details>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {runs.map((run) => <RunRow key={run.id} run={run} />)}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 12, marginTop: 16, fontSize: 13 }}>
-        {page > 1 && <a href={query({ page: page - 1 })} style={{ color: "#005A66", fontWeight: 600 }}>Previous page</a>}
-        {runs.length === PAGE_SIZE && <a href={query({ page: page + 1 })} style={{ color: "#005A66", fontWeight: 600 }}>Next page</a>}
-      </div>
+      {!singleId && (
+        <div style={{ display: "flex", gap: 12, marginTop: 16, fontSize: 13 }}>
+          {page > 1 && <a href={query({ page: page - 1 })} style={{ color: "#005A66", fontWeight: 600 }}>Previous page</a>}
+          {runs.length === PAGE_SIZE && <a href={query({ page: page + 1 })} style={{ color: "#005A66", fontWeight: 600 }}>Next page</a>}
+        </div>
+      )}
     </div>
   );
 }
