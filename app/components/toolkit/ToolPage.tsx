@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BRAND } from "@/app/lib/brand";
 import { getTool, type ToolSlug } from "@/app/lib/tools/registry";
+import { EMAIL_REGEX } from "@/app/lib/tools/validate";
 import GtmDimensionBar from "./shared/GtmDimensionBar";
 import ToolShareButtons from "./shared/ToolShareButtons";
 import CyclingLoader from "./shared/CyclingLoader";
@@ -27,6 +29,8 @@ interface FreeView {
   confidence: ConfidenceLevel;
   confidenceReason: string;
   scores: Record<string, number>;
+  /** True when the request carried a valid unlock cookie, so the gate is skipped. */
+  unlocked?: boolean;
 }
 
 interface Recommendation {
@@ -42,7 +46,11 @@ interface FullView extends FreeView {
   reasoning: Record<string, string>;
   recommendations: Recommendation[];
   extras: Record<string, ExtraValue>;
+  /** True only when this request sent the result email. */
+  emailed?: boolean;
 }
+
+const RUN_ID_PATTERN = /^run_[0-9a-f]{16}$/;
 
 const UPDATING_MESSAGE = "This tool is being updated. Please try again in a few minutes.";
 const GENERIC_MESSAGE = "Something went wrong. Please try again.";
@@ -100,6 +108,45 @@ async function readError(res: Response): Promise<string> {
   return GENERIC_MESSAGE;
 }
 
+async function fetchDetails(slug: string, runId: string, token?: string): Promise<Response> {
+  return fetch(`/api/tools/${slug}/details`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(token ? { runId, token } : { runId }),
+  });
+}
+
+/**
+ * Reads `run` and `t` from the query string and, when both are present,
+ * requests the saved full view with the token. Lives in its own component
+ * under Suspense so useSearchParams does not opt the static tool page out of
+ * static rendering. State is handed back only in the async continuation; on
+ * any failure nothing happens and the normal page shows.
+ */
+function SavedResultLoader({ slug, onLoaded }: { slug: ToolSlug; onLoaded: (full: FullView) => void }) {
+  const searchParams = useSearchParams();
+  const started = useRef(false);
+
+  useEffect(() => {
+    const runId = searchParams.get("run") ?? "";
+    const token = searchParams.get("t") ?? "";
+    if (started.current || !RUN_ID_PATTERN.test(runId) || !token) return;
+    started.current = true;
+    fetchDetails(slug, runId, token)
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as Partial<FullView>;
+        if (!data.runId || typeof data.score !== "number" || !data.reasoning) return;
+        onLoaded(data as FullView);
+      })
+      .catch(() => {
+        // an invalid or expired link shows the normal page
+      });
+  }, [searchParams, slug, onLoaded]);
+
+  return null;
+}
+
 /**
  * Renders any public registry entry: hero, intro, the two panels, the input
  * form, the result block, dimension bars, the unlock form and the full view.
@@ -118,6 +165,8 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
   const [company, setCompany] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [rerunOf, setRerunOf] = useState<string | null>(null);
+  const [savedMode, setSavedMode] = useState(false);
+  const [emailed, setEmailed] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -131,6 +180,7 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
 
   const inputsLocked = phase !== "input" && phase !== "error";
   const resultVisible = phase === "scored" || phase === "unlocking" || phase === "full";
+  const emailValid = EMAIL_REGEX.test(email.trim());
 
   const formValid = entry.inputs.every((input) => {
     const value = (values[input.key] ?? "").trim();
@@ -145,12 +195,37 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
     setPhase("error");
   };
 
+  /**
+   * Requests the full view. `returnTo` is where a 403 lands: the gate when
+   * the cookie turned out invalid, or the gate again after a form unlock.
+   */
+  const requestDetails = async (runId: string, returnTo: Phase, token?: string) => {
+    try {
+      const detailsRes = await fetchDetails(entry.slug, runId, token);
+      if (!detailsRes.ok) {
+        if (detailsRes.status === 403) {
+          setPhase(returnTo);
+          return;
+        }
+        fail(await readError(detailsRes), returnTo);
+        return;
+      }
+      const data = (await detailsRes.json()) as FullView;
+      setFull(data);
+      setEmailed(data.emailed === true);
+      setPhase("full");
+    } catch {
+      fail(GENERIC_MESSAGE, returnTo);
+    }
+  };
+
   const handleScore = async () => {
     if (!formValid || phase === "scoring") return;
     setPhase("scoring");
     setError(null);
     setFree(null);
     setFull(null);
+    setEmailed(false);
     try {
       const res = await fetch(`/api/tools/${entry.slug}/score`, {
         method: "POST",
@@ -167,6 +242,12 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
         return;
       }
       setFree(data as FreeView);
+      if (data.unlocked) {
+        // A valid unlock cookie: skip the gate and request details directly.
+        setPhase("unlocking");
+        await requestDetails(data.runId, "scored");
+        return;
+      }
       setPhase("scored");
     } catch {
       fail(GENERIC_MESSAGE, "input");
@@ -174,34 +255,33 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
   };
 
   const handleUnlock = async () => {
-    if (!free || !name || !email || !company) return;
+    if (!free || !emailValid) return;
     setPhase("unlocking");
     setError(null);
     try {
       const unlockRes = await fetch(`/api/tools/${entry.slug}/unlock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ runId: free.runId, name, email, company, website: honeypot }),
+        body: JSON.stringify({ runId: free.runId, name: name.trim(), email: email.trim(), company: company.trim(), website: honeypot }),
       });
       if (!unlockRes.ok) {
         fail(await readError(unlockRes), "scored");
         return;
       }
-      const detailsRes = await fetch(`/api/tools/${entry.slug}/details`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ runId: free.runId }),
-      });
-      if (!detailsRes.ok) {
-        fail(await readError(detailsRes), "scored");
-        return;
-      }
-      const data = (await detailsRes.json()) as FullView;
-      setFull(data);
-      setPhase("full");
     } catch {
       fail(GENERIC_MESSAGE, "scored");
+      return;
     }
+    await requestDetails(free.runId, "scored");
+  };
+
+  const handleSavedResult = (saved: FullView) => {
+    setFree(saved);
+    setFull(saved);
+    setEmailed(false);
+    setError(null);
+    setSavedMode(true);
+    setPhase("full");
   };
 
   const handleScoreAgain = () => {
@@ -209,6 +289,8 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
     setFree(null);
     setFull(null);
     setError(null);
+    setEmailed(false);
+    setSavedMode(false);
     setPhase("input");
   };
 
@@ -220,6 +302,10 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
 
   return (
     <div style={{ minHeight: "100vh", background: BRAND.white, fontFamily: "var(--font-dm-sans), sans-serif" }}>
+      <Suspense fallback={null}>
+        <SavedResultLoader slug={entry.slug} onLoaded={handleSavedResult} />
+      </Suspense>
+
       {/* HERO */}
       <section style={{ background: `linear-gradient(135deg, ${BRAND.darkGreen} 0%, ${BRAND.teal} 100%)`, padding: "40px 32px 56px", textAlign: "center" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -274,7 +360,8 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
         </div>
       </section>
 
-      {/* INPUT */}
+      {/* INPUT: hidden while a saved result is shown, until "Score again" */}
+      {!savedMode && (
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "8px 24px" }}>
         <input
           type="text"
@@ -392,10 +479,16 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
           </div>
         )}
       </section>
+      )}
 
       {/* RESULTS */}
       {resultVisible && view && (
-        <section ref={resultsRef} style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 48px" }}>
+        <section ref={resultsRef} style={{ maxWidth: 960, margin: "0 auto", padding: `${savedMode ? 32 : 0}px 24px 48px` }}>
+          {savedMode && (
+            <p style={{ fontSize: 13, color: BRAND.mid, margin: "0 0 14px", textAlign: "center" }}>
+              This is your saved result. Score again to run a fresh evaluation.
+            </p>
+          )}
           <div style={{ background: BRAND.lightBg, borderRadius: 12, padding: "32px 28px", border: `1px solid ${BRAND.border}` }}>
             <ResultBlock
               score={view.score}
@@ -406,6 +499,11 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
               confidence={view.confidence}
               confidenceReason={view.confidenceReason}
             />
+            {phase === "full" && emailed && (
+              <p style={{ fontSize: 13, color: BRAND.teal, textAlign: "center", margin: "-12px 0 24px" }}>
+                A copy of this result is on its way to your inbox, with a saved link and a delete-my-data link.
+              </p>
+            )}
 
             <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
@@ -447,20 +545,21 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
                         <path d="M7 11V7a5 5 0 0110 0v4" />
                       </svg>
                     </div>
-                    <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock Your Full Report</h3>
-                    <p style={{ fontSize: 13, color: BRAND.mid, margin: 0 }}>Get per-dimension scores, level labels, and specific recommendations for every weak area.</p>
+                    <h3 style={{ fontFamily: "var(--font-oswald), sans-serif", fontSize: 18, fontWeight: 600, color: BRAND.darkGreen, margin: "0 0 6px" }}>Unlock the full view</h3>
+                    <p style={{ fontSize: 13, color: BRAND.mid, margin: 0 }}>We use your email to send you this result and to unlock every tool for 30 days. Nothing else.</p>
                   </div>
                   {[
-                    { label: "Name", value: name, set: setName, placeholder: "Your name", type: "text" },
-                    { label: "Email", value: email, set: setEmail, placeholder: "you@company.com", type: "email" },
-                    { label: "Company", value: company, set: setCompany, placeholder: "Your company", type: "text" },
+                    { key: "email", label: "Email", value: email, set: setEmail, placeholder: "you@company.com", type: "email", required: true },
+                    { key: "name", label: "Name (optional)", value: name, set: setName, placeholder: "Your name", type: "text", required: false },
+                    { key: "company", label: "Company (optional)", value: company, set: setCompany, placeholder: "Your company", type: "text", required: false },
                   ].map((f) => (
-                    <div key={f.label} style={{ marginBottom: 12 }}>
-                      <label htmlFor={`${entry.slug}-unlock-${f.label}`} style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 4 }}>{f.label}</label>
+                    <div key={f.key} style={{ marginBottom: 12 }}>
+                      <label htmlFor={`${entry.slug}-unlock-${f.key}`} style={{ fontSize: 12, fontWeight: 600, color: BRAND.darkGreen, display: "block", marginBottom: 4 }}>{f.label}</label>
                       <input
-                        id={`${entry.slug}-unlock-${f.label}`}
+                        id={`${entry.slug}-unlock-${f.key}`}
                         type={f.type}
                         value={f.value}
+                        required={f.required}
                         onChange={(e) => f.set(e.target.value)}
                         placeholder={f.placeholder}
                         style={{ ...fieldStyle, padding: "10px 12px" }}
@@ -472,13 +571,13 @@ export default function ToolPage({ slug }: { slug: ToolSlug }) {
                   <button
                     type="button"
                     onClick={handleUnlock}
-                    disabled={!name || !email || !company}
-                    style={{ width: "100%", padding: "12px", borderRadius: 6, border: "none", background: !name || !email || !company ? BRAND.border : BRAND.brandGreen, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, letterSpacing: "0.04em", marginTop: 8, cursor: !name || !email || !company ? "not-allowed" : "pointer" }}
+                    disabled={!emailValid}
+                    style={{ width: "100%", padding: "12px", borderRadius: 6, border: "none", background: emailValid ? BRAND.brandGreen : BRAND.border, color: BRAND.white, fontFamily: "var(--font-oswald), sans-serif", fontWeight: 600, fontSize: 15, letterSpacing: "0.04em", marginTop: 8, cursor: emailValid ? "pointer" : "not-allowed" }}
                   >
-                    Unlock Full Report
+                    Unlock and email my result
                   </button>
                   <p style={{ fontSize: 11, color: BRAND.mid, textAlign: "center", marginTop: 10, marginBottom: 0 }}>
-                    We store your details securely and use them only to deliver this report. No spam, no third-party sharing.{" "}
+                    Your result arrives by email with a saved link and a delete-my-data link. No spam, no third-party sharing.{" "}
                     <a href="mailto:privacy@summitstrategyadvisory.com" style={{ color: BRAND.teal, textDecoration: "none" }}>privacy@summitstrategyadvisory.com</a>.
                   </p>
                 </div>

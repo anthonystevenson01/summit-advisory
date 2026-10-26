@@ -239,6 +239,70 @@ npm run build     # strongest check: validates page exports, metadata and the re
 - All scoring, no deploy: remove `OPENROUTER_API_KEY` from Vercel and redeploy the environment. Every score and details call answers 503 "model provider not configured"; pages still render.
 - One tool permanently: set `hidden: true` on its registry entry and deploy. It leaves the hub, the sitemap params and the three routes (404).
 
+---
+
+## Unlock gate, emailed result and delete-my-data, added October 2026
+
+**Trigger:** A visitor scores a tool at `/tools/{slug}` and presses "Unlock and email my result" on the gate (email required, name and company optional, honeypot unchanged). From then on, for 30 days, every tool on that browser skips the gate: the score response carries `unlocked: true` and `ToolPage.tsx` requests details straight away. The first full view for a run sends the result by email with a saved link and a delete-my-data link. Opening the saved link (`/tools/{slug}?run={runId}&t={token}`) shows that run's full view with the inputs hidden until "Score again". Opening the delete link (`/api/tools/data/delete?e={emailHash}&t={token}`) shows a confirmation page; pressing "Delete my data" removes every run stored under that email.
+
+**Service/Function:**
+- `app/lib/tools/unlock-token.ts` is the pure HMAC-SHA256 module (`signToken`, `verifyToken`, `hashEmail`). Secret and clock are arguments. One module, three purpose strings: `unlock-cookie`, `saved-link`, `delete`. A token issued for one purpose fails for another.
+- `app/lib/unlock.ts` is the only reader of `UNLOCK_SECRET`. Exports the cookie name and options and the typed issue and verify helpers the routes use.
+- `app/lib/mail.ts` is the one nodemailer transport (`sendMail`, `isMailConfigured`, `resultFromAddress`). The daily digest now sends through it with no timeout; the result email passes a budget.
+- `app/lib/tools/result-email.ts` renders the subject, plain text and text-first HTML. `redactAddresses` strips anything shaped like an address from a transport error before it is logged.
+- `app/api/tools/[tool]/unlock/route.ts`: validates (email only), `markUnlocked` (records the unlock, PERSISTs the run, SADDs the id to `runs:by-email:{hash}`), appends to `gtm-unlocks` with `name` and `company` as `""` when absent, tracks `email_given`, and sets the cookie when the secret is set. Responds `{ ok: true, unlocked }` where `unlocked` is true only when a cookie went out.
+- `app/api/tools/[tool]/score/route.ts`: unchanged through `scoreRun`; afterwards reads the cookie and responds with `unlocked: true` when it verifies. Nothing is written to the run at score time.
+- `app/api/tools/[tool]/details/route.ts`: body `{ runId, token? }`. Order: parse, slug, runId; verify cookie and token (string checks only); read the run; stored early return with `emailed: false`; 403 when neither the record, the cookie nor the token authorises; limiter; `detailRun` with the verified claims; email once; respond with the full view plus `emailed`. `detailRun` records a cookie unlock on the run (hash only, empty name and company) before generating, so the run persists and is indexed. `full_view_opened` carries `via: form | cookie | link`.
+- `app/api/tools/data/delete/route.ts`: GET and POST both verify the token against the hash. GET renders the confirmation page; POST calls `deleteRunsByEmail`, tracks `data_deleted` with the count only, clears a `summit_unlock` cookie whose hash matches, and renders the Done page. Plain HTML strings, inline BRAND styles, no script.
+- `app/lib/runs.ts`: `emailStatus` (`sent`, `failed`, null) and `emailedAt` on the record; `emailIndexKey`, `getRuns`, `listRunIdsByEmail`, `deleteRunsByEmail`, `recordEmailStatus`.
+- `app/components/toolkit/ToolPage.tsx`: email-first gate, skips the gate on `unlocked`, `SavedResultLoader` (under Suspense so the tool pages stay static) reads `run` and `t` and loads the saved view.
+
+**The cookie:** name `summit_unlock`; httpOnly; `secure` in production (follows `NODE_ENV`, so `npm run dev` over http still sets it); SameSite Lax; path `/`; Max-Age 30 days. Value is a signed token with purpose `unlock-cookie` carrying `eh` (the SHA-256 hash of the trimmed, lowercased email) and `iat`. Never the address. The 30 days is enforced twice: on `iat` at verification, and by Max-Age in the browser. Each form unlock issues its own cookie; two devices hold two valid cookies with the same hash and nothing revokes them except expiry, a secret rotation, or the delete flow clearing the one it can see.
+
+**The links:** the saved link token (purpose `saved-link`, claim `run`) and the delete link token (purpose `delete`, claim `eh`) do not expire. Each is bound to one run id or one email hash and does nothing for any other run, hash or route, so there is nothing to gain from an old link beyond what its owner could already do. The URLs use the request origin, so a preview deployment emails links to itself rather than to production.
+
+**Failure mode:**
+- `UNLOCK_SECRET` unset: the unlock still records on the run (per-run, as before 1b); no cookie, no saved link, no email. The visitor sees the full view for that run but is gated again on the next tool. Every run shows `emailStatus: failed` with the log line "UNLOCK_SECRET is not set"; the warning "UNLOCK_SECRET is not set: unlocks are recorded but no cookie, saved link or result email is issued" logs once per instance.
+- SMTP variables unset, or the send fails or times out: the visitor sees the full view without the "on its way to your inbox" line; the run records `emailStatus: failed`; the log carries the hash prefix and the transport error with addresses redacted. A `failed` status is final: there is no resend path in this release.
+- Send budget: the transport gets 58 s minus the time since the handler started, capped at 10 s, and is skipped under 2 s (logged "no time budget for email"). The full view is already persisted by then, so the request stays inside `maxDuration = 60` and a retry serves the stored view.
+- Cookie unlock with no address on record (the visitor deleted their data, then unlocked another tool with the surviving cookie): the run is unlocked and the full view shown; the send is recorded `failed` with "no address on record for hash".
+- Run expired or deleted: a saved link gets 404 from the details route and `ToolPage` shows the normal empty page with no error. A visitor with a cookie whose run was never persisted (Redis down at score time) gets 404 on details and falls back to the gate.
+- Invalid or tampered cookie: treated as no cookie; the gate shows. Invalid saved link (wrong token, wrong run, rotated secret): 403, normal page. Invalid delete link: a 400 "This link is not valid" page with no button. A delete POST without a valid token: the same page; nothing is deleted.
+- Redis down: unlock and details answer 500 as in 1a; the delete POST renders a 500 "Something went wrong. Please try the link again in a few minutes." page and is safe to retry (the route is idempotent). Opening a delete link a second time renders "Done. There was nothing stored under this address."
+- Secret rotation: every cookie, saved link and delete link issued under the old secret stops verifying at once. Visitors see the gate again on their next score and emailed links show the normal page or the "not valid" page. No overlap window exists in this release.
+
+**Template/Config:**
+- `UNLOCK_SECRET`: required in Production, Preview and Development on Vercel before this ships. Generate with `openssl rand -hex 32`. Signs the cookie and both links. Read in `app/lib/unlock.ts` only.
+- `RESULT_FROM_EMAIL`: optional; the From address on the emailed result. Defaults to `SMTP_USER`.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`: unchanged; now read by `app/lib/mail.ts` for both the result email and the daily digest. `NOTIFY_EMAIL` is still the digest's From and To.
+- Redis keys:
+
+| Key | What | TTL |
+|---|---|---|
+| `runs:by-email:{emailHash}` | Set of run ids unlocked under that hash (form or cookie). Written by `markUnlocked` from this release on; runs unlocked before this deploy are not in it | none; deleted by the delete flow |
+| `run:{id}` | Gains `emailStatus` (`sent`, `failed`, or absent when no send was attempted) and `emailedAt` (ISO, set on a send). A cookie unlock stores `unlock` with the hash and empty `email`, `name` and `company` | unchanged |
+| `events` | Gains `result_emailed` (`tool`, `runId`, `emailHash`) and `data_deleted` (`count` only). `full_view_opened` gains `via` | unchanged |
+| `gtm-unlocks` | Unchanged shape; 1b entries carry `name` and `company` as `""`. Cookie unlocks do not append (the lead was reported when the email was first given). Not purged by the delete flow | none |
+
+- Copy: gate heading "Unlock the full view", one line on what the email is used for, button "Unlock and email my result", footnote on the saved and delete links. Email subject "Your {tool} result: {score} out of 100, grade {grade} of 5"; body in registry order with both links and the line "This result was produced automatically against Summit Strategy Advisory's rubrics." The template replaces any en or em dash the model wrote.
+- Preview deployments: the cookie is set on the preview host and emailed links point at the preview origin, which shows Vercel's login to anyone without access. Run previews with SMTP unset or pointed at a test inbox.
+
+**To disable:**
+- Cookies, saved links and result emails, no deploy: remove `UNLOCK_SECRET` from Vercel and redeploy the environment. The gate falls back to per-run unlocks (name and company still optional), unlocks still record on the run and in `gtm-unlocks`, every run records `emailStatus: failed`, and the warning logs once per instance. Existing cookies and emailed links stop verifying.
+- Result emails only, no deploy: set the SMTP variables empty and redeploy. Cookies and saved links keep working; the send fails before touching the network ("SMTP not configured") and is recorded `failed`. The daily digest stops too, since it shares the transport.
+- The delete route cannot be switched off without a deploy; it only ever deletes data under a signed hash, so there is no reason to.
+
+**Follow-ups (from the review, non-blocking):**
+- Live smoke on a preview with `UNLOCK_SECRET` set and SMTP at a test inbox: the cookie flow, the emailed result, the saved link, the delete flow and the `runs:by-email` index have unit coverage for their pure parts only.
+- Timeout stacking: nodemailer's connection, greeting and socket timeouts each get the remaining budget and run one after another, so a host that stalls at every stage could exceed it. Race the send against the remaining budget.
+- Route the three legacy transports (`ai-studio-request`, `admin/reset-request`, `crm-interest`) through `app/lib/mail.ts`.
+- `signToken` spreads claims after the header, so a claim named `v`, `p` or `iat` would override it. All callers use fixed names; add a guard before reusing it with caller-supplied names.
+- Runs unlocked before this deploy are not in `runs:by-email`, so a delete link does not cover 1a-era runs. A backfill (iterate `runs:by-time`, SADD by `unlock.emailHash`) is a short script if wanted.
+- Owner decisions: the delete POST clears a matching unlock cookie (not in the spec); `gtm-unlocks` is not purged on delete (needs an LREM scan or a digest rebuilt from the run store).
+- No resend path for `emailStatus: failed`; `emailStatus` is not shown on `/admin/runs`.
+
+---
+
 ## Route to Buyer and Unit of Value, two hidden GTM tools, added October 2026
 
 **Trigger:** A visitor runs Route to Buyer at `/tools/route-to-buyer` or Unit of Value at `/tools/unit-of-value` once Anthony flips `hidden` on their registry entries. Today nothing runs: both entries ship `hidden: true`, so the page calls `notFound()`, the score, details and unlock routes answer 404, and the hub, the sitemap and `generateStaticParams` do not list them. When live, both tools follow the pipeline in the entry above. The only new behaviour is the `ceilingInputs` extra on Unit of Value, which the details call returns as structured JSON and the code turns into a figure.

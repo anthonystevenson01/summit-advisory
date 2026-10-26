@@ -11,9 +11,14 @@ import { getTool } from "../app/lib/tools/registry.ts";
 import { renderInputs, validateInputs, validateUnlock } from "../app/lib/tools/validate.ts";
 
 describe("validateUnlock", () => {
-  test("missing company is rejected", () => {
-    const r = validateUnlock({ name: "Ann", email: "ann@example.com" });
-    assert.equal(r.ok, false);
+  test("email alone is accepted and name and company come back as empty strings", () => {
+    const r = validateUnlock({ email: "ann@example.com" });
+    assert.deepEqual(r, { ok: true, name: "", email: "ann@example.com", company: "" });
+  });
+
+  test("optional fields are trimmed and returned", () => {
+    const r = validateUnlock({ name: "  Ann ", email: " ann@example.com ", company: " Acme " });
+    assert.deepEqual(r, { ok: true, name: "Ann", email: "ann@example.com", company: "Acme" });
   });
 
   test("a bad email is rejected", () => {
@@ -22,9 +27,10 @@ describe("validateUnlock", () => {
     if (!r.ok) assert.match(r.error, /valid email/);
   });
 
-  test("the trimmed trio is returned", () => {
-    const r = validateUnlock({ name: "  Ann ", email: " ann@example.com ", company: " Acme " });
-    assert.deepEqual(r, { ok: true, name: "Ann", email: "ann@example.com", company: "Acme" });
+  test("a missing email is rejected", () => {
+    const r = validateUnlock({ name: "Ann", company: "Acme" });
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.match(r.error, /valid email/);
   });
 
   test("a non-object body is rejected", () => {

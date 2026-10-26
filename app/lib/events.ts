@@ -5,7 +5,14 @@
  */
 import { getRedis } from "./redis.ts";
 
-export type EventName = "tool_started" | "result_shown" | "email_given" | "full_view_opened" | "re_run";
+export type EventName =
+  | "tool_started"
+  | "result_shown"
+  | "email_given"
+  | "full_view_opened"
+  | "re_run"
+  | "result_emailed"
+  | "data_deleted";
 
 export const EVENTS_KEY = "events";
 const EVENTS_MAX = 50_000;
