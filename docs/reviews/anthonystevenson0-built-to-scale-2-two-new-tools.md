@@ -54,3 +54,9 @@ A zero value reaching the renderer shows "not supported by the text" and withhol
 - `countWord` returns digits above twelve, which is acceptable for the foreseeable count.
 - `Ceiling` uses teal at 25 percent alpha for the panel border where the design said solid teal; a style choice, not blocking.
 - `app/tools/hub-copy.ts` is a plain module inside the app directory, not a route; worth one sentence in the runbook so nobody expects it to render.
+
+## Round 2: APPROVE (after merging main with Release 1b)
+
+Main gained Release 1b (PR 12) before this PR opened. Merging it (commit 03c8d76) left one conflict in `docs/runbook.md` (two entries appended at the same place; both kept) and one type error: Release 1b's `ResultEmailView.extras` was typed `Record<string, string | string[]>` while `FullView.extras` now carries `ExtraValue`. The fix touches `app/lib/tools/result-email.ts` and `__tests__/result-email.test.ts` only: the email view accepts `ExtraValue`, and a `CeilingInputs` value renders as the same lines the page shows (the figure per person per year with its assumptions, or the "cannot be computed" sentence). Any other object renders nothing. String and list extras are unchanged.
+
+Gates re-run by the Reviewer: `npm test` 170 pass, `npm run lint` 0 errors, `npx tsc --noEmit` clean, `npm run build` exit 0. The module stays pure (relative `.ts` imports of `../ceiling.ts` and the `ExtraValue` type only). No dashes in added lines. `pipeline.ts` still types `FullView.extras` as `Record<string, ExtraValue>`.

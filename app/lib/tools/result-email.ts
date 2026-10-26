@@ -20,7 +20,9 @@
  * place that can guarantee it.
  */
 import { BRAND } from "../brand.ts";
+import { CEILING_INPUT_KEYS, CEILING_INPUT_LABELS, computeCeiling, isCeilingInputs, isSupportedCeilingValue, unsupportedCeilingInputs, type CeilingInputs } from "../ceiling.ts";
 import type { Level, ToolDimension, ToolExtra } from "./registry.ts";
+import type { ExtraValue } from "./schema.ts";
 
 export interface ResultEmailRecommendation {
   dim: string;
@@ -43,7 +45,7 @@ export interface ResultEmailView {
   scores: Record<string, number>;
   reasoning: Record<string, string>;
   recommendations: ResultEmailRecommendation[];
-  extras: Record<string, string | string[]>;
+  extras: Record<string, ExtraValue>;
 }
 
 export interface ResultEmailArgs {
@@ -100,9 +102,45 @@ function levelLabel(dim: Pick<ToolDimension, "levels">, score: number): string {
   return dim.levels[score as Level] ?? "";
 }
 
-function extraValues(value: string | string[] | undefined): string[] {
+function joinLabels(labels: string[]): string {
+  if (labels.length <= 1) return labels.join("");
+  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
+}
+
+/**
+ * The lines the email prints for a ceiling extra, mirroring the Ceiling
+ * renderer in extras.tsx: the figure (or why it cannot be computed), then
+ * one line per assumption in key order.
+ */
+function ceilingLines(inputs: CeilingInputs): string[] {
+  const result = computeCeiling(inputs);
+  const lines: string[] = [];
+  if (result) {
+    lines.push(`${result.formatted} per person per year`);
+    for (const a of result.assumptions) {
+      lines.push(a.text ? `${a.label}: ${a.value.toLocaleString("en-GB")}, ${a.text}` : `${a.label}: ${a.value.toLocaleString("en-GB")}`);
+    }
+    return lines;
+  }
+  const missing = unsupportedCeilingInputs(inputs).map((key) => CEILING_INPUT_LABELS[key].toLowerCase());
+  lines.push(`The ceiling cannot be computed because the text did not give ${joinLabels(missing)}.`);
+  for (const key of CEILING_INPUT_KEYS) {
+    const input = inputs[key];
+    const figure = isSupportedCeilingValue(input.value) ? input.value.toLocaleString("en-GB") : "not supported by the text";
+    const text = input.assumption.trim();
+    lines.push(text ? `${CEILING_INPUT_LABELS[key]}: ${figure}, ${text}` : `${CEILING_INPUT_LABELS[key]}: ${figure}`);
+  }
+  return lines;
+}
+
+/** A string or list as is; a ceiling object as its printed lines; any other object as nothing. */
+function extraValues(value: ExtraValue | undefined): string[] {
   if (value === undefined) return [];
-  const list = Array.isArray(value) ? value : [value];
+  let list: string[];
+  if (typeof value === "string") list = [value];
+  else if (Array.isArray(value)) list = value;
+  else if (isCeilingInputs(value)) list = ceilingLines(value);
+  else return [];
   return list.map((v) => plainDashes(String(v)).trim()).filter((v) => v.length > 0);
 }
 

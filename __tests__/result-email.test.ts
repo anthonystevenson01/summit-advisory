@@ -6,6 +6,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
 import { getTool } from "../app/lib/tools/registry.ts";
+import type { CeilingInputs } from "../app/lib/ceiling.ts";
 import { plainDashes, redactAddresses, renderResultEmail, type ResultEmailView } from "../app/lib/tools/result-email.ts";
 
 const moat = getTool("moat")!;
@@ -131,6 +132,73 @@ describe("renderResultEmail", () => {
     });
     assert.ok(none.text.includes("Every dimension scored 4 or above."));
     assert.ok(none.html.includes("Every dimension scored 4 or above."));
+  });
+});
+
+describe("renderResultEmail with a ceiling extra", () => {
+  const unit = getTool("unit-of-value")!;
+  const unitDims = unit.dimensions;
+  const ceilingInputs: CeilingInputs = {
+    unitsPerPersonPerPeriod: { value: 1, assumption: "one exercise a week" },
+    pricePerUnit: { value: 9500, assumption: "9,500 CAD per exercise" },
+    periodsPerYear: { value: 40, assumption: "forty weeks a year" },
+  };
+
+  function unitView(inputs: CeilingInputs): ResultEmailView {
+    const scores: Record<string, number> = {};
+    const reasoning: Record<string, string> = {};
+    for (const d of unitDims) {
+      scores[d.key] = 3;
+      reasoning[d.key] = `Reasoning for ${d.name}.`;
+    }
+    return {
+      score: 52,
+      grade: 3,
+      gradeLabel: "Developing",
+      verdict: "The unit is a facilitator day.",
+      confidence: "high",
+      confidenceReason: "Delivery, pricing, cost and renewal all carry numbers.",
+      scores,
+      reasoning,
+      recommendations: [],
+      extras: { ceilingInputs: inputs, lever: "Software: the self-serve scenario library." },
+    };
+  }
+
+  function render(inputs: CeilingInputs) {
+    return renderResultEmail({
+      toolName: unit.name,
+      toolNumber: unit.number,
+      full: unitView(inputs),
+      dimensions: unitDims,
+      extrasMeta: unit.extras,
+      savedUrl: SAVED,
+      deleteUrl: DELETE,
+    });
+  }
+
+  test("a computable ceiling renders the figure and the three assumption lines in text and html", () => {
+    const email = render(ceilingInputs);
+    for (const body of [email.text, email.html]) {
+      assert.ok(body.includes("CAD 380,000 per person per year"), body);
+      assert.ok(body.includes("Units per person per period: 1, one exercise a week"));
+      assert.ok(body.includes("Price per unit: 9,500, 9,500 CAD per exercise"));
+      assert.ok(body.includes("Periods per year: 40, forty weeks a year"));
+      assert.ok(body.includes("Revenue ceiling per head"));
+      assert.ok(body.includes("Software: the self-serve scenario library."));
+    }
+    assert.doesNotMatch(email.text, DASH_RE);
+    assert.doesNotMatch(email.html, DASH_RE);
+  });
+
+  test("a null input renders the cannot be computed sentence and the not supported marker", () => {
+    const email = render({ ...ceilingInputs, periodsPerYear: { value: null, assumption: "the text does not say" } });
+    for (const body of [email.text, email.html]) {
+      assert.ok(body.includes("The ceiling cannot be computed because the text did not give periods per year."), body);
+      assert.ok(body.includes("Periods per year: not supported by the text, the text does not say"));
+      assert.ok(body.includes("Units per person per period: 1, one exercise a week"));
+      assert.equal(body.includes("per person per year"), false);
+    }
   });
 });
 
