@@ -41,6 +41,8 @@ function parseMaybeJson(raw: unknown): unknown {
 export function readCompositeSummary(hash: Record<string, unknown> | null | undefined): CompositeSummary | null {
   if (!hash || typeof hash !== "object") return null;
   if (hash.tool !== BUILT_TO_SCALE_TOOL) return null;
+  // An Ask Summit composite is admin only; the image draws the empty frame for it.
+  if (hash.source === "ask-summit") return null;
   const total = Number(parseMaybeJson(hash.total));
   if (!Number.isFinite(total)) return null;
   const band = typeof hash.band === "string" ? hash.band : "";

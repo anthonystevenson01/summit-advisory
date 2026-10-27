@@ -96,14 +96,14 @@ describe("Count copy derives from the registry", () => {
 describe("Three paths and method copy", () => {
   const DASH_RE = /[\u2013\u2014]| - /;
 
-  test("ENTRY_PATHS has the three titles, hrefs and the coming next flag", () => {
+  test("ENTRY_PATHS has the three titles and hrefs, none marked coming next", () => {
     assert.deepEqual(ENTRY_PATHS.map((p) => p.title), ["Use a tool", "Score your own model", "Ask Summit to score it"]);
     assert.equal(ENTRY_PATHS[0].href, "#tools");
     assert.equal(ENTRY_PATHS[1].href, "/tools/built-to-scale");
-    assert.ok(ENTRY_PATHS[2].href.startsWith(`mailto:${CONTACT_EMAIL}`), ENTRY_PATHS[2].href);
-    assert.equal(ENTRY_PATHS[2].comingNext, true);
-    assert.equal(ENTRY_PATHS[0].comingNext, undefined);
-    assert.equal(ENTRY_PATHS[1].comingNext, undefined);
+    assert.equal(ENTRY_PATHS[2].href, "/tools/ask-summit");
+    assert.equal(ENTRY_PATHS[2].cta, "Ask Summit to score it");
+    assert.ok(CONTACT_EMAIL.includes("@"));
+    for (const p of ENTRY_PATHS) assert.equal(p.comingNext, undefined, p.title);
     assert.ok(ENTRY_PATHS[0].body.startsWith(PUBLIC_TOOL_COUNT_WORD_CAPITALISED), ENTRY_PATHS[0].body);
     for (const p of ENTRY_PATHS) assert.ok(p.cta.length > 0);
   });
@@ -120,10 +120,11 @@ describe("Three paths and method copy", () => {
     assert.ok(HUB_LEAD.startsWith(PUBLIC_TOOL_COUNT_WORD_CAPITALISED));
   });
 
-  test("the sitemap lists the Built to Scale? page and its method page", () => {
+  test("the sitemap lists the Built to Scale? page, its method page and the Ask Summit page", () => {
     const urls = sitemap().map((e) => e.url);
     assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/built-to-scale"));
     assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/built-to-scale/method"));
+    assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/ask-summit"));
   });
 });
 

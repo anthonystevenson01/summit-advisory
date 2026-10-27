@@ -16,6 +16,7 @@ import {
   verifyUnlockCookie,
 } from "@/app/lib/unlock";
 import { errorResponse } from "@/app/api/tools/[tool]/errors";
+import { validateSession } from "@/app/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,16 @@ export async function POST(req: NextRequest) {
     const run = await getCompositeRun(runId);
     if (!run) {
       return NextResponse.json({ error: "Run not found. It may have expired." }, { status: 404 });
+    }
+    // An Ask Summit composite is admin only: the session stands in for the
+    // unlock so the working can be stored, and nothing is emailed (no address).
+    const askSummit = run.source === "ask-summit";
+    if (askSummit) {
+      if (!(await validateSession())) {
+        return NextResponse.json({ error: "Run not found. It may have expired." }, { status: 404 });
+      }
+      const result = await detailModel(runId, { source: "web", ip: getClientIp(req), linkVerified: true });
+      return NextResponse.json({ ...result.full, emailed: false });
     }
     if (run.detailsAt && run.unlock) {
       const children = await getToolRuns(Object.values(run.children));
