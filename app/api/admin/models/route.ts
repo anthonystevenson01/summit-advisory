@@ -185,8 +185,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (body.fallback !== undefined && body.fallback !== null && body.fallback !== "") {
-      if (parsed.task !== "synthesis") {
-        return NextResponse.json({ error: "Only synthesis may have a fallback." }, { status: 400 });
+      if (parsed.task !== "synthesis" && parsed.task !== "builder-read") {
+        return NextResponse.json({ error: "Only synthesis and builder-read may have a fallback." }, { status: 400 });
       }
       if (typeof body.fallback !== "string" || !CURATED_MODELS.includes(body.fallback)) {
         return NextResponse.json({ error: "Fallback is not in the curated list." }, { status: 400 });

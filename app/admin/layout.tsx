@@ -43,6 +43,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <a href="/admin/runs" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             Runs
           </a>
+          <Link href="/admin/briefs" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Briefs
+          </Link>
           <a href="/admin/models" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             Models
           </a>
@@ -51,6 +54,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </a>
           <Link href="/admin/reports" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             Reports
+          </Link>
+          <Link href="/admin/stats" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Stats
           </Link>
         </div>
         <form action="/api/admin/logout" method="POST">
