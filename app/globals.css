@@ -126,8 +126,14 @@ body {
 /* Six text items need about 952px at the default spacing, more than the
    901px just above the hamburger breakpoint. From 901 to 1100px the side
    padding drops to 24px and the link padding to 12px, so the row needs about
-   832px and keeps 68px spare at 901px (51px with a 17px scrollbar). Above
-   1100px the nav is unchanged. This block must stay before the 900px block. */
+   832px and keeps 68px spare at 901px (51px with a 17px scrollbar). 1100px is
+   where the default spacing fits again with room to spare (measured: 149px
+   free at 1101px), so above it the nav is unchanged. The nowrap on .nav-link
+   and .nav-cta keeps two word labels (GTM Tools, Project Builder, Book a
+   Call) on one line: without it a squeezed row breaks them onto two lines
+   (measured: items 62px high against 41px). Adding a seventh item means
+   measuring again. This block must stay before the 900px block, so the
+   hamburger rules win at 900px and below. */
 @media (max-width: 1100px) {
   .nav { padding: 0 24px; }
   .nav-link { padding: 10px 12px; }

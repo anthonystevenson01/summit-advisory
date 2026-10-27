@@ -19,10 +19,6 @@ const nextConfig: NextConfig = {
   // landing URL is /scale-up-advisory?page=sme; the hub is static and ignores
   // it. Other ?page values are untouched. Keep this file to `import type`
   // only: the test suite loads it under Node's type stripping.
-  // The Project Builder moved from /tools/project-builder to /project-builder
-  // in October 2026. Resume links already emailed (?b=&t=) and shared ?src=
-  // tags point at the old address and rely on Next merging the query into the
-  // destination, so this entry must not be removed without a migration.
   async redirects() {
     return [
       {
@@ -31,6 +27,19 @@ const nextConfig: NextConfig = {
         destination: "/scale-up-advisory",
         permanent: true,
       },
+      // The Project Builder moved from /tools/project-builder to
+      // /project-builder in October 2026. Permanent (308) because the old
+      // address is retired: search engines move the listing across and
+      // browsers cache the hop. Resume links already emailed (?b=&t=) and
+      // shared ?src= tags point at the old address; they work only because
+      // Next carries the incoming query to the destination, where the page
+      // reads b, t and src on the client. Keep the entry unconditional (no
+      // `has` or `missing`) so every old link is caught. Do not remove it
+      // without a migration: those links stay in inboxes. Do not reuse
+      // /tools/project-builder either, as browsers that cached the 308 never
+      // request it again. The destination must equal PROJECT_BUILDER_PATH
+      // (asserted in __tests__/project-builder-path.test.ts); it is a literal
+      // because this file may only `import type`.
       {
         source: "/tools/project-builder",
         destination: "/project-builder",

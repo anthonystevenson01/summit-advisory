@@ -3,12 +3,22 @@
  * hero title, the step headings and ledes, the field labels, hints and
  * placeholders, the assist strip texts and button labels, the checklist
  * wording, the consent line, the confirmation line and the status lines,
- * plus the builder's public path. Pure, no imports. The prototype's wording with the house rules applied:
- * ASCII apostrophes, British spelling, no en or em dash (the catalogue test
- * walks every export).
+ * plus the builder's public path. Pure, no imports. The prototype's wording
+ * with the house rules applied: ASCII apostrophes, British spelling, no en or
+ * em dash (the catalogue test walks every export).
  */
 
-/** The builder's public path. Every link to the builder is built from this. */
+/**
+ * The builder's public path. Every link to the builder is built from this:
+ * the resume links in the save, unlock and reminder emails, the delete page's
+ * back link, the reset's replaceState, the /tools hub block, the sitemap, the
+ * canonical and the top nav item. One constant so the next move is one edit
+ * and a test can tie the redirect in next.config.ts to it.
+ *
+ * Links emailed before October 2026 point at the old address under /tools.
+ * They still work only because next.config.ts redirects it here with the
+ * query kept; changing this value needs a matching redirect for the old one.
+ */
 export const PROJECT_BUILDER_PATH = "/project-builder";
 
 export const HERO_TITLE = "Tell us what you want to build.";

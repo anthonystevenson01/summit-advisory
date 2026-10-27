@@ -592,10 +592,21 @@ npm run build     # strongest check: validates page exports, metadata and the re
 - Out of scope and still open: a relation from Project Briefs to the Companies and People databases; a privacy page; a session id in events; a resend path for a failed email; a retry button for a failed Notion write beyond saving the status; a shared HTML helper for the two delete routes; a `FALLBACK_TASKS` constant so the models client and the admin route stop hard coding which keys take a fallback; purging `ai:calls` entries on delete; a longer call log. Release 2 adds the report studio, the draft report, the AI review and the diagram library; Release 3 the Google Doc export and the background business research.
 
 **Moved to /project-builder, October 2026:**
-- The page now lives at `/project-builder`, with a "Project Builder" item between GTM Tools and Blog in the top navigation on every page that renders `SiteNav`, desktop and mobile.
-- `next.config.ts` redirects `/tools/project-builder` permanently (308) to `/project-builder` and Next carries the query, so emailed resume links and `?src=` tags keep working. The redirect must stay: removing it needs a migration, and browsers have cached the 308.
-- Every link to the builder is built from `PROJECT_BUILDER_PATH` in `app/lib/project-builder/copy.ts`: the resume links, the delete page's back link, the reset, the hub block, the sitemap and the canonical.
-- Between 901 and 1100px the nav uses tighter spacing (24px side padding, 12px link padding) so six items fit on one line; above 1100px it is unchanged.
+
+**Trigger:** A visitor opens `/project-builder` from the "Project Builder" item in the top navigation (between GTM Tools and Blog, desktop row and mobile menu, on every page that renders `SiteNav`), from the "Building something?" block on `/tools`, or through an old `/tools/project-builder` link: a resume link emailed before the move, a shared `?src=` tag or a bookmark.
+
+**Service/Function:**
+- `next.config.ts` redirects `/tools/project-builder` permanently (308) to `/project-builder`. The entry is unconditional and Next carries the incoming query across, so `/tools/project-builder?b=...&t=...&src=...` lands on `/project-builder?b=...&t=...&src=...`, where the page reads `b`, `t` and `src` on the client as before. `/tools/project-builder/` with a trailing slash takes two hops (slash removal, then the redirect).
+- `app/project-builder/page.tsx` (static) and `app/project-builder/layout.tsx` (the `.toolkit` wrapper the page used to get from `app/tools/layout.tsx`).
+- `PROJECT_BUILDER_PATH` in `app/lib/project-builder/copy.ts` is the one place the path is written. It feeds the resume links (`app/api/project-builder/brief-auth.ts`, `app/api/admin/briefs/[id]/route.ts`, `app/api/admin/daily-report/route.ts`), the delete page's back link, the reset's `replaceState` in `ProjectBuilderPage.tsx`, `BUILDER_BLOCK` in `app/tools/hub-copy.ts`, the sitemap (0.8), the canonical and `SiteNav`.
+- `app/globals.css`: between 901 and 1100px the nav uses 24px side padding and 12px link padding so the six items fit on one line; above 1100px it is unchanged.
+- `__tests__/project-builder-path.test.ts` asserts the constant and that the redirect's destination equals it, is permanent and has no conditions.
+
+**Failure mode:** Removing or narrowing the redirect breaks every resume link and `?src=` tag already sent: they 404 and the prospect cannot get back to a saved brief. The redirect must stay; a migration (fresh links emailed to every open brief) is the only safe way to drop it. Changing `PROJECT_BUILDER_PATH` without a matching redirect for the old value does the same to links sent since October 2026; the path test fails if the redirect and the constant drift.
+
+**Template/Config:** No env vars or config keys. The path is `PROJECT_BUILDER_PATH`; the redirect's destination is the same value as a literal, because `next.config.ts` may only `import type`.
+
+**To disable:** No runtime toggle. The nav item lives in `app/components/SiteNav.tsx` and the redirect in `next.config.ts`, so either change needs a deploy. To hide the nav item, remove both `Link`s for it and redeploy; the page and the redirect keep working. Do not remove the redirect (see Failure mode).
 
 ---
 
