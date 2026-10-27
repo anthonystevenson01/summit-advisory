@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/daily-report",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/admin/ask-summit/retention",
+      "schedule": "30 1 * * *"
     }
   ]
 }

@@ -37,6 +37,7 @@ type ModelsData = {
   catalog: CatalogModel[];
   calibration: Record<string, CalibrationEntry>;
   usage: Record<string, { calls: number; cost: number }>;
+  spend: { month: string; cost: number; threshold: number | null; alertedAt: string | null };
 };
 
 const GATED_TASKS: RoutingTask[] = ["scoring", "synthesis"];
@@ -123,6 +124,8 @@ export default function ModelsClient() {
   const [overrideTask, setOverrideTask] = useState<RoutingTask>("scoring");
   const [overrideTool, setOverrideTool] = useState<string>(PUBLIC_TOOLS[0]?.slug ?? "icp");
   const [maxTokensDraft, setMaxTokensDraft] = useState<Record<string, string>>({});
+  const [thresholdDraft, setThresholdDraft] = useState<string | null>(null);
+  const [savingThreshold, setSavingThreshold] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/models");
@@ -170,9 +173,32 @@ export default function ModelsClient() {
     });
   }
 
+  async function saveThreshold() {
+    if (!data) return;
+    setSavingThreshold(true);
+    setError("");
+    const value = thresholdDraft ?? (data.spend.threshold === null ? "" : String(data.spend.threshold));
+    const res = await fetch("/api/admin/ask-summit/spend-threshold", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ threshold: value }),
+    });
+    if (res.ok) {
+      const next = (await res.json()) as { threshold: number | null };
+      setData((prev) => (prev ? { ...prev, spend: { ...prev.spend, threshold: next.threshold } } : prev));
+      setThresholdDraft(null);
+    } else {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(err.error ?? "Save failed");
+    }
+    setSavingThreshold(false);
+  }
+
   if (!data) {
     return error ? <p style={{ color: BRAND.red, fontSize: 13 }}>{error}</p> : <p style={{ color: BRAND.mid, fontSize: 13 }}>Loading</p>;
   }
+
+  const thresholdValue = thresholdDraft ?? (data.spend.threshold === null ? "" : String(data.spend.threshold));
 
   const renderRow = (key: string, task: RoutingTask, isTaskRow: boolean) => {
     const { cfg, source } = resolveForDisplay(data, key);
@@ -303,6 +329,32 @@ export default function ModelsClient() {
 
   return (
     <div>
+      <div style={{ marginBottom: 16, background: BRAND.white, borderRadius: 10, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: BRAND.darkGreen }}>
+          Spend this month ({data.spend.month}): ${data.spend.cost.toFixed(2)}
+        </span>
+        <label style={{ fontSize: 13, color: BRAND.dark, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          Alert threshold: $
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={thresholdValue}
+            disabled={savingThreshold}
+            onChange={(e) => setThresholdDraft(e.target.value)}
+            style={{ ...controlStyle, width: 110 }}
+          />
+        </label>
+        <button type="button" disabled={savingThreshold} onClick={() => void saveThreshold()} style={buttonStyle}>
+          Save
+        </button>
+        <span style={{ fontSize: 11, color: BRAND.mid }}>
+          {data.spend.alertedAt
+            ? `Alert sent on ${formatDate(data.spend.alertedAt)}. The daily report emails once a month when the spend passes the threshold; pause Ask Summit if it is unexpected.`
+            : "The daily report emails once a month when the spend passes the threshold; blank means no alert. Pause Ask Summit on its queue page if spend is unexpected."}
+        </span>
+      </div>
+
       <div style={{ background: BRAND.white, borderRadius: 10, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>

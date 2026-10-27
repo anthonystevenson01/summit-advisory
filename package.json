@@ -9,11 +9,15 @@
     "lint": "eslint",
     "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"__tests__/*.test.ts\"",
     "calibrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/calibrate.ts",
-    "seed-report": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/seed-report.ts"
+    "seed-report": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/seed-report.ts",
+    "process-ask": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/process-ask.ts"
   },
   "dependencies": {
+    "@upstash/qstash": "2.12.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/blob": "2.8.2",
+    "fflate": "0.8.3",
     "next": "16.1.5",
     "nodemailer": "^8.0.2",
     "openai": "^7.3.0",

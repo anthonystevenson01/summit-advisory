@@ -52,6 +52,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Link href="/admin/reports" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
             Reports
           </Link>
+          <Link href="/admin/ask-summit" style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)", textDecoration: "none" }}>
+            Ask Summit
+          </Link>
         </div>
         <form action="/api/admin/logout" method="POST">
           <button

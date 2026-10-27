@@ -64,13 +64,24 @@ export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
   scoring: "One call per tool per run. Scores every dimension 1 to 5 against the rubric and writes the verdict and confidence. Structured JSON at temperature 0. No fallback: a silent model switch here would move grades.",
   details: "The full view after unlock: per-dimension reasoning, recommendations for dimensions scoring 3 or below, and the tool's extras. Structured JSON at temperature 0.",
   synthesis: "One call per Built to Scale? run that writes the five comments, verdict, strongest, weakest and one change. Live since Release 3a. Has one fallback so an outage does not drop the headline.",
-  extraction: "Ask Summit: reads crawled pages and documents and drafts the five inputs. Release 3b; nothing calls it yet.",
+  extraction: "Ask Summit: reads the crawled pages and the documents (PDFs as files) and drafts the five parts with evidence and confidence. Live since Release 3b. Temperature 0.",
 };
 
 export const MODEL_CONFIG_KEY = "admin:model-config";
 export const AI_CALLS_KEY = "ai:calls";
 export const CALIBRATION_KEY = "admin:calibration";
 const AI_CALLS_MAX = 2000;
+
+/** One PDF sent to the model as a file part on the extraction key: 20 MB each, 30 MB together. */
+export const MODEL_FILE_MAX_BYTES = 20 * 1024 * 1024;
+export const MODEL_FILES_MAX_BYTES = 30 * 1024 * 1024;
+
+export interface ModelFile {
+  name: string;
+  mediaType: "application/pdf";
+  /** Base64 without a data-URL prefix. */
+  data: string;
+}
 
 export class LlmNotConfiguredError extends Error {
   constructor() {
@@ -235,6 +246,8 @@ export interface AiCallLog {
   key: string;
   model: string;
   runId: string | null;
+  /** The Ask Summit request a processing call belongs to; null or absent for every other caller. */
+  requestId?: string | null;
   ms: number;
   promptTokens: number;
   completionTokens: number;
@@ -262,8 +275,12 @@ export async function logCall(entry: AiCallLog): Promise<void> {
 export interface CallModelArgs<T> {
   routingKey: string;
   runId: string | null;
+  /** Tags the call log with the Ask Summit request; no behaviour. */
+  requestId?: string | null;
   system: string;
   user: string;
+  /** PDFs sent as file parts. Accepted on the extraction key only; sized against MODEL_FILE_MAX_BYTES and MODEL_FILES_MAX_BYTES. */
+  files?: ModelFile[];
   schema: NamedSchema;
   /** The single validator for the answer; a throw here is a 502 at the route. */
   parse: (raw: unknown) => T;
@@ -371,6 +388,25 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
   const temperature = fixedTemperature ? 0 : args.temperature;
   const maxTokens = route.maxTokens ?? args.maxTokens ?? 2000;
 
+  // File parts (PDFs) are the extraction key's alone and are sized before
+  // any call so a request can never exceed the provider's body cap. Every
+  // other caller passes no files and its user message stays a string.
+  const files = args.files ?? [];
+  if (files.length > 0 && route.task !== "extraction") throw new Error("files are accepted on the extraction key only");
+  let filesBytes = 0;
+  for (const file of files) {
+    const bytes = Math.floor((file.data.length * 3) / 4);
+    filesBytes += bytes;
+    if (bytes > MODEL_FILE_MAX_BYTES || filesBytes > MODEL_FILES_MAX_BYTES) throw new Error("file too large for the model");
+  }
+  const userContent: unknown =
+    files.length === 0
+      ? args.user
+      : [
+          { type: "text", text: args.user },
+          ...files.map((file) => ({ type: "file", file: { filename: file.name, file_data: `data:${file.mediaType};base64,${file.data}` } })),
+        ];
+
   const body: Record<string, unknown> = {
     model: route.model,
     max_tokens: maxTokens,
@@ -379,7 +415,7 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
         role: "system",
         content: [{ type: "text", text: args.system, cache_control: { type: "ephemeral" } }],
       },
-      { role: "user", content: args.user },
+      { role: "user", content: userContent },
     ],
     response_format: { type: "json_schema", json_schema: args.schema },
   };
@@ -389,7 +425,12 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
   // would be spent on reasoning and the content would come back empty.
   body.reasoning = route.reasoning ? { effort: route.reasoning } : { enabled: false };
   if (route.fallback) body.models = [route.model, route.fallback];
-  if (args.web) body.plugins = [{ id: "web" }];
+  const plugins: Array<Record<string, unknown>> = [];
+  if (args.web) plugins.push({ id: "web" });
+  // The native engine lets the model read a deck's pages as images; it is
+  // charged as input tokens. `pdf-text` is the free text-only alternative.
+  if (files.length > 0) plugins.push({ id: "file-parser", pdf: { engine: "native" } });
+  if (plugins.length > 0) body.plugins = plugins;
 
   const started = Date.now();
   let answeredBy = route.model;
@@ -449,6 +490,7 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
       key: args.routingKey,
       model: answeredBy,
       runId: args.runId,
+      requestId: args.requestId ?? null,
       ms,
       ...usage,
       ok: true,
@@ -463,6 +505,7 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
       key: args.routingKey,
       model: answeredBy,
       runId: args.runId,
+      requestId: args.requestId ?? null,
       ms: Date.now() - started,
       ...usage,
       ok: false,

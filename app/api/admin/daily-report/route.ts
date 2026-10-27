@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/app/lib/redis";
-import { sendMail } from "@/app/lib/mail";
+import { isMailConfigured, sendMail } from "@/app/lib/mail";
+import { getMonthSpend, getSpendThreshold, markSpendAlerted, monthKey, wasSpendAlerted } from "@/app/lib/ask-summit/admin";
+import { spendAlertDue } from "@/app/lib/ask-summit/spend";
+import { originFromHeaders } from "@/app/lib/report-notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +45,39 @@ function formatLead(u: { name?: unknown; email?: unknown; company?: unknown }): 
   return company ? `${who}, ${company}` : who;
 }
 
+type SpendAlertOutcome = "sent" | "failed" | "not-due" | "unconfigured";
+
+/**
+ * The monthly spend alert (Release 3b): once per UTC month, when this
+ * month's spend from `ai:calls` has reached the threshold set on
+ * /admin/models, one plain text email to NOTIFY_EMAIL. The flag is set
+ * only after a send, so a failed send retries the next day. Runs before
+ * the zero-lead early return so a quiet day still alerts.
+ */
+async function spendAlert(origin: string): Promise<SpendAlertOutcome> {
+  const now = Date.now();
+  const month = monthKey(now);
+  const [spend, threshold, alerted] = await Promise.all([getMonthSpend(now), getSpendThreshold(), wasSpendAlerted(month)]);
+  if (!spendAlertDue({ spend, threshold, alerted })) return "not-due";
+  const to = process.env.NOTIFY_EMAIL?.trim();
+  if (!to || !isMailConfigured()) return "unconfigured";
+  const text = [
+    `Spend so far in ${month}: $${spend.toFixed(2)}`,
+    `Threshold: $${(threshold ?? 0).toFixed(2)}`,
+    `Pause Ask Summit at ${origin}/admin/ask-summit if this is unexpected.`,
+    `Routing table: ${origin}/admin/models`,
+    "The figure comes from the last 2000 logged model calls; calls whose cost the provider did not report count as zero, so it is a lower bound.",
+  ].join("\n");
+  try {
+    await sendMail({ from: to, to, subject: "Summit: model spend this month passed the threshold", text });
+  } catch (err) {
+    console.error("daily-report: spend alert failed", err instanceof Error ? err.message : err);
+    return "failed";
+  }
+  await markSpendAlerted(month);
+  return "sent";
+}
+
 function formatStamp(iso: string): string {
   try {
     const d = new Date(iso);
@@ -66,6 +102,14 @@ export async function GET(req: NextRequest) {
     if (auth !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+  }
+
+  let spendAlertOutcome: SpendAlertOutcome = "not-due";
+  try {
+    spendAlertOutcome = await spendAlert(originFromHeaders(req.headers));
+  } catch (err) {
+    console.error("daily-report: spend check failed", err instanceof Error ? err.message : err);
+    spendAlertOutcome = "failed";
   }
 
   // Read both unlock lists in parallel
@@ -100,7 +144,7 @@ export async function GET(req: NextRequest) {
 
   if (total === 0) {
     // Silent on zero-lead days — per the user's spec.
-    return NextResponse.json({ ok: true, count: 0, skipped: "no leads in last 24h" });
+    return NextResponse.json({ ok: true, count: 0, skipped: "no leads in last 24h", spendAlert: spendAlertOutcome });
   }
 
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, NOTIFY_EMAIL } = process.env;
@@ -164,5 +208,5 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, count: total, icp: recentIcp.length, gtm: recentGtm.length });
+  return NextResponse.json({ ok: true, count: total, icp: recentIcp.length, gtm: recentGtm.length, spendAlert: spendAlertOutcome });
 }

@@ -24,7 +24,15 @@ export type EventName =
   | "report_unpublished"
   | "report_opened"
   | "report_tool_rerun"
-  | "book_call_clicked";
+  | "book_call_clicked"
+  | "ask_submitted"
+  | "ask_processing"
+  | "ask_processed"
+  | "ask_failed"
+  | "ask_rerun"
+  | "ask_data_deleted"
+  | "ask_paused"
+  | "ask_resumed";
 
 export const EVENTS_KEY = "events";
 const EVENTS_MAX = 50_000;

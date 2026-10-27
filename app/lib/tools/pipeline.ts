@@ -71,6 +71,8 @@ export interface PipelineContext {
   cookieUnlock?: { emailHash: string };
   /** True when the saved-link token verified for this run id. */
   linkVerified?: boolean;
+  /** The Ask Summit request behind a processing call; tags the call log only. */
+  requestId?: string;
 }
 
 export type UnlockVia = "form" | "cookie" | "link";
@@ -218,6 +220,7 @@ export async function scoreRun(
   const call = await callModel({
     routingKey: `scoring:${entry.slug}`,
     runId,
+    requestId: ctx.requestId ?? null,
     system: buildScoringSystem(entry, rubric),
     user: buildScoringUser(entry, inputs),
     schema: scoringSchema(entry),
@@ -302,6 +305,7 @@ export async function detailRun(runId: string, ctx: PipelineContext): Promise<De
   const call = await callModel({
     routingKey: `details:${entry.slug}`,
     runId: run.id,
+    requestId: ctx.requestId ?? null,
     system: buildDetailsSystem(entry, rubric, run.scores),
     user: buildDetailsUser(entry, run.inputs),
     schema: detailsSchema(entry),
