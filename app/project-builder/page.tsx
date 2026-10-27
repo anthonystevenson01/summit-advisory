@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import SiteNav from "@/app/components/SiteNav";
 import ToolkitFooter from "@/app/components/toolkit/ToolkitFooter";
 import ProjectBuilderPage from "@/app/components/project-builder/ProjectBuilderPage";
+import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
 
-const CANONICAL = "https://summitstrategyadvisory.com/tools/project-builder";
+const CANONICAL = `https://summitstrategyadvisory.com${PROJECT_BUILDER_PATH}`;
 const TITLE = "Project Builder: define your software project and get a brief from Summit";
 const DESCRIPTION =
   "Define a software project in six steps, with a one tap suggestion on every step. Save it, come back on any device, and submit it. Anthony sends you the project brief within two working days.";
@@ -45,9 +45,10 @@ const webAppSchema = {
 };
 
 /**
- * /tools/project-builder: the public builder inside the toolkit chrome
- * (SiteNav, the back link to /tools, ToolkitFooter) with the same metadata
- * shape as the tool pages and a WebApplication ld+json block.
+ * /project-builder: the public builder on a page of its own, with its own
+ * chrome (SiteNav with the Project Builder item active, ToolkitFooter), the
+ * same metadata shape as the tool pages and a WebApplication ld+json block.
+ * The .toolkit wrapper comes from the layout beside this page.
  *
  * Static on purpose: this page reads no searchParams, so the resume link's
  * `b` and `t` and the `src` tag are read on the client by a loader under
@@ -60,13 +61,8 @@ export default function ProjectBuilderRoute() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }} />
-      <SiteNav activePage="tools" />
+      <SiteNav activePage="project-builder" />
       <div className="page">
-        <div style={{ background: "var(--forest)", padding: "14px 48px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <Link href="/tools" className="inner-back" style={{ marginBottom: 0 }}>
-            &larr; All GTM Tools
-          </Link>
-        </div>
         <ProjectBuilderPage />
         <ToolkitFooter />
       </div>

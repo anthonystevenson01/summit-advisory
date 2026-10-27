@@ -17,6 +17,7 @@ import { redactAddresses } from "@/app/lib/tools/result-email";
 import { getUnlockSecret, issueBriefDeleteToken, issueBriefLinkToken, verifyBriefLinkToken } from "@/app/lib/unlock";
 import { BRIEF_ID_PATTERN, isLocked } from "@/app/lib/project-builder/brief";
 import type { BriefEmail, EmailContact } from "@/app/lib/project-builder/emails";
+import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
 import { BRIEF_LOCKED_MESSAGE, RATE_LIMIT_MESSAGE } from "./errors";
 
 export type Body = Record<string, unknown>;
@@ -92,7 +93,7 @@ export function briefLinks(origin: string, id: string, emailHash: string): Brief
   if (!token || !deleteToken) return null;
   return {
     token,
-    resumeUrl: `${origin}/tools/project-builder?b=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`,
+    resumeUrl: `${origin}${PROJECT_BUILDER_PATH}?b=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`,
     deleteUrl: `${origin}/api/project-builder/delete?e=${encodeURIComponent(emailHash)}&t=${encodeURIComponent(deleteToken)}`,
   };
 }

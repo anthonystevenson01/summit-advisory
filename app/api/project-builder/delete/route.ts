@@ -4,6 +4,7 @@ import { deleteBriefsByEmail } from "@/app/lib/briefs";
 import { track } from "@/app/lib/events";
 import { verifyBriefDeleteToken } from "@/app/lib/unlock";
 import { archiveBriefPage } from "@/app/lib/project-builder-notion";
+import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ function renderPage({ title, body }: { title: string; body: string }): string {
 
 const h1 = (text: string) => `<h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:${BRAND.darkGreen};">${text}</h1>`;
 const p = (text: string) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${BRAND.dark};">${text}</p>`;
-const backLink = `<p style="margin:20px 0 0;font-size:14px;"><a href="/tools/project-builder" style="color:${BRAND.teal};">Back to the Project Builder</a></p>`;
+const backLink = `<p style="margin:20px 0 0;font-size:14px;"><a href="${PROJECT_BUILDER_PATH}" style="color:${BRAND.teal};">Back to the Project Builder</a></p>`;
 
 function htmlResponse(html: string, status: number): NextResponse {
   return new NextResponse(html, {

@@ -19,12 +19,21 @@ const nextConfig: NextConfig = {
   // landing URL is /scale-up-advisory?page=sme; the hub is static and ignores
   // it. Other ?page values are untouched. Keep this file to `import type`
   // only: the test suite loads it under Node's type stripping.
+  // The Project Builder moved from /tools/project-builder to /project-builder
+  // in October 2026. Resume links already emailed (?b=&t=) and shared ?src=
+  // tags point at the old address and rely on Next merging the query into the
+  // destination, so this entry must not be removed without a migration.
   async redirects() {
     return [
       {
         source: "/",
         has: [{ type: "query", key: "page", value: "sme" }],
         destination: "/scale-up-advisory",
+        permanent: true,
+      },
+      {
+        source: "/tools/project-builder",
+        destination: "/project-builder",
         permanent: true,
       },
     ];

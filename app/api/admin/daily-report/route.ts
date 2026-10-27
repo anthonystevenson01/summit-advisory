@@ -6,6 +6,7 @@ import { getUnlockSecret, issueBriefDeleteToken, issueBriefLinkToken } from "@/a
 import { archiveBriefPage } from "@/app/lib/project-builder-notion";
 import { BRIEF_DRAFT_TTL_SECONDS, statusLabel } from "@/app/lib/project-builder/brief";
 import { renderReminderEmail } from "@/app/lib/project-builder/emails";
+import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
 import { buildRequirements, countByPriority, projectName } from "@/app/lib/project-builder/requirements";
 
 export const runtime = "nodejs";
@@ -78,7 +79,7 @@ async function sendReminders(now: number): Promise<number> {
     const origin = siteOrigin();
     const email = renderReminderEmail({
       state: b.state,
-      resumeUrl: `${origin}/tools/project-builder?b=${encodeURIComponent(b.id)}&t=${encodeURIComponent(token)}`,
+      resumeUrl: `${origin}${PROJECT_BUILDER_PATH}?b=${encodeURIComponent(b.id)}&t=${encodeURIComponent(token)}`,
       deleteUrl: `${origin}/api/project-builder/delete?e=${encodeURIComponent(b.contact.emailHash)}&t=${encodeURIComponent(deleteToken)}`,
     });
     try {

@@ -7,6 +7,7 @@
  */
 import { PUBLIC_TOOLS, PUBLIC_TOOL_COUNT_WORD_CAPITALISED } from "../lib/tools/registry.ts";
 import { CONTACT_EMAIL } from "../lib/brand.ts";
+import { PROJECT_BUILDER_PATH } from "../lib/project-builder/copy.ts";
 
 const COUNT = PUBLIC_TOOL_COUNT_WORD_CAPITALISED;
 
@@ -84,7 +85,7 @@ export const BUILDER_BLOCK = {
   label: "Project Builder",
   title: "Building something?",
   body: "Define your project and Summit will send you a brief.",
-  href: "/tools/project-builder",
+  href: PROJECT_BUILDER_PATH,
   cta: "Start your brief",
 } as const;
 

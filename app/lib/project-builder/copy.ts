@@ -2,11 +2,14 @@
  * Every visible Project Builder string that is not catalogue data: the
  * hero title, the step headings and ledes, the field labels, hints and
  * placeholders, the assist strip texts and button labels, the checklist
- * wording, the consent line, the confirmation line and the status lines.
- * Pure, no imports. The prototype's wording with the house rules applied:
+ * wording, the consent line, the confirmation line and the status lines,
+ * plus the builder's public path. Pure, no imports. The prototype's wording with the house rules applied:
  * ASCII apostrophes, British spelling, no en or em dash (the catalogue test
  * walks every export).
  */
+
+/** The builder's public path. Every link to the builder is built from this. */
+export const PROJECT_BUILDER_PATH = "/project-builder";
 
 export const HERO_TITLE = "Tell us what you want to build.";
 

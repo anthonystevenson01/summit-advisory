@@ -18,7 +18,7 @@ import {
 } from "../app/lib/project-builder/emails.ts";
 
 const DASH_RE = /[–—]/;
-const RESUME = "https://summitstrategyadvisory.com/tools/project-builder?b=brief_0123456789abcdef&t=abc.def";
+const RESUME = "https://summitstrategyadvisory.com/project-builder?b=brief_0123456789abcdef&t=abc.def";
 const VIEW = RESUME;
 const DELETE = "https://summitstrategyadvisory.com/api/project-builder/delete?e=0123&t=ghi.jkl";
 const ADMIN = "https://summitstrategyadvisory.com/admin/briefs/brief_0123456789abcdef";

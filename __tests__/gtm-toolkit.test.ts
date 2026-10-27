@@ -133,15 +133,18 @@ describe("Project Builder block", () => {
   const DASH_RE = /[\u2013\u2014]| - /;
 
   test("links to the builder and carries no dash", () => {
-    assert.equal(BUILDER_BLOCK.href, "/tools/project-builder");
+    assert.equal(BUILDER_BLOCK.href, "/project-builder");
     assert.doesNotMatch(BUILDER_BLOCK.title, DASH_RE);
     assert.doesNotMatch(BUILDER_BLOCK.body, DASH_RE);
     assert.ok(BUILDER_BLOCK.cta.length > 0);
   });
 
-  test("the sitemap lists the builder", () => {
-    const urls = sitemap().map((e) => e.url);
-    assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/project-builder"));
+  test("the sitemap lists the builder at its own address and not the old one", () => {
+    const entries = sitemap();
+    const entry = entries.find((e) => e.url === "https://summitstrategyadvisory.com/project-builder");
+    assert.ok(entry, "the sitemap does not list /project-builder");
+    assert.equal(entry.priority, 0.8);
+    assert.ok(!entries.some((e) => e.url === "https://summitstrategyadvisory.com/tools/project-builder"));
   });
 });
 

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 // Relative with the .ts extension: __tests__/scale-up-advisory.test.ts loads this file under plain Node.
 import { PUBLIC_TOOLS } from "./lib/tools/registry.ts";
+import { PROJECT_BUILDER_PATH } from "./lib/project-builder/copy.ts";
 
 const BASE = "https://summitstrategyadvisory.com";
 
@@ -22,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     { url: `${BASE}/tools/built-to-scale`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE}/tools/built-to-scale/method`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE}/tools/project-builder`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}${PROJECT_BUILDER_PATH}`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE}/newsletter`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
   ];
 }
