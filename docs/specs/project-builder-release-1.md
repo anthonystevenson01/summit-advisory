@@ -1,5 +1,5 @@
 ---
-# Task Spec — Project Builder, Release 1: the public builder, save and resume, submit and hand-off
+# Task Spec: Project Builder, Release 1: the public builder, save and resume, submit and hand-off
 # Source: the "Project Builder: design doc" Claude Doc (23 October 2026) and the prototype page saved at docs/prototypes/project-builder-prototype.html
 # Not in this release: the report studio, the draft report and its suggested diagrams, the AI review, the Google Doc, and the background business research with web search and Clay. Those are Releases 2 and 3.
 # Owner: anthonystevenson0
