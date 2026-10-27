@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BRAND } from "@/app/lib/brand";
 import { deleteRunsByEmail } from "@/app/lib/runs";
+import { deleteBlobs } from "@/app/lib/ask-summit/blobs";
+import { deleteAskRequestsByEmail, listAskRequestsByEmail } from "@/app/lib/ask-summit/store";
 import { track } from "@/app/lib/events";
 import { UNLOCK_COOKIE, unlockCookieOptions, verifyDeleteToken, verifyUnlockCookie } from "@/app/lib/unlock";
 
@@ -85,8 +87,11 @@ function confirmPage(emailHash: string, token: string): NextResponse {
   return htmlResponse(renderPage({ title: "Delete my data", body }), 200);
 }
 
-function donePage(count: number): NextResponse {
-  const line = count === 0 ? "Done. There was nothing stored under this address." : `Done. ${count} result${count === 1 ? "" : "s"} deleted.`;
+function donePage(count: number, requests: number): NextResponse {
+  let line: string;
+  if (count === 0 && requests === 0) line = "Done. There was nothing stored under this address.";
+  else if (requests > 0) line = `Done. ${count} result${count === 1 ? "" : "s"} and ${requests} request${requests === 1 ? "" : "s"} deleted.`;
+  else line = `Done. ${count} result${count === 1 ? "" : "s"} deleted.`;
   const body = h1("Done") + p(line) + backLink;
   return htmlResponse(renderPage({ title: "Done", body }), 200);
 }
@@ -117,15 +122,29 @@ export async function POST(req: NextRequest) {
   if (!ok) return invalidPage();
 
   let count: number;
+  let requests: string[] = [];
   try {
     count = await deleteRunsByEmail(ok.emailHash);
+    // Ask Summit requests under the hash: the blobs first (a failure is
+    // logged and the sweep catches them later), then the records, their
+    // data keys and both index entries. The composite runs and the reports
+    // built from them are not touched.
+    const askRecords = await listAskRequestsByEmail(ok.emailHash);
+    const urls = askRecords.flatMap((r) => (r.dataDeleted ? [] : r.files.map((f) => f.url)));
+    try {
+      await deleteBlobs(urls);
+    } catch (err) {
+      console.error("data delete: blob deletion failed", err instanceof Error ? err.message.slice(0, 200) : err);
+    }
+    requests = await deleteAskRequestsByEmail(ok.emailHash);
   } catch (err) {
     console.error("data delete: run deletion failed", err instanceof Error ? err.message : err);
     return errorPage();
   }
-  void track("data_deleted", { count });
+  void track("data_deleted", { count, requests: requests.length });
+  for (const requestId of requests) void track("ask_data_deleted", { requestId, reason: "delete-link" });
 
-  const res = donePage(count);
+  const res = donePage(count, requests.length);
   // A visitor who deletes their data should not keep a cookie whose hash now
   // points at nothing: their next details request would silently re-index
   // them. Only a cookie carrying this hash is cleared, so a different

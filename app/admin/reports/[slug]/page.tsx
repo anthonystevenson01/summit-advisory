@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import RowsEditor, { type EditorRow } from "./RowsEditor";
 import SlugField from "./SlugField";
+import DraftedInputs, { type DraftedInputsProps } from "./DraftedInputs";
+import { getAskRequest, getDocs, getDraft, getPages } from "@/app/lib/ask-summit/store";
 import { getReport } from "@/app/lib/reports";
 import { getCompositeRun, getToolRuns } from "@/app/lib/runs";
 import { BTS_PARTS } from "@/app/lib/tools/built-to-scale-method";
@@ -67,6 +69,24 @@ export default async function ReportEditorPage({ params, searchParams }: { param
     console.error("Admin report editor run read error", err instanceof Error ? err.message : err);
   }
 
+  // The Ask Summit request behind the report, when there is one: the record,
+  // the draft, the page list (no texts) and the documents, read together.
+  let ask: Omit<DraftedInputsProps, "slug"> | null = null;
+  if (report.askRequestId) {
+    ask = { request: null, draft: null, pages: null, docs: null };
+    try {
+      const [request, draft, pages, docs] = await Promise.all([
+        getAskRequest(report.askRequestId),
+        getDraft(report.askRequestId),
+        getPages(report.askRequestId, { withText: false }),
+        getDocs(report.askRequestId),
+      ]);
+      ask = { request, draft, pages, docs };
+    } catch (err) {
+      console.error("Admin report editor ask-summit read error", err instanceof Error ? err.message : err);
+    }
+  }
+
   const rows: EditorRow[] = report.rows.map((row) => ({
     key: row.key,
     name: BTS_PARTS.find((p) => p.key === row.key)?.name ?? row.key,
@@ -109,6 +129,13 @@ export default async function ReportEditorPage({ params, searchParams }: { param
               </>
             ) : (
               <span style={{ color: "#C0392B", fontWeight: 600 }}>Run not found.</span>
+            )}
+            {report.askRequestId && (
+              <>
+                <br />
+                <Link href="/admin/ask-summit" style={linkStyle}>From Ask Summit request {report.askRequestId}</Link>
+                {ask?.request ? `: ${ask.request.host}, ${ask.request.state}, ${ask.request.pageCount} pages, ${ask.request.docCount} documents` : ": request not found"}
+              </>
             )}
           </p>
         </div>
@@ -201,6 +228,12 @@ export default async function ReportEditorPage({ params, searchParams }: { param
           </a>
         </div>
       </form>
+
+      {ask && (
+        <div style={{ marginTop: 16 }}>
+          <DraftedInputs slug={report.slug} request={ask.request} draft={ask.draft} pages={ask.pages} docs={ask.docs} />
+        </div>
+      )}
     </div>
   );
 }

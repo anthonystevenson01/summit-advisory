@@ -75,6 +75,28 @@ export function getReportAccessLimiter() {
   });
 }
 
+// 2 Ask Summit submissions per email hash per day (Release 3b; each one commits a person's time)
+export function getAskEmailLimiter() {
+  const redis = getRedisForRateLimit();
+  if (!redis) return null;
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(2, "1 d"),
+    prefix: "rl:ask-email",
+  });
+}
+
+// 5 Ask Summit submissions per IP per day (Release 3b)
+export function getAskIpLimiter() {
+  const redis = getRedisForRateLimit();
+  if (!redis) return null;
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "1 d"),
+    prefix: "rl:ask-ip",
+  });
+}
+
 // ── Project Builder ──────────────────────────────────────────────────────────
 
 function builderLimiter(limit: number, window: "1 h" | "24 h", prefix: string) {

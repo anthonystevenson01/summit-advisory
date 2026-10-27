@@ -14,6 +14,7 @@ import { toCompositeFreeView, toCompositeFullView } from "@/app/lib/tools/built-
 import { AUTOMATED_LABEL, BUILT_TO_SCALE_TOOL, type CompositeRow } from "@/app/lib/tools/built-to-scale-method";
 import { plainDashes } from "@/app/lib/tools/result-email";
 import { UNLOCK_COOKIE, verifySavedLinkToken, verifyUnlockCookie } from "@/app/lib/unlock";
+import { validateSession } from "@/app/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +35,20 @@ async function loadRun(id: string) {
   }
 }
 
+/** An Ask Summit composite is the raw run the prospect must never see; only the admin session may open it. */
+async function adminMayView(run: { source: string }): Promise<boolean> {
+  if (run.source !== "ask-summit") return true;
+  try {
+    return await validateSession();
+  } catch {
+    return false;
+  }
+}
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
   const run = await loadRun(id);
-  if (!run) return { title: "Built to Scale? scorecard" };
+  if (!run || !(await adminMayView(run))) return { title: "Built to Scale? scorecard" };
   const title = `Built to Scale? ${run.total} of 25: ${run.band}`;
   const description = plainDashes(run.verdict);
   const url = `${BASE}/tools/built-to-scale/r/${run.id}`;
@@ -72,6 +83,7 @@ export default async function ResultPage({ params, searchParams }: { params: Par
   const { t } = await searchParams;
   const run = await loadRun(id);
   if (!run) notFound();
+  if (!(await adminMayView(run))) notFound();
 
   // A stranger holding the link to an unlocked run sees the free view only:
   // the full view needs the cookie together with the unlock on record and

@@ -91,8 +91,11 @@ export class NoToolsAvailableError extends Error {
 }
 
 export interface ScoreModelContext {
-  source: "web" | "calibration";
+  /** "ask-summit" persists and tracks as "web" does and stamps the record so its result surfaces stay admin only. */
+  source: "web" | "calibration" | "ask-summit";
   ip?: string;
+  /** The Ask Summit request behind a processing call; passed to every callModel as a log tag. */
+  requestId?: string;
   /** Epoch ms by which the route must have answered; the synthesis is refused or abandoned against it. */
   deadlineAt?: number;
 }
@@ -288,7 +291,7 @@ export async function scoreModel(body: unknown, ctx: ScoreModelContext): Promise
   if (!validated.ok) throw new InputError(validated.error);
   const { parts, quickMode } = validated;
 
-  const isWeb = ctx.source === "web";
+  const isWeb = ctx.source !== "calibration";
   const runId = isWeb ? newRunId() : `cal_${newRunId().slice(4)}`;
   if (isWeb) void track("bts_started", { quickMode, source: ctx.source });
 
@@ -308,7 +311,7 @@ export async function scoreModel(body: unknown, ctx: ScoreModelContext): Promise
   // failure never leaves a sibling call unobserved.
   const settled = await Promise.allSettled(
     candidates.map((entry) =>
-      scoreRun(entry.slug, composeToolInputs(entry, parts, quickMode), { source: childSource, ip: ctx.ip, parentId: runId }),
+      scoreRun(entry.slug, composeToolInputs(entry, parts, quickMode), { source: childSource, ip: ctx.ip, parentId: runId, requestId: ctx.requestId }),
     ),
   );
 
@@ -339,6 +342,7 @@ export async function scoreModel(body: unknown, ctx: ScoreModelContext): Promise
   const modelCall = callModel({
     routingKey: "synthesis",
     runId,
+    requestId: ctx.requestId ?? null,
     system: buildSynthesisSystem(rubric, ran, absentNames, quickMode),
     user: buildSynthesisUser(parts, quickMode, children),
     schema: synthesisSchema(),
@@ -379,7 +383,7 @@ export async function scoreModel(body: unknown, ctx: ScoreModelContext): Promise
     id: runId,
     tool: BUILT_TO_SCALE_TOOL,
     createdAt: new Date().toISOString(),
-    source: "web",
+    source: ctx.source === "ask-summit" ? "ask-summit" : "web",
     quickMode,
     inputs: quickMode ? { description: parts.pain } : { ...parts },
     children: Object.fromEntries(children.map((c) => [c.entry.slug, c.run.id])),

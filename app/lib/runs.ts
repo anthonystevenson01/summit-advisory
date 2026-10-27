@@ -101,7 +101,8 @@ export interface CompositeRunRecord {
   id: string;
   tool: typeof BUILT_TO_SCALE_TOOL;
   createdAt: string;
-  source: "web";
+  /** "ask-summit" marks a composite the Ask Summit processing made; its result surfaces are admin only. */
+  source: "web" | "ask-summit";
   quickMode: boolean;
   /** Five-part mode: the parts by part key. Quick mode: `{ description }`. */
   inputs: Record<string, string>;
@@ -254,7 +255,7 @@ function deserialiseComposite(hash: Record<string, unknown>): CompositeRunRecord
     id: String(r.id ?? ""),
     tool: BUILT_TO_SCALE_TOOL,
     createdAt: String(r.createdAt ?? ""),
-    source: "web",
+    source: r.source === "ask-summit" ? "ask-summit" : "web",
     quickMode: parsed.quickMode === true || parsed.quickMode === "true",
     inputs: r.inputs ?? {},
     children: r.children ?? {},

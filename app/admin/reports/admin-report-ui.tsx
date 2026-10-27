@@ -71,6 +71,12 @@ export const STATUS_LINES: Record<string, string> = {
   deleted: "Deleted.",
   exists: "A draft already exists for that run; this is it.",
   "not-found": "That report was not found.",
+  rerun: "Re-run complete. The rows were reset to the new run; previous edits to grades and comments are not kept.",
+  processed: "Processed.",
+  enqueued: "Queued for processing. QStash will call the processing route shortly.",
+  paused: "Paused. The form and the submit route now answer that Summit is not taking requests.",
+  resumed: "Resumed. Queued requests are not processed on their own; press Process now on each.",
+  "data-deleted": "The uploads and the crawled pages were deleted. The request, the draft, the run and the report are kept.",
 };
 
 export const ERROR_LINES: Record<string, string> = {
@@ -84,6 +90,11 @@ export const ERROR_LINES: Record<string, string> = {
   "run-not-found": "The run behind this report could not be read.",
   "not-found": "That report was not found.",
   failed: "The change could not be saved. Check the Redis variables.",
+  "rerun-invalid": "Every part needs at least 40 characters after the placeholder rule.",
+  "rerun-busy": "A re-run is already in progress for this request.",
+  "rerun-mismatch": "This report is not linked to that request.",
+  "enqueue-failed": "QStash did not accept the message; check QSTASH_TOKEN.",
+  "not-queued": "Only queued, failed or stale requests can be processed, and not one whose data was deleted.",
 };
 
 export function StatusLines({ status, error }: { status?: string; error?: string }) {

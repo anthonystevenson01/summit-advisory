@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/app/lib/redis";
 import { validateSession } from "@/app/lib/auth";
+import { getMonthSpend, getSpendThreshold, monthKey, spendAlertedAt } from "@/app/lib/ask-summit/admin";
 import {
   AI_CALLS_KEY,
   CALIBRATION_KEY,
@@ -95,13 +96,26 @@ async function getUsage(): Promise<Record<string, { calls: number; cost: number 
   return usage;
 }
 
+/** This month's spend, the alert threshold and when the month's alert went out, for the panel on /admin/models. */
+async function getSpend(): Promise<{ month: string; cost: number; threshold: number | null; alertedAt: string | null }> {
+  const now = Date.now();
+  const month = monthKey(now);
+  try {
+    const [cost, threshold, alertedAt] = await Promise.all([getMonthSpend(now), getSpendThreshold(), spendAlertedAt(month)]);
+    return { month, cost, threshold, alertedAt };
+  } catch {
+    return { month, cost: 0, threshold: null, alertedAt: null };
+  }
+}
+
 async function snapshot() {
   invalidateRouteCache();
-  const [config, catalog, calibration, usage] = await Promise.all([
+  const [config, catalog, calibration, usage, spend] = await Promise.all([
     getRouteConfig(),
     getCatalog(),
     getCalibrationState(),
     getUsage(),
+    getSpend(),
   ]);
   return {
     config,
@@ -111,6 +125,7 @@ async function snapshot() {
     catalog,
     calibration,
     usage,
+    spend,
   };
 }
 

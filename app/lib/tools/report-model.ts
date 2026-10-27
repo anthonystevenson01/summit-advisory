@@ -80,6 +80,8 @@ export interface ReportRecord {
   lastOpenedAt: string | null;
   openCount: number;
   rerunCount: number;
+  /** The Ask Summit request this report was drafted from, or null for a report made by hand. */
+  askRequestId: string | null;
 }
 
 /** A partial edit per dimension, as the editor form and the seed script supply it. */
@@ -377,6 +379,7 @@ export function readReportHash(hash: Record<string, unknown> | null | undefined)
     lastOpenedAt: nullableString(hash.lastOpenedAt),
     openCount: numberOf(hash.openCount),
     rerunCount: numberOf(hash.rerunCount),
+    askRequestId: nullableString(hash.askRequestId),
   };
 }
 

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/app/lib/redis";
 import { isMailConfigured, resultFromAddress, sendMail } from "@/app/lib/mail";
+import { getMonthSpend, getSpendThreshold, markSpendAlerted, monthKey, wasSpendAlerted } from "@/app/lib/ask-summit/admin";
+import { spendAlertDue } from "@/app/lib/ask-summit/spend";
+import { originFromHeaders } from "@/app/lib/report-notify";
 import { deleteBrief, listBriefsUpdatedBetween, listStaleDrafts, updateBrief, type BriefRecord } from "@/app/lib/briefs";
 import { getUnlockSecret, issueBriefDeleteToken, issueBriefLinkToken } from "@/app/lib/unlock";
 import { archiveBriefPage } from "@/app/lib/project-builder-notion";
@@ -50,6 +53,39 @@ function formatLead(u: { name?: unknown; email?: unknown; company?: unknown }): 
   const company = typeof u.company === "string" ? u.company.trim() : "";
   const who = name ? `${name} <${email}>` : email;
   return company ? `${who}, ${company}` : who;
+}
+
+type SpendAlertOutcome = "sent" | "failed" | "not-due" | "unconfigured";
+
+/**
+ * The monthly spend alert (Release 3b): once per UTC month, when this
+ * month's spend from `ai:calls` has reached the threshold set on
+ * /admin/models, one plain text email to NOTIFY_EMAIL. The flag is set
+ * only after a send, so a failed send retries the next day. Runs before
+ * the zero-lead early return so a quiet day still alerts.
+ */
+async function spendAlert(origin: string): Promise<SpendAlertOutcome> {
+  const now = Date.now();
+  const month = monthKey(now);
+  const [spend, threshold, alerted] = await Promise.all([getMonthSpend(now), getSpendThreshold(), wasSpendAlerted(month)]);
+  if (!spendAlertDue({ spend, threshold, alerted })) return "not-due";
+  const to = process.env.NOTIFY_EMAIL?.trim();
+  if (!to || !isMailConfigured()) return "unconfigured";
+  const text = [
+    `Spend so far in ${month}: $${spend.toFixed(2)}`,
+    `Threshold: $${(threshold ?? 0).toFixed(2)}`,
+    `Pause Ask Summit at ${origin}/admin/ask-summit if this is unexpected.`,
+    `Routing table: ${origin}/admin/models`,
+    "The figure comes from the last 2000 logged model calls; calls whose cost the provider did not report count as zero, so it is a lower bound.",
+  ].join("\n");
+  try {
+    await sendMail({ from: to, to, subject: "Summit: model spend this month passed the threshold", text });
+  } catch (err) {
+    console.error("daily-report: spend alert failed", err instanceof Error ? err.message : err);
+    return "failed";
+  }
+  await markSpendAlerted(month);
+  return "sent";
 }
 
 const REMINDER_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
@@ -131,6 +167,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  let spendAlertOutcome: SpendAlertOutcome = "not-due";
+  try {
+    spendAlertOutcome = await spendAlert(originFromHeaders(req.headers));
+  } catch (err) {
+    console.error("daily-report: spend check failed", err instanceof Error ? err.message : err);
+    spendAlertOutcome = "failed";
+  }
+
   // Read both unlock lists in parallel
   let icpUnlocks: IcpUnlock[] = [];
   let gtmUnlocks: GtmUnlock[] = [];
@@ -192,7 +236,7 @@ export async function GET(req: NextRequest) {
   if (total === 0 && recentBriefs.length === 0) {
     // Nothing to report: no digest, but the reminders and the purge still run.
     const { reminders, purged } = await housekeeping();
-    return NextResponse.json({ ok: true, count: 0, briefs: 0, reminders, purged, skipped: "nothing to report in last 24h" });
+    return NextResponse.json({ ok: true, count: 0, briefs: 0, reminders, purged, skipped: "nothing to report in last 24h", spendAlert: spendAlertOutcome });
   }
 
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, NOTIFY_EMAIL } = process.env;
@@ -266,5 +310,5 @@ export async function GET(req: NextRequest) {
   }
 
   const { reminders, purged } = await housekeeping();
-  return NextResponse.json({ ok: true, count: total, icp: recentIcp.length, gtm: recentGtm.length, briefs: recentBriefs.length, reminders, purged });
+  return NextResponse.json({ ok: true, count: total, icp: recentIcp.length, gtm: recentGtm.length, briefs: recentBriefs.length, reminders, purged, spendAlert: spendAlertOutcome });
 }

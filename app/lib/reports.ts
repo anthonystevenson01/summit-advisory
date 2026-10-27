@@ -70,6 +70,7 @@ export interface CreateReportInput {
   opening: string;
   productThoughts: string;
   moonshot: string;
+  askRequestId?: string | null;
 }
 
 /**
@@ -119,6 +120,7 @@ export async function createReport(input: CreateReportInput): Promise<ReportReco
     lastOpenedAt: null,
     openCount: 0,
     rerunCount: 0,
+    askRequestId: input.askRequestId ?? null,
   };
   // The two open timestamps are left unwritten: recordOpen sets the first
   // with HSETNX, which a stored "null" would defeat, and the reader treats a

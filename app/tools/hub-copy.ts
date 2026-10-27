@@ -7,6 +7,7 @@
  */
 import { PUBLIC_TOOLS, PUBLIC_TOOL_COUNT_WORD_CAPITALISED } from "../lib/tools/registry.ts";
 import { CONTACT_EMAIL } from "../lib/brand.ts";
+import { HUB_CTA } from "../lib/ask-summit/copy.ts";
 
 const COUNT = PUBLIC_TOOL_COUNT_WORD_CAPITALISED;
 
@@ -52,7 +53,7 @@ export interface EntryPath {
   body: string;
   href: string;
   cta: string;
-  /** Shown with a "Coming next" tag; Release 3b replaces the mailto with a form. */
+  /** Shown with a "Coming next" tag. No card carries it since Release 3b; kept for the next path that needs it. */
   comingNext?: boolean;
 }
 
@@ -73,9 +74,8 @@ export const ENTRY_PATHS: readonly EntryPath[] = [
   {
     title: "Ask Summit to score it",
     body: "Give us your website and a deck. We run the same tools, then a person reads the output, checks it against what we know, edits the scores and writes the commentary. You get a reviewed report, a one-slide summary and a call to walk through it. Usually within two working days.",
-    href: `mailto:${CONTACT_EMAIL}?subject=Ask%20Summit%20to%20score%20it`,
-    cta: "Email Summit",
-    comingNext: true,
+    href: "/tools/ask-summit",
+    cta: HUB_CTA,
   },
 ];
 
