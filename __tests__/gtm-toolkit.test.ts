@@ -14,7 +14,7 @@ import {
   TOOLS,
   isToolPublic,
 } from "../app/lib/tools/registry.ts";
-import { CONTACT_EMAIL, ENTRY_PATHS, HOW_IT_WORKS, HUB_INTRO, HUB_LEAD, HUB_TAG, HUB_TITLE, itemListSchema } from "../app/tools/hub-copy.ts";
+import { BUILDER_BLOCK, CONTACT_EMAIL, ENTRY_PATHS, HOW_IT_WORKS, HUB_INTRO, HUB_LEAD, HUB_TAG, HUB_TITLE, itemListSchema } from "../app/tools/hub-copy.ts";
 import { HUB_TOOLS } from "../app/scale-up-advisory/scale-up-content.ts";
 import sitemap from "../app/sitemap.ts";
 import { ISSUES } from "../app/components/newsletter/data/issues.ts";
@@ -125,6 +125,24 @@ describe("Three paths and method copy", () => {
     assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/built-to-scale"));
     assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/built-to-scale/method"));
     assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/ask-summit"));
+  });
+});
+
+// ─── Project Builder block ────────────────────────────────────────────────────
+
+describe("Project Builder block", () => {
+  const DASH_RE = /[\u2013\u2014]| - /;
+
+  test("links to the builder and carries no dash", () => {
+    assert.equal(BUILDER_BLOCK.href, "/tools/project-builder");
+    assert.doesNotMatch(BUILDER_BLOCK.title, DASH_RE);
+    assert.doesNotMatch(BUILDER_BLOCK.body, DASH_RE);
+    assert.ok(BUILDER_BLOCK.cta.length > 0);
+  });
+
+  test("the sitemap lists the builder", () => {
+    const urls = sitemap().map((e) => e.url);
+    assert.ok(urls.includes("https://summitstrategyadvisory.com/tools/project-builder"));
   });
 });
 

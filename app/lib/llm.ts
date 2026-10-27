@@ -7,7 +7,8 @@
  * table, the calibration gate and the ai:calls log.
  *
  * Routing keys are `scoring`, `details`, `synthesis` and `extraction`, each
- * optionally narrowed to `{task}:{tool}`. Resolution order is the specific
+ * optionally narrowed to `{task}:{tool}`, plus the three Project Builder keys
+ * `builder-read`, `builder-suggest` and `builder-ideas` (never narrowed). Resolution order is the specific
  * key (`scoring:moat`), then the task key (`scoring`), then DEFAULT_ROUTES
  * below. Overrides live in the Redis hash `admin:model-config`, written from
  * /admin/models and cached in memory for 30 seconds, so a model change needs
@@ -41,6 +42,9 @@ export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   details: { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 4000 },
   synthesis: { model: "anthropic/claude-opus-5.5", reasoning: "medium", maxTokens: 4000, fallback: "anthropic/claude-sonnet-5.5" },
   extraction: { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 4000 },
+  "builder-read": { model: "anthropic/claude-haiku-5.5", maxTokens: 6000, fallback: "anthropic/claude-sonnet-5.5" },
+  "builder-suggest": { model: "anthropic/claude-haiku-5.5", maxTokens: 1500 },
+  "builder-ideas": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 3000 },
 };
 
 /** The admin dropdown is limited to this list; the admin route rejects anything else. */
@@ -58,6 +62,9 @@ export const TASK_LABELS: Record<RoutingTask, string> = {
   details: "Full view",
   synthesis: "Built to Scale? synthesis",
   extraction: "Ask Summit extraction",
+  "builder-read": "Project Builder: read a document",
+  "builder-suggest": "Project Builder: suggestions",
+  "builder-ideas": "Project Builder: ideas",
 };
 
 export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
@@ -65,6 +72,9 @@ export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
   details: "The full view after unlock: per-dimension reasoning, recommendations for dimensions scoring 3 or below, and the tool's extras. Structured JSON at temperature 0.",
   synthesis: "One call per Built to Scale? run that writes the five comments, verdict, strongest, weakest and one change. Live since Release 3a. Has one fallback so an outage does not drop the headline.",
   extraction: "Ask Summit: reads the crawled pages and the documents (PDFs as files) and drafts the five parts with evidence and confidence. Live since Release 3b. Temperature 0.",
+  "builder-read": "Extracts a requirements baseline from pasted text on the document and partly built routes of the Project Builder. Up to 60,000 characters in, one JSON answer. Has one fallback so a Haiku outage does not stop a read. Not calibration gated.",
+  "builder-suggest": "The one tap helpers on the Project Builder steps (goal, features, connections, guardrails, running it) and the lookup of a system not in the catalogue. Short JSON answers that fill blanks and add, never overwrite. Not calibration gated.",
+  "builder-ideas": "Make it smarter: three to six AI or automation ideas grounded in the brief. Up to three runs per brief. Not calibration gated.",
 };
 
 export const MODEL_CONFIG_KEY = "admin:model-config";

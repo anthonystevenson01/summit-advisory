@@ -1,6 +1,7 @@
 import { getRedis } from "@/app/lib/redis";
 import { countRuns } from "@/app/lib/runs";
 import { countAskRequestsByState } from "@/app/lib/ask-summit/store";
+import { countBriefs } from "@/app/lib/briefs";
 
 export const dynamic = "force-dynamic";
 
@@ -10,17 +11,20 @@ export default async function AdminDashboard() {
   let runsScored = 0;
   let emailsCaptured = 0;
   let askQueued = 0;
+  let briefsSaved = 0;
 
   try {
     const redis = getRedis();
-    const [visits, builds, runs, gtmUnlocks, icpUnlocks, askCounts] = await Promise.all([
+    const [visits, builds, runs, gtmUnlocks, icpUnlocks, askCounts, briefs] = await Promise.all([
       redis.get("page-visits"),
       redis.llen("ai-studio-requests"),
       countRuns(),
       redis.llen("gtm-unlocks"),
       redis.llen("icp-unlocks"),
       countAskRequestsByState(),
+      countBriefs(),
     ]);
+    briefsSaved = briefs;
     pageVisits = typeof visits === "number" ? visits : parseInt(String(visits) || "0", 10);
     buildRequests = builds;
     runsScored = runs;
@@ -36,6 +40,7 @@ export default async function AdminDashboard() {
     { label: "Runs Scored", value: runsScored, color: "#D4A017" },
     { label: "Emails Captured (incl. legacy ICP list)", value: emailsCaptured, color: "#C0392B" },
     { label: "Ask Summit queued", value: askQueued, color: "#005A66" },
+    { label: "Briefs", value: briefsSaved, color: "#053030" },
   ];
 
   const links = [
@@ -45,6 +50,8 @@ export default async function AdminDashboard() {
     { href: "/admin/rubrics", title: "Rubrics", body: "Live rubric versions from Notion, with a refresh" },
     { href: "/admin/reports", title: "Reports", body: "Prospect reports built from Built to Scale? runs" },
     { href: "/admin/ask-summit", title: "Ask Summit", body: "Requests to score a prospect's model: queue, pause, delete" },
+    { href: "/admin/briefs", title: "Briefs", body: "Every Project Builder brief: answers, requirements, status, Notion" },
+    { href: "/admin/stats", title: "Stats", body: "Builder funnel, helper use, model spend and briefs by status" },
   ];
 
   return (

@@ -8,7 +8,7 @@ import NewsletterCapture from "./shared/NewsletterCapture";
 import ToolkitFooter from "./ToolkitFooter";
 import SiteNav from "../SiteNav";
 import { PUBLIC_TOOLS, isToolHidden, isToolPublic } from "@/app/lib/tools/registry";
-import { ENTRY_PATHS, HOW_IT_WORKS, HUB_INTRO, HUB_LEAD, HUB_TAG } from "@/app/tools/hub-copy";
+import { BUILDER_BLOCK, ENTRY_PATHS, HOW_IT_WORKS, HUB_INTRO, HUB_LEAD, HUB_TAG } from "@/app/tools/hub-copy";
 
 // One surface and accent for every card.
 const CARD_SURFACE = "#0a1a14";
@@ -230,6 +230,18 @@ export default function ToolkitHub() {
               </div>
             </div>
           )}
+
+          {/* Project Builder: one band above the newsletter capture */}
+          <div className="cards-section" style={{ paddingBottom: 48 }}>
+            <div className="cards-label">{BUILDER_BLOCK.label}</div>
+            <h2 style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 32, fontWeight: 700, color: "var(--forest)", margin: "0 0 8px", lineHeight: 1.1 }}>
+              {BUILDER_BLOCK.title}
+            </h2>
+            <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--ghost)", margin: "0 0 16px", maxWidth: 560 }}>{BUILDER_BLOCK.body}</p>
+            <Link href={BUILDER_BLOCK.href} className="card-link" aria-label={BUILDER_BLOCK.cta}>
+              {BUILDER_BLOCK.cta} &rarr;
+            </Link>
+          </div>
 
           {/* Newsletter */}
           <NewsletterCapture dark label="Get the Scale-Up Letter" />
