@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { HamburgerIcon, CloseIcon, UserIcon } from "./icons";
+import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
 
 const LOGO_WHITE = "/brand-icons/Combination Mark_White.png";
 const BOOK_URL =
@@ -11,7 +12,7 @@ const BOOK_URL =
 
 interface SiteNavProps {
   /** Highlight one of the nav items as the current page */
-  activePage?: "resources" | "tools" | "blog" | "careers" | "newsletter";
+  activePage?: "resources" | "tools" | "project-builder" | "blog" | "careers" | "newsletter";
   /** SPA override handlers — used on the main homepage */
   onLogoClick?: () => void;
   onResources?: () => void;
@@ -64,6 +65,11 @@ export default function SiteNav({
 
           <Link href="/tools" className="nav-link" style={activePage === "tools" ? activeStyle : undefined}>GTM Tools</Link>
 
+          {/* A page of its own, not a homepage SPA view, so it needs no handler and is a
+              plain Link on the homepage too. It sits beside GTM Tools but apart from it:
+              the builder is a service, not one of the diagnostic tools. */}
+          <Link href={PROJECT_BUILDER_PATH} className="nav-link" style={activePage === "project-builder" ? activeStyle : undefined}>Project Builder</Link>
+
           {onBlog ? (
             <button type="button" className="nav-link" style={activePage === "blog" ? activeStyle : undefined} onClick={() => handleNav(onBlog)}>Blog</button>
           ) : (
@@ -112,6 +118,8 @@ export default function SiteNav({
           )}
 
           <Link href="/tools" className="nav-mobile-link" onClick={() => setMenuOpen(false)}>GTM Tools</Link>
+
+          <Link href={PROJECT_BUILDER_PATH} className="nav-mobile-link" onClick={() => setMenuOpen(false)}>Project Builder</Link>
 
           {onBlog ? (
             <button type="button" className="nav-mobile-link" onClick={() => handleNav(onBlog)}>Blog</button>

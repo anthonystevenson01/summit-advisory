@@ -51,6 +51,7 @@ import {
   LINK_INVALID_LINE,
   LINK_REQUEST_ANSWER,
   OFFLINE_LINE,
+  PROJECT_BUILDER_PATH,
   SAVE,
   SAVED_LINE,
   SAVED_LOCAL_ONLY_LINE,
@@ -639,7 +640,7 @@ export default function ProjectBuilderPage() {
     setSelectedKey(null);
     setLocalIdeasRuns(0);
     setPhase("building");
-    window.history.replaceState(null, "", "/tools/project-builder");
+    window.history.replaceState(null, "", PROJECT_BUILDER_PATH);
     window.scrollTo({ top: 0 });
   };
 

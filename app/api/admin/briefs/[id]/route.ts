@@ -7,6 +7,7 @@ import { getUnlockSecret, issueBriefDeleteToken, issueBriefLinkToken } from "@/a
 import { archiveBriefPage, isNotionBriefsConfigured, updateBriefPage } from "@/app/lib/project-builder-notion";
 import { BRIEF_ID_PATTERN, canTransition, isBriefStatus } from "@/app/lib/project-builder/brief";
 import { renderUnlockEmail } from "@/app/lib/project-builder/emails";
+import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
 import { redactAddresses } from "@/app/lib/tools/result-email";
 
 export const runtime = "nodejs";
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         const email = renderUnlockEmail({
           state: updated.state,
           contact: { name: brief.contact.name, company: brief.contact.company, website: brief.contact.website },
-          resumeUrl: `${origin}/tools/project-builder?b=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`,
+          resumeUrl: `${origin}${PROJECT_BUILDER_PATH}?b=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`,
           deleteUrl: `${origin}/api/project-builder/delete?e=${encodeURIComponent(brief.contact.emailHash)}&t=${encodeURIComponent(deleteToken)}`,
         });
         try {

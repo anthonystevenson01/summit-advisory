@@ -98,6 +98,7 @@ body {
   border: none;
   padding: 10px 18px;
   cursor: pointer;
+  white-space: nowrap;
   transition: color 0.2s;
 }
 .nav-link:hover { color: rgba(255,255,255,0.9); }
@@ -115,11 +116,28 @@ body {
   padding: 10px 24px;
   cursor: pointer;
   margin-left: 12px;
+  white-space: nowrap;
   transition: background 0.2s;
 }
 .nav-cta:hover { background: #3dba78; }
 .nav-cta:focus-visible { outline: 2px solid var(--sage); outline-offset: 3px; }
 .nav-cta:active { background: #27a660; }
+
+/* Six text items need about 952px at the default spacing, more than the
+   901px just above the hamburger breakpoint. From 901 to 1100px the side
+   padding drops to 24px and the link padding to 12px, so the row needs about
+   832px and keeps 68px spare at 901px (51px with a 17px scrollbar). 1100px is
+   where the default spacing fits again with room to spare (measured: 149px
+   free at 1101px), so above it the nav is unchanged. The nowrap on .nav-link
+   and .nav-cta keeps two word labels (GTM Tools, Project Builder, Book a
+   Call) on one line: without it a squeezed row breaks them onto two lines
+   (measured: items 62px high against 41px). Adding a seventh item means
+   measuring again. This block must stay before the 900px block, so the
+   hamburger rules win at 900px and below. */
+@media (max-width: 1100px) {
+  .nav { padding: 0 24px; }
+  .nav-link { padding: 10px 12px; }
+}
 
 /* ─── PAGE WRAPPER ─── */
 .page {
