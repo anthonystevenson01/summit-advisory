@@ -27,6 +27,21 @@ const nextConfig: NextConfig = {
         destination: "/scale-up-advisory",
         permanent: true,
       },
+      // Product Studio moved from /ai-studio and the homepage ?page=ai view to
+      // its own pages under /product-studio in October 2026, matching the
+      // Scale-Up hub and option pages. Permanent for the same reasons as the
+      // ?page=sme entry above.
+      {
+        source: "/ai-studio",
+        destination: "/product-studio",
+        permanent: true,
+      },
+      {
+        source: "/",
+        has: [{ type: "query", key: "page", value: "ai" }],
+        destination: "/product-studio",
+        permanent: true,
+      },
       // The Project Builder moved from /tools/project-builder to
       // /project-builder in October 2026. Permanent (308) because the old
       // address is retired: search engines move the listing across and

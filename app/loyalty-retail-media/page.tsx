@@ -132,13 +132,6 @@ export default function LoyaltyRetailMediaPage() {
               uncounted loyalty revenue and built retail media networks that generate real supplier
               income. Now we build them with you.
             </p>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>
-              Last reviewed: April 2026 · By{" "}
-              <Link href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>
-                Anthony Stevenson
-              </Link>
-              , Founder, Summit Strategy Advisory
-            </p>
           </div>
 
           <div className="inner-body">
@@ -258,7 +251,7 @@ export default function LoyaltyRetailMediaPage() {
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">Product Studio</Link></li>
+            <li><Link href="/product-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><Link href="/tools">GTM Tools</Link></li>

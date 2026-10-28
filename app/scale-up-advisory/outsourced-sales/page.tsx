@@ -7,7 +7,6 @@ import {
   BOOK_URL,
   HOW_WE_CHARGE,
   HOW_WE_CHARGE_TITLE,
-  LAST_REVIEWED_LABEL,
   LEAD_ENGINE,
   OUTSOURCED_FAQS,
   OUTSOURCED_HERO,
@@ -100,13 +99,6 @@ export default function OutsourcedSalesPage() {
             <div className="inner-eyebrow">{OUTSOURCED_HERO.eyebrow}</div>
             <h1 className="inner-title">{OUTSOURCED_HERO.title}</h1>
             <p className="inner-lead">{OUTSOURCED_HERO.lead}</p>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>
-              Last reviewed: {LAST_REVIEWED_LABEL} · By{" "}
-              <Link href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>
-                Anthony Stevenson
-              </Link>
-              , Founder, Summit Strategy Advisory
-            </p>
           </div>
 
           {/* 2. What Summit is */}
@@ -216,7 +208,7 @@ export default function OutsourcedSalesPage() {
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">Product Studio</Link></li>
+            <li><Link href="/product-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><Link href="/tools">GTM Tools</Link></li>

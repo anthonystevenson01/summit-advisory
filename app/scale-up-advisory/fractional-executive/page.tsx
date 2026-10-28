@@ -11,7 +11,6 @@ import {
   FRACTIONAL_FEATURES,
   FRACTIONAL_HERO,
   FRACTIONAL_WHY,
-  LAST_REVIEWED_LABEL,
   OUTSOURCED_SALES_PATH,
   SCALE_UP_PATH,
   TOOLS_HUB_PATH,
@@ -67,13 +66,6 @@ export default function FractionalExecutivePage() {
             <div className="inner-eyebrow">{FRACTIONAL_HERO.eyebrow}</div>
             <h1 className="inner-title">{FRACTIONAL_HERO.title}</h1>
             <p className="inner-lead">{FRACTIONAL_HERO.lead}</p>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>
-              Last reviewed: {LAST_REVIEWED_LABEL} · By{" "}
-              <Link href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>
-                Anthony Stevenson
-              </Link>
-              , Founder, Summit Strategy Advisory
-            </p>
           </div>
 
           <div className="inner-body">
@@ -159,7 +151,7 @@ export default function FractionalExecutivePage() {
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">Product Studio</Link></li>
+            <li><Link href="/product-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><Link href="/tools">GTM Tools</Link></li>

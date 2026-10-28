@@ -2,15 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import SiteNav from "@/app/components/SiteNav";
-import { ArrowRight } from "@/app/components/icons";
+import { ArrowLeft, ArrowRight } from "@/app/components/icons";
 import {
   HERO,
   HUB_OPTIONS_LABEL,
-  HUB_TOOLS,
-  LAST_REVIEWED_LABEL,
   OPTIONS,
-  TOOLS_HUB_PATH,
-  TOOL_STAGE_MAP,
   scaleUpServiceSchema,
 } from "./scale-up-content";
 
@@ -37,19 +33,10 @@ export const metadata: Metadata = {
   },
 };
 
-const smallPara = {
-  fontFamily: "var(--font-dm-sans), sans-serif",
-  fontSize: 14,
-  color: "var(--ghost)",
-  marginTop: 24,
-  lineHeight: 1.7,
-} as const;
-
-const inlineLink = { color: "var(--teal)", fontWeight: 600 } as const;
-
 /**
- * Hub for the Scale-Up Advisory practice: the hero, the two option cards
- * (each its own page) and the free GTM tools. The narrative for each option
+ * Hub for the Scale-Up Advisory practice: the hero and the two option cards
+ * (each its own page), laid out like /product-studio. The free GTM tools live
+ * at /tools and are linked from the option pages. The narrative for each option
  * lives on its own page under /scale-up-advisory/. Deliberately no FAQ, CTA
  * band or in-page anchors: the option pages carry the FAQs and the CTA, and
  * the nav carries Book a Call.
@@ -63,16 +50,12 @@ export default function ScaleUpAdvisoryPage() {
         <div className="inner">
           {/* 1. Hero */}
           <div className="inner-hero">
+            <Link href="/" className="inner-back no-underline">
+              <ArrowLeft /> All Practices
+            </Link>
             <div className="inner-eyebrow">{HERO.eyebrow}</div>
             <h1 className="inner-title">{HERO.title}</h1>
             <p className="inner-lead">{HERO.lead}</p>
-            <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>
-              Last reviewed: {LAST_REVIEWED_LABEL} · By{" "}
-              <Link href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "underline" }}>
-                Anthony Stevenson
-              </Link>
-              , Founder, Summit Strategy Advisory
-            </p>
           </div>
 
           {/* 2. The two options, each a page of its own */}
@@ -92,33 +75,13 @@ export default function ScaleUpAdvisoryPage() {
               ))}
             </div>
           </div>
-
-          {/* 3. Free GTM tools */}
-          <div className="inner-body">
-            <h2 className="section-label">{HUB_TOOLS.label}</h2>
-            <p className="section-intro" style={{ marginBottom: 16 }}><strong>{HUB_TOOLS.heading}</strong></p>
-            <p className="section-intro">{HUB_TOOLS.body}</p>
-            <div className="resources" style={{ marginTop: 32 }}>
-              {TOOL_STAGE_MAP.map((t) => (
-                <Link key={t.slug} href={t.href} className="resource resource-tool no-underline">
-                  <span className="resource-tag">{HUB_TOOLS.cardTag}</span>
-                  <div className="resource-title">{t.name}</div>
-                  <p className="resource-desc">{t.summary}</p>
-                  <span className="resource-cta">{HUB_TOOLS.cardCta} →</span>
-                </Link>
-              ))}
-            </div>
-            <p style={smallPara}>
-              <Link href={TOOLS_HUB_PATH} style={inlineLink}>{HUB_TOOLS.hubLink} →</Link>
-            </p>
-          </div>
         </div>
 
-        {/* 4. Footer */}
+        {/* 3. Footer */}
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">Product Studio</Link></li>
+            <li><Link href="/product-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><Link href="/tools">GTM Tools</Link></li>

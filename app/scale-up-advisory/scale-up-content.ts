@@ -22,7 +22,6 @@ export const TOOLS_HUB_PATH = "/tools";
 export const BOOK_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
 
-export const LAST_REVIEWED_LABEL = "September 2026";
 export const DATE_MODIFIED = "2026-09-28";
 
 // ── Top level: hero and the two options ──
