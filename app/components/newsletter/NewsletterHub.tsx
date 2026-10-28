@@ -135,7 +135,7 @@ export default function NewsletterHub() {
       {/* Bottom CTA */}
       <div className="equity-band">
         <div className="inner-body" style={{ margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
+          <div className="equity-grid">
             <div>
               <div className="inner-eyebrow">Subscribe</div>
               <h2 style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 36, fontWeight: 900, textTransform: "uppercase", color: "var(--white)", lineHeight: 1.05, marginBottom: 16 }}>
