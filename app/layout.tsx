@@ -77,7 +77,7 @@ const orgSchema = {
   url: "https://summitstrategyadvisory.com",
   logo: "https://summitstrategyadvisory.com/brand-icons/Combination%20Mark_White.png",
   description:
-    "Strategy advisory working alongside founders and leadership teams. Three practice areas: AI Product Studio, Loyalty & Retail Media, Scale-Up Advisory.",
+    "Strategy advisory working alongside founders and leadership teams. Three practice areas: Product Studio, Loyalty & Retail Media, Scale-Up Advisory.",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Vancouver",
