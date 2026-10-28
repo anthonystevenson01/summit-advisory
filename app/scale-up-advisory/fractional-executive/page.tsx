@@ -159,7 +159,7 @@ export default function FractionalExecutivePage() {
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">AI Studio</Link></li>
+            <li><Link href="/ai-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><Link href="/tools">GTM Tools</Link></li>

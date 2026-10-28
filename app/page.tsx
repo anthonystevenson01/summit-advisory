@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LOGO_WHITE, ICON_AI, ICON_RETAIL, ICON_SME } from "./summit-assets";
 import SiteNav from "./components/SiteNav";
 import { ArrowRight, ArrowLeft } from "./components/icons";
+import { PROJECT_BUILDER_PATH } from "./lib/project-builder/copy";
 
 const BOOK_CALL_URL =
   "https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu?gv=true";
@@ -29,8 +30,14 @@ const openRoles = [
   { title: "Agentic Coder", type: "Contract · Remote", desc: "We're looking for a builder who thinks in systems and ships with AI. You'll work directly with Anthony to design, build, and deploy agentic workflows and AI-native products — across our studio projects and internal tooling. This isn't a support role. You'll own the technical direction of what we build and how we build it." },
 ];
 
-// ── AI Studio Page ──
-function AIStudioPage({ onBack }: { onBack: () => void }) {
+// ── Product Studio Page ──
+// Two audiences share one page: startups get the equity model and the idea
+// form, enterprise teams get a scoped build and a call. The choice sits at the
+// top so each visitor only reads the half that applies to them.
+type StudioAudience = "startups" | "enterprise";
+
+function ProductStudioPage({ onBack, onBook }: { onBack: () => void; onBook: () => void }) {
+  const [audience, setAudience] = useState<StudioAudience>("startups");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -123,11 +130,35 @@ function AIStudioPage({ onBack }: { onBack: () => void }) {
     <div className="inner">
       <div className="inner-hero">
         <button type="button" className="inner-back" onClick={onBack}><ArrowLeft /> All Practices</button>
-        <div className="inner-eyebrow">For Founders</div>
-        <h1 className="inner-title">AI Product Studio</h1>
-        <p className="inner-lead">We build technology products for early-stage founders in exchange for equity. No large retainer. No handoffs. First version live in 4 weeks.</p>
+        <div className="inner-eyebrow">{audience === "startups" ? "For Founders" : "For Enterprise Teams"}</div>
+        <h1 className="inner-title">Product Studio</h1>
+        <p className="inner-lead">
+          {audience === "startups"
+            ? "We build technology products for early-stage founders in exchange for equity. No large retainer. No handoffs. First version live in 4 weeks."
+            : "Smart bespoke software. Built around your business, deployed in your environment, and yours to own."}
+        </p>
+        <div className="studio-choice" role="group" aria-label="Who the studio is for">
+          {([
+            { id: "startups", label: "For Startups", note: "Equity, not fees" },
+            { id: "enterprise", label: "For Enterprise", note: "Smart bespoke software" },
+          ] as const).map((o) => (
+            <button
+              type="button"
+              aria-pressed={audience === o.id}
+              className={`studio-choice-btn${audience === o.id ? " active" : ""}`}
+              key={o.id}
+              onClick={() => setAudience(o.id)}
+            >
+              <span className="studio-choice-label">{o.label}</span>
+              <span className="studio-choice-note">{o.note}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
+      {audience === "enterprise" && <EnterpriseStudio onBook={onBook} />}
+
+      {audience === "startups" && (<>
       <div className="inner-body">
         <div className="section-label">What You Get</div>
         <p className="section-intro">Four stages. Four weeks. A working product in market — not a prototype.</p>
@@ -354,7 +385,176 @@ function AIStudioPage({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+      </>)}
     </div>
+  );
+}
+
+// Enterprise half of the Product Studio, drawn from the "Summit Product
+// Studio intro" deck (Oct 2026). Prices stay out: every build is quoted
+// against a signed-off spec.
+function EnterpriseStudio({ onBook }: { onBook: () => void }) {
+  const shifts = [
+    { title: "Paying monthly, using 30% or less", body: "Subscriptions for tools where most features go unused, and no say over the roadmap." },
+    { title: "Building is faster and cheaper than ever", body: "What took a dev team months now takes a small senior team days." },
+    { title: "Tools can now be smart", body: "Software doesn't just store and display any more. It reads, sorts, drafts and recommends." },
+    { title: "Business keeps getting more complex", body: "More systems, more data, more channels. Off-the-shelf tools were built for everyone, not for you." },
+  ];
+  const smart = [
+    { title: "Reads and remembers everything", body: "Makes sense of large volumes of data quickly and keeps the context over time." },
+    { title: "Organises without being told", body: "Finds the patterns, then sorts, classifies and prioritises." },
+    { title: "Simulates outcomes at scale", body: "Models many variations quickly, so planning and resourcing decisions rest on more than a guess." },
+    { title: "Has an opinion", body: "Weighs the evidence, recommends a course and surfaces ideas you hadn't asked for." },
+  ];
+  const yours = [
+    { title: "Shaped to how you work", body: "Your process, your language, your odd exceptions. Not the vendor's." },
+    { title: "Connects to whatever you run", body: "We build the connectors and transformation layers, however awkward the system." },
+    { title: "Lives in your environment", body: "Deployed in your cloud with your security. Your data never leaves." },
+    { title: "You own what we make", body: "The code and the roadmap. No licence, no waiting for someone else's release." },
+  ];
+  const steps = [
+    { step: "01", title: "Problem", get: "A clear problem statement", body: "What's slowing you down, and whether software is the fix." },
+    { step: "02", title: "Shape", get: "Prototype and signed-off spec", body: "Requirements captured, prototyped live in the Project Builder, then sorted and signed off together." },
+    { step: "03", title: "Quote", get: "The numbers", body: "A fixed price and a timeline for the build, before we start." },
+    { step: "04", title: "Build", get: "Working features", body: "Short cycles. Working software in front of you every week." },
+    { step: "05", title: "Deploy", get: "A live product you own", body: "Live in your environment, on your accounts. The code is yours." },
+  ];
+  const builderSteps = [
+    { step: "01", title: "Describe it, or upload what you have", body: "A sentence is enough. So is a ten-year-old requirements doc or screenshots of the spreadsheet." },
+    { step: "02", title: "Watch it take shape", body: "Six short steps. It suggests the features, integrations and guardrails we'd ask about, and you tap to agree or change them." },
+    { step: "03", title: "Get a quote", body: "Your team signs off the spec and a fixed price comes back against it." },
+  ];
+  const work = [
+    { name: "Podbeat.ai", tag: "Podcast marketing", desc: "Give it a podcast episode. It finds the strongest moments, scores them with a clip-rating model, cuts them and sends them to TikTok, Spotify and YouTube.", outcomes: ["Built with a cohort of podcasters", "Ten-week beta"] },
+    { name: "Canvas", tag: "Team visualisation", desc: "Paste a conversation, a document or nothing at all, and Canvas draws what the group is really comparing. Everyone edits the page by talking to it.", outcomes: ["canvas-app.ai", "Built for complex problems"] },
+  ];
+  const whyUs = [
+    { title: "Deep product and technical knowledge", body: "We know why, not just how. We've owned the product, the roadmap, the architecture and the results." },
+    { title: "Experienced with enterprise", body: "We've shipped into banks, grocers and telcos, and wired into the big systems they run." },
+    { title: "Easy to work with", body: "Outcome-driven, at the frontier, and working in short cycles so you see value early." },
+  ];
+  const grid = (items: { title: string; body: string }[]) => (
+    <div className="features">
+      {items.map((f) => (
+        <div className="feature" key={f.title}>
+          <div className="feature-title">{f.title}</div>
+          <p className="feature-body">{f.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+  return (
+    <>
+      <div className="inner-body">
+        <div className="section-label">The Market Is Moving</div>
+        <p className="section-intro">From complex to simple. From built for the many to built for you.</p>
+        {grid(shifts)}
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">Built Smart</div>
+        <p className="section-intro">Tools with judgement built in.</p>
+        {grid(smart)}
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">Built Around You</div>
+        <p className="section-intro">Your business, your systems, your rules.</p>
+        {grid(yours)}
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">Our Process</div>
+        <p className="section-intro">Five steps. A forward deployed team with you throughout, from the first conversation to live.</p>
+        <div className="process-steps">
+          {steps.map((d) => (
+            <div className="process-step" key={d.step}>
+              <div className="process-step-left">
+                <div className="process-num">{d.step}</div>
+                <div className="process-line" />
+              </div>
+              <div className="process-step-right">
+                <div className="process-header">
+                  <div className="process-title">{d.title}</div>
+                  <div className="process-duration">You get: {d.get}</div>
+                </div>
+                <p className="process-body">{d.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="equity-band">
+        <div className="inner-body" style={{ paddingTop: 0, paddingBottom: 0 }}>
+          <div className="section-label" style={{ color: "var(--sage)" }}>How We Build</div>
+          <h2 className="equity-title">Two teams. One standard.</h2>
+          <p className="equity-body"><strong>Forward deployed specialists</strong> sit in your organisation. Product, analyst and technical deployment people who shape the requirements with you and stay through build, deploy and live.</p>
+          <p className="equity-body"><strong>The product and development team</strong> writes the code. Senior AI native engineers working from the Summit knowledge layer: reference architectures, spec and test templates, security rules, ERP, POS and CRM adapters, and deployment recipes. Every piece of work is broken into tasks, run on the right model for the job, and passes its tests and a second review before it reaches you.</p>
+        </div>
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">Where Could We Start?</div>
+        <p className="section-intro">The Project Builder turns an idea into a quoted spec.</p>
+        <div className="process-steps">
+          {builderSteps.map((d) => (
+            <div className="process-step" key={d.step}>
+              <div className="process-step-left">
+                <div className="process-num">{d.step}</div>
+                <div className="process-line" />
+              </div>
+              <div className="process-step-right">
+                <div className="process-header">
+                  <div className="process-title">{d.title}</div>
+                </div>
+                <p className="process-body">{d.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Link href={PROJECT_BUILDER_PATH} className="submit-btn no-underline" style={{ display: "inline-block", width: "auto", textAlign: "center" }}>Try the Project Builder →</Link>
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">What We&apos;ve Built Recently</div>
+        <div className="case-grid">
+          {work.map((c) => (
+            <div className="case-card" key={c.name}>
+              <div className="case-header">
+                <div className="case-name">{c.name}</div>
+                <span className="resource-tag">{c.tag}</span>
+              </div>
+              <p className="case-desc">{c.desc}</p>
+              <div className="case-outcomes">
+                {c.outcomes.map((o) => (
+                  <div className="case-outcome" key={o}>{o}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">Why Us</div>
+        <p className="section-intro">Senior AI native engineers and product people. We&apos;ve built and shipped software inside and for some of the world&apos;s largest brands.</p>
+        <div className="features">
+          {whyUs.map((f) => (
+            <div className="feature" key={f.title}>
+              <div className="feature-title">{f.title}</div>
+              <p className="feature-body">{f.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="inner-body">
+        <div className="section-label">Talk to Us</div>
+        <p className="section-intro">A 30-minute call is enough to know if there&apos;s a fit. Bring the problem, not a brief.</p>
+        <button type="button" className="submit-btn" onClick={onBook}>Book a 30-Minute Call →</button>
+      </div>
+    </>
   );
 }
 
@@ -581,7 +781,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
                 <label className="form-label">I&apos;m interested in</label>
                 <select className="form-select">
                   <option value="">Select a practice...</option>
-                  <option>AI Product Studio</option>
+                  <option>Product Studio</option>
                   <option>Loyalty & Retail Media</option>
                   <option>Scale-Up: Hire a fractional executive</option>
                   <option>Scale-Up: Outsource your sales</option>
@@ -624,7 +824,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
   // A card with an href is a plain link to that practice's own page; the
   // others open a view inside this client component.
   const cards: { id: string; icon: string; title: string; desc: string; href?: string }[] = [
-    { id: "ai", icon: ICON_AI, title: "AI Product Studio", desc: "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks." },
+    { id: "ai", icon: ICON_AI, title: "Product Studio", desc: "We build technology products for startups in exchange for equity, and for enterprise teams on a scoped build. Production-grade, end to end." },
     { id: "retail", icon: ICON_RETAIL, title: "Loyalty & Retail Media", desc: "Loyalty programs and retail media for large retailers. We've built these capabilities. Now we build them with you." },
     { id: "sme", icon: ICON_SME, title: "Scale-Up Advisory", desc: "Outsourced sales and fractional executives for B2B scale-ups. Fixed-price packages, AI-enabled, and you own everything we build.", href: "/scale-up-advisory" },
   ];
@@ -672,7 +872,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
       <div style={{ borderTop: "1px solid var(--border)", padding: "24px 48px" }}>
         <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "rgba(255,255,255,0.25)", lineHeight: 1.7, maxWidth: 860, margin: "0 auto" }}>
           Summit Strategy Advisory — Vancouver, BC. Founded by Anthony Stevenson.{" "}
-          <Link href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>AI Product Studio</Link>
+          <Link href="/ai-studio" style={{ color: "rgba(255,255,255,0.35)" }}>Product Studio</Link>
           {" · "}
           <Link href="/loyalty-retail-media" style={{ color: "rgba(255,255,255,0.35)" }}>Loyalty &amp; Retail Media</Link>
           {" · "}
@@ -825,7 +1025,7 @@ export default function Summit() {
       />
       <div className="page">
         {page === "home" && <HomePage onNavigate={nav} />}
-        {page === "ai" && <AIStudioPage onBack={() => nav("home")} />}
+        {page === "ai" && <ProductStudioPage onBack={() => nav("home")} onBook={goToBooking} />}
         {page === "retail" && <RetailAdvisoryPage onBack={() => nav("home")} onBook={goToBooking} />}
         {page === "resources" && <ResourcesPage onBack={() => nav("home")} />}
 {page === "blog" && <BlogPage onBack={() => nav("home")} />}
@@ -834,7 +1034,7 @@ export default function Summit() {
         <footer className="footer">
           <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">AI Studio</Link></li>
+            <li><Link href="/ai-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><button type="button" onClick={() => nav("resources")}>Resources</button></li>

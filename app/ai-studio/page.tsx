@@ -4,12 +4,12 @@ import Link from "next/link";
 import SiteNav from "@/app/components/SiteNav";
 
 export const metadata: Metadata = {
-  title: "AI Product Studio — Summit Strategy Advisory",
+  title: "Product Studio — Summit Strategy Advisory",
   description:
     "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks.",
   alternates: { canonical: "https://summitstrategyadvisory.com/ai-studio" },
   openGraph: {
-    title: "AI Product Studio — Summit Strategy Advisory",
+    title: "Product Studio — Summit Strategy Advisory",
     description:
       "We build technology products for early-stage founders in exchange for equity. End-to-end, production-grade. First version live in 4 weeks.",
     url: "https://summitstrategyadvisory.com/ai-studio",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Product Studio — Summit Strategy Advisory",
+    title: "Product Studio — Summit Strategy Advisory",
     description:
       "We build technology products for early-stage founders in exchange for equity. End-to-end, AI-native.",
     images: ["/opengraph-image"],
@@ -30,7 +30,7 @@ const BOOK_URL =
 const pageSchema = {
   "@context": "https://schema.org",
   "@type": "Service",
-  name: "AI Product Studio",
+  name: "Product Studio",
   dateModified: "2026-04-29",
   provider: {
     "@type": "Organization",
@@ -52,12 +52,12 @@ const faqSchema = {
       name: "What is an equity-based product studio?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "An equity-based product studio builds technology products in exchange for ownership stakes rather than upfront fees. Summit's AI Product Studio takes a 15–30% equity stake and delivers a production-grade product within 4 weeks, fully aligning its incentives with the founder.",
+        text: "An equity-based product studio builds technology products in exchange for ownership stakes rather than upfront fees. Summit's Product Studio takes a 15–30% equity stake and delivers a production-grade product within 4 weeks, fully aligning its incentives with the founder.",
       },
     },
     {
       "@type": "Question",
-      name: "How much equity does Summit's AI Product Studio take?",
+      name: "How much equity does Summit's Product Studio take?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "Summit typically takes between 15–30% equity, depending on the scope, complexity, and stage of the product. The exact stake is agreed upfront, documented cleanly in a simple agreement, and there are no surprises or scope adjustments after work begins.",
@@ -73,7 +73,7 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "What types of products does the AI Product Studio build?",
+      name: "What types of products does the Product Studio build?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "Summit builds AI-native products — software where LLMs, agents, and embeddings are core components rather than add-ons. Examples include AI-powered SaaS tools, automation platforms, intelligent workflow products, and multi-modal applications. Podbeat.ai, an AI podcast tool with multi-platform distribution, is the studio's first live proof of concept.",
@@ -81,7 +81,7 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "Who is the AI Product Studio best suited for?",
+      name: "Who is the Product Studio best suited for?",
       acceptedAnswer: {
         "@type": "Answer",
         text: "The studio model works best for pre-seed or seed-stage founders who have a clear problem to solve, don't yet have a full technical co-founder, and are comfortable with an equity-based arrangement. It is not suited for companies that need a fixed-price quote, already have a strong technical team, or want a build agency with no skin in the game.",
@@ -130,7 +130,7 @@ export default function AIStudioPage() {
         <div className="inner">
           <div className="inner-hero">
             <div className="inner-eyebrow">For Founders</div>
-            <h1 className="inner-title">AI Product Studio</h1>
+            <h1 className="inner-title">Product Studio</h1>
             <p className="inner-lead">
               We build technology products for early-stage founders in exchange for equity. No large
               retainer. No handoffs. First version live in 4 weeks.
@@ -300,7 +300,7 @@ export default function AIStudioPage() {
         <footer className="footer">
           <Image src="/brand-icons/Combination Mark_White.png" alt="Summit Strategy Advisory" width={140} height={22} className="footer-logo" />
           <ul className="footer-links">
-            <li><Link href="/ai-studio">AI Studio</Link></li>
+            <li><Link href="/ai-studio">Product Studio</Link></li>
             <li><Link href="/loyalty-retail-media">Loyalty & Retail Media</Link></li>
             <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
             <li><Link href="/tools">GTM Tools</Link></li>

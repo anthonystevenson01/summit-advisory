@@ -17,7 +17,7 @@ export default function ToolkitFooter() {
       />
       <ul className="footer-links">
         <li><Link href="/">Home</Link></li>
-        <li><Link href="/ai-studio">AI Studio</Link></li>
+        <li><Link href="/ai-studio">Product Studio</Link></li>
         <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- homepage SPA reads ?page= from window.location once on mount; full document load is intentional */}
         <li><a href="/?page=resources">Resources</a></li>
