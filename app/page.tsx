@@ -733,7 +733,7 @@ function ContactPage({ onBack }: { onBack: () => void }) {
         <h1 className="inner-title">Let&apos;s Talk</h1>
         <p className="inner-lead">Whether you&apos;re entering a new market, modernising retail infrastructure, or need a product built — book 30 minutes.</p>
       </div>
-      <div className="inner-body" style={{ maxWidth: 900 }}>
+      <div className="inner-body" style={{ maxWidth: "calc(50.25rem + 2 * var(--page-gutter))" }}>
         {sent ? (
           <div className="success-box">
             <h3>Message Received</h3>
@@ -944,9 +944,9 @@ function CareersPage({ onBack, onContact }: { onBack: () => void; onContact: () 
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 16, lineHeight: 1.7, maxWidth: 600, marginBottom: 48 }}>
             Summit works alongside founders and leadership teams who are trying to do something difficult — enter a new market, build a new capability, or grow faster than their current model allows. We bring senior expertise, executional discipline, and the kind of direct involvement that most advisory firms won&apos;t offer.
           </p>
-          <div className="equity-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div className="equity-grid" style={{ gap: 20 }}>
             {values.map((v, i) => (
-              <div className="equity-card" key={i}>
+              <div className="equity-card" key={i} style={{ flexDirection: "column", alignItems: "flex-start", gap: 0 }}>
                 <div style={{ fontFamily: "var(--font-barlow-condensed), sans-serif", fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{v.title}</div>
                 <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, lineHeight: 1.6, margin: 0 }}>{v.body}</p>
               </div>

@@ -79,8 +79,8 @@ export default function ToolkitHub() {
         <div className="inner">
 
           {/* Niche callout */}
-          <div style={{ background: "var(--teal)", padding: "28px 48px" }}>
-            <p style={{ fontFamily: "Barlow, sans-serif", fontSize: 15, lineHeight: 1.75, color: "rgba(255,255,255,0.75)", maxWidth: 760 }}>
+          <div style={{ background: "var(--teal)", padding: "28px var(--page-gutter)" }}>
+            <p style={{ fontFamily: "Barlow, sans-serif", fontSize: "0.9375rem", lineHeight: 1.75, color: "rgba(255,255,255,0.75)", maxWidth: "47.5rem" }}>
               Generic GTM advice assumes you have an infinite market. You don&rsquo;t. When your TAM is 400 accounts,
               every positioning misstep costs you a prospect you&rsquo;ll never get back. These tools are built for that reality.
             </p>
@@ -137,10 +137,10 @@ export default function ToolkitHub() {
           </div>
 
           {/* How It Works — full width, 3-column */}
-          <div style={{ padding: "56px 48px 64px" }}>
+          <div style={{ padding: "56px var(--page-gutter) 64px" }}>
             <div className="section-label">How It Works</div>
             <p className="section-intro" style={{ marginBottom: 40 }}>{HUB_INTRO}</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3 }}>
+            <div className="grid-3">
               {HOW_IT_WORKS.map((step) => (
                 <div key={step.num} className="feature">
                   <div style={{

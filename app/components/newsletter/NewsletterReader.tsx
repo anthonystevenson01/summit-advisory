@@ -196,7 +196,7 @@ export default function NewsletterReader({ issueId }: Props) {
       </div>
 
       {/* Article body */}
-      <div className="inner-body" style={{ maxWidth: 720 }}>
+      <div className="inner-body" style={{ maxWidth: "calc(39rem + 2 * var(--page-gutter))" }}>
         <article>
           {issue.body.map((block, i) => (
             <BlockRenderer key={i} block={block} />
@@ -205,7 +205,7 @@ export default function NewsletterReader({ issueId }: Props) {
       </div>
 
       {/* Issue footer */}
-      <div className="inner-body" style={{ paddingTop: 0, maxWidth: 720 }}>
+      <div className="inner-body" style={{ paddingTop: 0, maxWidth: "calc(39rem + 2 * var(--page-gutter))" }}>
         <div style={{ borderTop: "2px solid var(--border)", paddingTop: 40, marginBottom: 40 }}>
           <div className="section-label">Forward this issue</div>
           <p className="section-intro">

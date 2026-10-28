@@ -46,7 +46,18 @@
   --color-foreground: var(--foreground);
 }
 
-html, body { height: 100%; font-size: 16px; }
+/* Root size grows with the window on large screens. Every font-size below
+   is in rem, so all text scales together from this one value. */
+html {
+  height: 100%;
+  font-size: clamp(16px, calc(16px + (100vw - 1280px) * 0.004), 19px);
+}
+body { height: 100%; font-size: 1rem; }
+
+/* Shared page column: up to 1200px wide, centred, with a 48px minimum gutter.
+   Padding % resolves against the parent width, so this works inside full
+   width bands too. */
+:root { --page-gutter: max(48px, calc((100% - 1104px) / 2)); }
 
 body {
   font-family: var(--font-barlow), sans-serif;
@@ -67,7 +78,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 48px;
+  padding: 0 var(--page-gutter);
   background: var(--forest);
 }
 
@@ -89,7 +100,7 @@ body {
 
 .nav-link {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -106,7 +117,7 @@ body {
 
 .nav-cta {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -157,7 +168,7 @@ body {
 
 .home-hero {
   background: var(--forest);
-  padding: 48px 48px 72px;
+  padding: 48px var(--page-gutter) 72px;
   position: relative;
   overflow: hidden;
 }
@@ -176,7 +187,7 @@ body {
 
 .home-hero-inner {
   position: relative;
-  max-width: 680px;
+  max-width: 42.5rem;
   animation: fadeUp 0.6s ease both;
 }
 
@@ -187,7 +198,7 @@ body {
 
 .hero-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -221,23 +232,23 @@ body {
 }
 
 .hero-body {
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 400;
   line-height: 1.7;
   color: rgba(255,255,255,0.6);
-  max-width: 520px;
+  max-width: 32.5rem;
 }
 
 /* ─── CARDS ─── */
 .cards-section {
   background: var(--off);
   flex: 1;
-  padding: 0 48px 64px;
+  padding: 0 var(--page-gutter) 64px;
 }
 
 .cards-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -299,7 +310,7 @@ body {
 
 .card-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -309,7 +320,7 @@ body {
 }
 
 .card-desc {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 400;
   color: var(--ghost);
   line-height: 1.75;
@@ -319,7 +330,7 @@ body {
 
 .card-link {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -341,7 +352,7 @@ body {
 
 .inner-hero {
   background: var(--forest);
-  padding: 60px 48px 56px;
+  padding: 60px var(--page-gutter) 56px;
   position: relative;
   overflow: hidden;
 }
@@ -360,7 +371,7 @@ body {
 
 .inner-back {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -381,7 +392,7 @@ body {
 
 .inner-eyebrow {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -400,21 +411,20 @@ body {
   line-height: 1;
   margin-bottom: 20px;
   position: relative;
-  max-width: 680px;
+  max-width: 42.5rem;
 }
 
 .inner-lead {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 400;
   line-height: 1.75;
   color: rgba(255,255,255,0.58);
-  max-width: 560px;
+  max-width: 35rem;
   position: relative;
 }
 
 .inner-body {
-  padding: 56px 48px 64px;
-  max-width: 960px;
+  padding: 56px var(--page-gutter) 64px;
 }
 
 .features {
@@ -434,7 +444,7 @@ body {
 
 .feature-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -443,7 +453,7 @@ body {
 }
 
 .feature-body {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.75;
 }
@@ -459,7 +469,7 @@ body {
 
 .cta-bar-left h3 {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -467,13 +477,13 @@ body {
   margin-bottom: 4px;
 }
 .cta-bar-left p {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(255,255,255,0.55);
 }
 
 .cta-bar-btn {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -505,7 +515,7 @@ body {
 
 .resource-tag {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -516,7 +526,7 @@ body {
 
 .resource-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -526,7 +536,7 @@ body {
 }
 
 .resource-desc {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--ghost);
   line-height: 1.7;
 }
@@ -545,7 +555,7 @@ body {
   display: inline-block;
   margin-top: 16px;
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -562,7 +572,7 @@ body {
 
 .contact-info-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -572,7 +582,7 @@ body {
 
 .contact-info-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -582,7 +592,7 @@ body {
 }
 
 .contact-info p {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.8;
   margin-bottom: 28px;
@@ -594,13 +604,13 @@ body {
   gap: 12px;
   padding: 16px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ink);
 }
 
 .contact-detail-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -619,7 +629,7 @@ body {
 
 .form-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -632,7 +642,7 @@ body {
   color: var(--ink);
   padding: 12px 16px;
   font-family: var(--font-barlow), sans-serif;
-  font-size: 15px;
+  font-size: 0.9375rem;
   outline: none;
   transition: border-color 0.2s, background 0.2s;
   width: 100%;
@@ -655,7 +665,7 @@ body {
 .submit-btn {
   width: 100%;
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -679,7 +689,7 @@ body {
 
 .success-box h3 {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 900;
   text-transform: uppercase;
   color: var(--forest);
@@ -687,7 +697,7 @@ body {
 }
 
 .success-box p {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.75;
 }
@@ -695,7 +705,7 @@ body {
 /* ─── AI STUDIO PAGE ─── */
 .section-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -714,11 +724,11 @@ body {
 }
 
 .section-intro {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: var(--ghost);
   line-height: 1.75;
   margin-bottom: 36px;
-  max-width: 560px;
+  max-width: 35rem;
 }
 
 .process-steps {
@@ -744,7 +754,7 @@ body {
 
 .process-num {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--white);
   background: var(--forest);
@@ -781,7 +791,7 @@ body {
 
 .process-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -790,7 +800,7 @@ body {
 
 .process-duration {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--ghost);
   letter-spacing: 0.08em;
   border: 1px solid var(--border);
@@ -798,7 +808,7 @@ body {
 }
 
 .process-body {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.8;
 }
@@ -808,9 +818,6 @@ body {
   padding: 64px 0;
 }
 
-.equity-band .inner-body {
-  max-width: 960px;
-}
 
 .equity-grid {
   display: grid;
@@ -821,7 +828,7 @@ body {
 
 .equity-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 900;
   text-transform: uppercase;
   color: var(--white);
@@ -831,7 +838,7 @@ body {
 }
 
 .equity-body {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: rgba(255,255,255,0.55);
   line-height: 1.8;
   margin-bottom: 14px;
@@ -854,7 +861,7 @@ body {
 
 .equity-card-num {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 40px;
+  font-size: 2.5rem;
   font-weight: 900;
   color: var(--white);
   line-height: 1;
@@ -862,7 +869,7 @@ body {
 }
 
 .equity-card-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(255,255,255,0.5);
   line-height: 1.5;
 }
@@ -883,7 +890,7 @@ body {
 
 .for-card-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -895,7 +902,7 @@ body {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.65;
   margin-bottom: 10px;
@@ -933,7 +940,7 @@ body {
 
 .case-name {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -941,7 +948,7 @@ body {
 }
 
 .case-desc {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.75;
   margin-bottom: 20px;
@@ -955,7 +962,7 @@ body {
 
 .case-outcome {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 0.1em;
   color: var(--sage);
   text-transform: uppercase;
@@ -977,7 +984,7 @@ body {
 
 .form-section-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -988,7 +995,7 @@ body {
 }
 
 .form-section-note {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--ghost);
   margin-bottom: 16px;
   line-height: 1.6;
@@ -1015,7 +1022,7 @@ body {
   width: 36px;
   height: 36px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 0.6875rem;
   flex-shrink: 0;
   margin-bottom: 0;
   display: flex;
@@ -1030,7 +1037,7 @@ body {
   border: 1px dashed var(--border);
   color: var(--sage);
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1043,7 +1050,7 @@ body {
 .add-member-btn:hover { border-color: var(--sage); background: rgba(49,154,101,0.04); }
 
 @media (max-width: 900px) {
-  .equity-grid  { grid-template-columns: 1fr; }
+  .equity-grid  { grid-template-columns: minmax(0, 1fr); }
   .for-grid     { grid-template-columns: 1fr; }
   .case-grid    { grid-template-columns: 1fr; }
   .process-step { flex-direction: column; gap: 12px; }
@@ -1067,7 +1074,7 @@ body {
 
 .focus-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1077,7 +1084,7 @@ body {
 }
 
 .focus-body {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.8;
 }
@@ -1124,7 +1131,7 @@ body {
 
 .pkg-num {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 72px;
+  font-size: 4.5rem;
   font-weight: 900;
   line-height: 1;
   color: var(--forest);
@@ -1145,7 +1152,7 @@ body {
 
 .pkg-cat {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 400;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1157,7 +1164,7 @@ body {
 
 .pkg-focus-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1168,7 +1175,7 @@ body {
 
 .pkg-name {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1185,7 +1192,7 @@ body {
 
 .pkg-tag {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ghost);
@@ -1195,7 +1202,7 @@ body {
 }
 
 .pkg-desc {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--ghost);
   line-height: 1.8;
   margin-bottom: 20px;
@@ -1216,7 +1223,7 @@ body {
 
 .pkg-deliverable {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--forest);
@@ -1259,7 +1266,7 @@ body {
 
 .retail-case-client {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1268,7 +1275,7 @@ body {
 
 .retail-case-region {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ghost);
@@ -1283,7 +1290,7 @@ body {
 
 .retail-case-col-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -1292,7 +1299,7 @@ body {
 }
 
 .retail-case-text {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--ghost);
   line-height: 1.75;
 }
@@ -1312,7 +1319,7 @@ body {
 
 .calendly-title {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 900;
   text-transform: uppercase;
   color: var(--white);
@@ -1323,7 +1330,7 @@ body {
 }
 
 .calendly-body {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: rgba(255,255,255,0.5);
   line-height: 1.8;
   max-width: 440px;
@@ -1334,7 +1341,7 @@ body {
   background: var(--sage);
   color: var(--white);
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1356,7 +1363,7 @@ body {
 /* ─── FOOTER ─── */
 .footer {
   background: var(--forest);
-  padding: 28px 48px;
+  padding: 28px var(--page-gutter);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1372,7 +1379,7 @@ body {
 
 .footer-copy {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: rgba(255,255,255,0.25);
   letter-spacing: 0.06em;
 }
@@ -1384,7 +1391,7 @@ body {
 }
 .footer-links button {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1398,7 +1405,7 @@ body {
 .footer-links button:hover { color: rgba(255,255,255,0.7); }
 .footer-links a {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1443,7 +1450,7 @@ body {
 
 .nav-mobile-link {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1466,7 +1473,7 @@ body {
 
 .nav-mobile-cta {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1500,7 +1507,7 @@ body {
   .footer { flex-direction: column; gap: 16px; text-align: center; padding: 24px 20px; }
   .footer-links { flex-wrap: wrap; justify-content: center; }
   /* Prevent iOS auto-zoom on input focus */
-  input, textarea, select { font-size: 16px !important; }
+  input, textarea, select { font-size: 1rem !important; }
   /* Reduce hero title size for smaller screens */
   .hero-headline { font-size: clamp(36px, 9vw, 56px); }
   .inner-title { font-size: clamp(32px, 8vw, 52px); }
@@ -1534,7 +1541,7 @@ body {
 }
 .tk-nav-logo {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.05em;
@@ -1542,7 +1549,7 @@ body {
 }
 .tk-nav-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: rgba(255,255,255,0.5);
   letter-spacing: 0.12em;
@@ -1550,7 +1557,7 @@ body {
 }
 .tk-nav-tag {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 400;
   color: rgba(255,255,255,0.35);
   letter-spacing: 0.08em;
@@ -1573,7 +1580,7 @@ body {
   margin-bottom: 16px;
 }
 .tk-hero-sub {
-  font-size: 17px;
+  font-size: 1.0625rem;
   color: rgba(255,255,255,0.6);
   line-height: 1.7;
   max-width: 540px;
@@ -1587,7 +1594,7 @@ body {
 .tk-tag {
   display: inline-block;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1602,7 +1609,7 @@ body {
   padding: 28px 40px;
 }
 .tk-niche-strip p {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: rgba(255,255,255,0.8);
   line-height: 1.75;
   max-width: 760px;
@@ -1615,7 +1622,7 @@ body {
 }
 .tk-cards-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 600;
   color: var(--tk-dark);
   text-transform: uppercase;
@@ -1623,7 +1630,7 @@ body {
   margin-bottom: 8px;
 }
 .tk-cards-sub {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: rgba(5,48,48,0.6);
   margin-bottom: 32px;
   line-height: 1.6;
@@ -1654,7 +1661,7 @@ body {
 }
 .tk-tool-card-num {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.15em;
   color: rgba(5,48,48,0.4);
@@ -1663,7 +1670,7 @@ body {
 }
 .tk-tool-card-name {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--tk-dark);
   text-transform: uppercase;
@@ -1672,13 +1679,13 @@ body {
   margin-bottom: 8px;
 }
 .tk-tool-card-tagline {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(5,48,48,0.6);
   line-height: 1.65;
   margin-bottom: 12px;
 }
 .tk-tool-card-output {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: rgba(5,48,48,0.45);
   font-style: italic;
   line-height: 1.6;
@@ -1687,7 +1694,7 @@ body {
   padding: 12px 24px;
   border-top: 2px solid #eee;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1698,7 +1705,7 @@ body {
 .tk-badge {
   display: inline-block;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1716,7 +1723,7 @@ body {
 }
 .tk-how-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
@@ -1734,7 +1741,7 @@ body {
 }
 .tk-step-num {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
   color: var(--tk-teal);
   line-height: 1;
@@ -1742,7 +1749,7 @@ body {
 }
 .tk-step-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   color: #fff;
   text-transform: uppercase;
@@ -1750,7 +1757,7 @@ body {
   margin-bottom: 8px;
 }
 .tk-step-body {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: rgba(255,255,255,0.55);
   line-height: 1.7;
 }
@@ -1773,7 +1780,7 @@ body {
 }
 .tk-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1781,7 +1788,7 @@ body {
 .tk-input, .tk-textarea, .tk-select {
   padding: 12px 16px;
   font-family: Georgia, serif;
-  font-size: 15px;
+  font-size: 0.9375rem;
   outline: none;
   border: 1px solid;
   width: 100%;
@@ -1793,7 +1800,7 @@ body {
 /* Buttons */
 .tk-btn-primary {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1806,7 +1813,7 @@ body {
 .tk-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 .tk-btn-ghost {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1827,19 +1834,19 @@ body {
 }
 .tk-grade-letter {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 80px;
+  font-size: 5rem;
   font-weight: 700;
   line-height: 1;
 }
 .tk-grade-score {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 400;
   opacity: 0.65;
   margin-bottom: 16px;
 }
 .tk-grade-summary {
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.75;
 }
 .tk-mini-bars {
@@ -1855,7 +1862,7 @@ body {
 }
 .tk-mini-bar-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1875,7 +1882,7 @@ body {
 }
 .tk-mini-bar-num {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   width: 24px;
   text-align: right;
@@ -1894,7 +1901,7 @@ body {
 }
 .tk-info-card-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1902,7 +1909,7 @@ body {
   margin-bottom: 10px;
 }
 .tk-info-card-text {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.7;
 }
 
@@ -1925,14 +1932,14 @@ body {
 }
 .tk-dim-name {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .tk-dim-score {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -1946,12 +1953,12 @@ body {
   transition: width 0.5s ease;
 }
 .tk-dim-observation {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.65;
   opacity: 0.8;
 }
 .tk-dim-fix {
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.6;
   margin-top: 8px;
   font-style: italic;
@@ -1965,7 +1972,7 @@ body {
 }
 .tk-panel-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1973,7 +1980,7 @@ body {
   opacity: 0.65;
 }
 .tk-panel-text {
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.75;
 }
 
@@ -1988,7 +1995,7 @@ body {
   text-align: left;
   width: 100%;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2004,7 +2011,7 @@ body {
 }
 .tk-verdict-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -2013,7 +2020,7 @@ body {
 }
 .tk-verdict-score {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 64px;
+  font-size: 4rem;
   font-weight: 700;
   line-height: 1;
   margin-bottom: 12px;
@@ -2021,7 +2028,7 @@ body {
 .tk-verdict-chip {
   display: inline-block;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2029,7 +2036,7 @@ body {
   margin-bottom: 16px;
 }
 .tk-verdict-reasoning {
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.75;
 }
 
@@ -2048,13 +2055,13 @@ body {
 }
 .tk-numbered-item-num {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   flex-shrink: 0;
   width: 24px;
 }
 .tk-numbered-item-text {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.7;
 }
 
@@ -2073,7 +2080,7 @@ body {
 }
 .tk-hex-rating {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2085,7 +2092,7 @@ body {
   gap: 4px;
 }
 .tk-hex-label-row {
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.5;
   opacity: 0.75;
 }
@@ -2097,20 +2104,20 @@ body {
 }
 .tk-contact-role {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
 }
 .tk-contact-why {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.65;
   margin-bottom: 8px;
   opacity: 0.85;
 }
 .tk-contact-signal {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-style: italic;
   opacity: 0.65;
   margin-bottom: 10px;
@@ -2123,7 +2130,7 @@ body {
 }
 .tk-contact-linkedin {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 11px;
+  font-size: 0.6875rem;
   padding: 8px 12px;
   background: rgba(0,0,0,0.06);
   word-break: break-all;
@@ -2143,12 +2150,12 @@ body {
 }
 .tk-signal-right { flex: 1; }
 .tk-signal-finding {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.65;
   margin-bottom: 6px;
 }
 .tk-signal-implication {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-style: italic;
   opacity: 0.7;
   line-height: 1.6;
@@ -2158,7 +2165,7 @@ body {
 .tk-pill {
   display: inline-block;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2176,13 +2183,13 @@ body {
 }
 .tk-timing-badge {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .tk-timing-text {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.65;
   opacity: 0.8;
 }
@@ -2194,19 +2201,19 @@ body {
 }
 .tk-fit-rating {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 700;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
 .tk-fit-score {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 40px;
+  font-size: 2.5rem;
   font-weight: 700;
   line-height: 1;
 }
 .tk-fit-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-family: var(--font-oswald), sans-serif;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -2221,14 +2228,14 @@ body {
 }
 .tk-nl-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 8px;
 }
 .tk-nl-sub {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.7;
   margin-bottom: 20px;
   opacity: 0.75;
@@ -2240,15 +2247,16 @@ body {
 }
 .tk-nl-input {
   flex: 1;
+  min-width: 0;
   padding: 13px 16px;
   font-family: Georgia, serif;
-  font-size: 15px;
+  font-size: 0.9375rem;
   border: none;
   outline: none;
 }
 .tk-nl-btn {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2260,7 +2268,7 @@ body {
 }
 .tk-nl-btn:hover { opacity: 0.85; }
 .tk-nl-success {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.65;
   opacity: 0.85;
 }
@@ -2288,14 +2296,14 @@ body {
 }
 .tk-loader-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
 .tk-loader-sub {
-  font-size: 14px;
+  font-size: 0.875rem;
   opacity: 0.55;
   font-style: italic;
 }
@@ -2306,7 +2314,7 @@ body {
   text-align: center;
 }
 .tk-err-msg {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.7;
   margin-bottom: 20px;
 }
@@ -2314,7 +2322,7 @@ body {
 /* Back button */
 .tk-back-btn {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2334,7 +2342,7 @@ body {
 /* Context toggle */
 .tk-context-toggle {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2359,7 +2367,7 @@ body {
 }
 .tk-footer-text {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.08em;
   color: rgba(255,255,255,0.3);
@@ -2388,7 +2396,7 @@ body {
   margin-bottom: 12px;
 }
 .tk-nl-masthead-tagline {
-  font-size: 17px;
+  font-size: 1.0625rem;
   color: rgba(255,255,255,0.55);
   font-style: italic;
 }
@@ -2413,14 +2421,14 @@ body {
 }
 .tk-nl-descriptor-key {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.5);
 }
 .tk-nl-descriptor-val {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: #fff;
 }
 .tk-nl-inline-form {
@@ -2442,7 +2450,7 @@ body {
 .tk-nl-featured-issue:hover { opacity: 0.85; }
 .tk-nl-issue-num {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -2451,7 +2459,7 @@ body {
 }
 .tk-nl-featured-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
   color: #0e1a10;
   text-transform: uppercase;
@@ -2460,7 +2468,7 @@ body {
   margin-bottom: 10px;
 }
 .tk-nl-featured-subtitle {
-  font-size: 17px;
+  font-size: 1.0625rem;
   color: rgba(14,26,16,0.65);
   line-height: 1.7;
   margin-bottom: 16px;
@@ -2470,7 +2478,7 @@ body {
   align-items: center;
   gap: 12px;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2480,7 +2488,7 @@ body {
   background: var(--tk-mint);
   color: var(--tk-dark);
   padding: 3px 9px;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .tk-nl-archive {
   padding: 0 40px 48px;
@@ -2489,7 +2497,7 @@ body {
 }
 .tk-nl-archive-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2517,7 +2525,7 @@ body {
 .tk-nl-archive-item:hover { opacity: 0.7; }
 .tk-nl-archive-num {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2527,13 +2535,13 @@ body {
 }
 .tk-nl-archive-title-text {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
   color: #0e1a10;
   flex: 1;
 }
 .tk-nl-archive-date {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(14,26,16,0.4);
   flex-shrink: 0;
 }
@@ -2553,7 +2561,7 @@ body {
 }
 .tk-nl-reader-back {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2570,7 +2578,7 @@ body {
 .tk-nl-reader-back:hover { opacity: 0.7; }
 .tk-nl-reader-pub {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2582,7 +2590,7 @@ body {
 }
 .tk-nl-nav-btn {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2597,7 +2605,7 @@ body {
 .tk-nl-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .tk-nl-article {
-  max-width: 680px;
+  max-width: 42.5rem;
   margin: 0 auto;
   padding: 56px 24px 80px;
 }
@@ -2608,7 +2616,7 @@ body {
   margin-bottom: 24px;
   flex-wrap: wrap;
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2625,7 +2633,7 @@ body {
   margin-bottom: 16px;
 }
 .tk-nl-article-dek {
-  font-size: 19px;
+  font-size: 1.1875rem;
   font-style: italic;
   color: rgba(14,26,16,0.65);
   line-height: 1.7;
@@ -2635,14 +2643,14 @@ body {
 }
 .tk-nl-article-body { }
 .tk-nl-block-p {
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.8;
   color: #1a1a1a;
   margin-bottom: 20px;
 }
 .tk-nl-block-h2 {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #0e1a10;
   text-transform: uppercase;
@@ -2653,7 +2661,7 @@ body {
   border-left: 4px solid #005A66;
   background: #f7f4ee;
   padding: 24px 28px;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-style: italic;
   color: #0e1a10;
   line-height: 1.7;
@@ -2669,13 +2677,13 @@ body {
 .tk-nl-issue-footer {
   border-top: 1px solid rgba(14,26,16,0.1);
   padding: 40px 24px;
-  max-width: 680px;
+  max-width: 42.5rem;
   margin: 0 auto;
   text-align: center;
 }
 .tk-nl-issue-footer-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2683,7 +2691,7 @@ body {
   margin-bottom: 8px;
 }
 .tk-nl-issue-footer-sub {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: rgba(14,26,16,0.55);
   margin-bottom: 20px;
   line-height: 1.65;
@@ -2700,7 +2708,7 @@ body {
 .tk-nl-prev-next {
   border-top: 1px solid rgba(14,26,16,0.08);
   display: flex;
-  max-width: 680px;
+  max-width: 42.5rem;
   margin: 0 auto;
 }
 .tk-nl-pn-btn {
@@ -2718,7 +2726,7 @@ body {
 .tk-nl-pn-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .tk-nl-pn-label {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2727,7 +2735,7 @@ body {
 }
 .tk-nl-pn-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #0e1a10;
 }
@@ -2747,7 +2755,7 @@ body {
 }
 .tk-nl-bottom-copy-title {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
@@ -2756,7 +2764,7 @@ body {
   margin-bottom: 12px;
 }
 .tk-nl-bottom-copy-body {
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: rgba(255,255,255,0.55);
   line-height: 1.75;
 }
@@ -2767,7 +2775,7 @@ body {
 }
 .tk-nl-bottom-footer-text {
   font-family: var(--font-oswald), sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.2);
@@ -2795,7 +2803,7 @@ body {
    The row grid and the mobile rules for the dark scorecard panel. Fonts and
    colours are inline BRAND styles in the Scorecard component. */
 .bts-panel { padding: 28px; }
-.bts-total { font-size: 72px; }
+.bts-total { font-size: 4.5rem; }
 .bts-rows { border-top: 1px solid rgba(255,255,255,0.12); }
 .bts-row {
   display: grid;
@@ -2813,7 +2821,7 @@ body {
 .bts-form-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
 @media (max-width: 480px) {
   .bts-panel { padding: 16px; }
-  .bts-total { font-size: 56px; }
+  .bts-total { font-size: 3.5rem; }
   .bts-dots { width: 86px; }
   .bts-pair { grid-template-columns: 1fr; }
 }
@@ -2911,9 +2919,9 @@ body {
 .pb-steps::before { right: calc(100% / 12); background: var(--pb-line); }
 .pb-steps::after { width: calc(100% * 5 / 6 * var(--p)); background: var(--pb-accent); transition: width 0.35s ease; }
 .pb-steps li { display: flex; justify-content: center; min-width: 0; }
-.pb-step-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; font-size: 13px; line-height: 1.15; padding: 0 2px; text-align: center; min-width: 0; }
+.pb-step-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; font-size: 0.8125rem; line-height: 1.15; padding: 0 2px; text-align: center; min-width: 0; }
 .pb-step-dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; position: relative; z-index: 1; }
-.pb-now { display: none; grid-column: 1 / -1; margin: 0; text-align: center; font-size: 15px; font-weight: 700; }
+.pb-now { display: none; grid-column: 1 / -1; margin: 0; text-align: center; font-size: 0.9375rem; font-weight: 700; }
 .pb-paths { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 22px; }
 .pb-feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .pb-sysgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin-top: 14px; }
@@ -2929,7 +2937,7 @@ body {
 .pb-checks { list-style: none; margin: 0 0 26px; padding: 0; }
 .pb-checks li { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
 .pb-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding-bottom: env(safe-area-inset-bottom, 0px); }
-.pb-dock-bar { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 1240px; margin: 0 auto; padding: 12px 24px; background: none; border: 0; color: inherit; cursor: pointer; text-align: left; font-size: 15px; box-sizing: border-box; }
+.pb-dock-bar { display: flex; align-items: center; gap: 16px; width: 100%; max-width: 1240px; margin: 0 auto; padding: 12px 24px; background: none; border: 0; color: inherit; cursor: pointer; text-align: left; font-size: 0.9375rem; box-sizing: border-box; }
 .pb-dock-panel { padding: 6px 24px 22px; max-width: 1240px; margin: 0 auto; max-height: min(62vh, 600px); overflow: auto; box-sizing: border-box; }
 .pb-dock-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 36px; }
 .pb-mdots { display: flex; gap: 3px; flex-wrap: wrap; max-width: 200px; }
@@ -2943,7 +2951,7 @@ body {
 @media (max-width: 700px) {
   .pb-paths { grid-template-columns: 1fr; }
   .pb-step-lbl, .pb-arrow-t { display: none; }
-  .pb-step-dot { width: 26px; height: 26px; font-size: 13px; }
+  .pb-step-dot { width: 26px; height: 26px; font-size: 0.8125rem; }
   .pb-steps::before, .pb-steps::after { top: 12px; }
   .pb-now { display: block; }
 }
@@ -2984,16 +2992,26 @@ body {
 .studio-choice-btn:focus-visible { outline: 2px solid var(--sage); outline-offset: 3px; }
 .studio-choice-label {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .studio-choice-note {
   font-family: var(--font-dm-sans), sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   opacity: 0.8;
 }
 @media (max-width: 600px) {
   .studio-choice { grid-template-columns: 1fr; }
+}
+
+/* Three equal columns that stack on phones. */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+@media (max-width: 700px) {
+  .grid-3 { grid-template-columns: 1fr; }
 }
