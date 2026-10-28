@@ -16,7 +16,7 @@ function SiteFooter() {
       <Image src={LOGO_WHITE} alt="Summit" width={140} height={22} className="footer-logo" />
       <ul className="footer-links">
         <li><Link href="/">Home</Link></li>
-        <li><Link href="/ai-studio">Product Studio</Link></li>
+        <li><Link href="/product-studio">Product Studio</Link></li>
         <li><Link href="/loyalty-retail-media">Loyalty &amp; Retail Media</Link></li>
         <li><Link href="/scale-up-advisory">Scale-Up Advisory</Link></li>
         <li><Link href="/tools">GTM Tools</Link></li>

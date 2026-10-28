@@ -49,7 +49,7 @@ All tools are free, no signup required, results in under 60 seconds.
 
 ## How to Engage
 
-**Product Studio:** Submit your idea via the application form at https://summitstrategyadvisory.com/ai-studio. We review every submission and respond within 3 business days.
+**Product Studio:** Submit your idea via the application form at https://summitstrategyadvisory.com/product-studio/startups. We review every submission and respond within 3 business days.
 
 **Loyalty & Retail Media / Scale-Up Advisory:** Book a 30-minute call — no obligation, no pitch deck. https://calendar.google.com/calendar/appointments/schedules/AcZssZ35rKsxptXY-OfUDUjC4G9jWqVTFtPcCPApotrNSNzoQoEvN-HAegmAab4E5jxQ7NAgSF89ollu
 
@@ -58,7 +58,9 @@ All tools are free, no signup required, results in under 60 seconds.
 ## Key Pages
 
 - Homepage: https://summitstrategyadvisory.com
-- Product Studio: https://summitstrategyadvisory.com/ai-studio
+- Product Studio: https://summitstrategyadvisory.com/product-studio
+- Product Studio for startups: https://summitstrategyadvisory.com/product-studio/startups
+- Product Studio for enterprise: https://summitstrategyadvisory.com/product-studio/enterprise
 - Loyalty & Retail Media: https://summitstrategyadvisory.com/loyalty-retail-media
 - Scale-Up Advisory: https://summitstrategyadvisory.com/scale-up-advisory
 - GTM Tools Hub: https://summitstrategyadvisory.com/tools
