@@ -290,7 +290,7 @@ export default function ModelsClient() {
           />
         </td>
         <td style={td}>
-          {task === "synthesis" || task === "builder-read" ? (
+          {task === "synthesis" || task === "builder-read" || task === "builder-prototype" ? (
             <select
               value={cfg.fallback ?? ""}
               disabled={busy}

@@ -120,6 +120,12 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         rows={[...t.helpers.map((r) => [r.step, r.uses, r.fallbacks]), ["document reads", t.reads.uses, t.reads.fallbacks], ["ideas runs", t.ideasRuns.uses, t.ideasRuns.fallbacks]]}
       />
 
+      <h2 style={h2}>Prototypes</h2>
+      <Table
+        head={["Created", "Updated", "Failed", "Corrected", "Style found", "Style partial", "Style none"]}
+        rows={[[t.prototypes.created, t.prototypes.updated, t.prototypes.failed, t.prototypes.corrected, t.prototypes.styleFound, t.prototypes.stylePartial, t.prototypes.styleNone]]}
+      />
+
       <h2 style={h2}>Model calls per routing key</h2>
       <Table
         head={["Key", "Calls", "Failed", "Prompt tokens", "Completion tokens", "Spend"]}

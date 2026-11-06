@@ -38,6 +38,11 @@ function isBlockedHost(hostname: string): boolean {
   return BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix));
 }
 
+/** The same host rule as the form, for the crawler's asset fetches and their redirect targets. */
+export function isPublicHostname(hostname: string): boolean {
+  return !isBlockedHost(hostname.toLowerCase());
+}
+
 /**
  * Trims, prefixes `https://` when no scheme is given, requires http or
  * https with no credentials and a public-looking hostname, lowercases the

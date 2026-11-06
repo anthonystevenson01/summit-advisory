@@ -7,7 +7,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
 import { blank, type BriefState } from "../app/lib/project-builder/brief.ts";
-import { briefPageBlocks, briefPageProperties, chunkBlocks, notionPageUrl, type BriefPageArgs } from "../app/lib/project-builder/notion-brief.ts";
+import { PROTOTYPE_LINK_LABEL, briefPageBlocks, briefPageProperties, chunkBlocks, notionPageUrl, type BriefPageArgs } from "../app/lib/project-builder/notion-brief.ts";
 
 const DASH_RE = /[–—]/;
 
@@ -118,6 +118,22 @@ describe("briefPageBlocks", () => {
     assert.ok(idx > 0);
     const paras = blocks.slice(idx + 1).map((b) => texts(b)[0]);
     assert.deepEqual(paras.map((p) => p.length), [2000, 2000, 500]);
+  });
+
+  test("a Prototype section with linked rich text only when a prototype URL is given", () => {
+    const none = briefPageBlocks(args()) as Array<Record<string, unknown>>;
+    assert.ok(!none.some((b) => b.type === "heading_2" && texts(b)[0] === "Prototype"));
+    const proto = "https://summitstrategyadvisory.com/project-builder?b=brief_0123456789abcdef&t=a.b&view=prototype";
+    const admin = "https://summitstrategyadvisory.com/admin/briefs/brief_0123456789abcdef/prototype";
+    const blocks = briefPageBlocks(args({ prototypeUrl: proto, prototypeAdminUrl: admin })) as Array<Record<string, unknown>>;
+    const idx = blocks.findIndex((b) => b.type === "heading_2" && texts(b)[0] === "Prototype");
+    assert.ok(idx > 0);
+    const link = blocks[idx + 1] as { paragraph: { rich_text: Array<{ text: { content: string; link: { url: string } } }> } };
+    assert.equal(link.paragraph.rich_text[0].text.content, PROTOTYPE_LINK_LABEL);
+    assert.equal(link.paragraph.rich_text[0].text.link.url, proto);
+    const adminLink = blocks[idx + 3] as { paragraph: { rich_text: Array<{ text: { link: { url: string } } }> } };
+    assert.equal(adminLink.paragraph.rich_text[0].text.link.url, admin);
+    assert.ok(!JSON.stringify(blocks).includes("<html"));
   });
 
   test("chunkBlocks and notionPageUrl", () => {

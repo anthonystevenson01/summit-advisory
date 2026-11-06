@@ -468,3 +468,73 @@ export function parseIdeas(raw: unknown): IdeasResult {
   }
   return { note: cleanString(raw.note, TEXT), ideas };
 }
+
+// ── Prototype ────────────────────────────────────────────────────────────────
+
+/** Characters kept from a reply's html before validation; the validator reports the real cap. */
+export const PROTOTYPE_REPLY_CHARS = 200_000;
+export const PROTOTYPE_SCREENS_CAP = 5;
+export const PROTOTYPE_EDITS_CAP = 40;
+
+export interface PrototypeResult {
+  screens: string[];
+  html: string;
+  summary: string;
+}
+
+export function prototypeSchema(): NamedSchema {
+  return named(
+    "builder_prototype",
+    obj({
+      screens: list(text("A screen name."), "The screens in the document, in navigation order."),
+      html: text("The whole self contained HTML document."),
+      summary: text("One plain sentence on what the prototype shows."),
+    }),
+  );
+}
+
+export function parsePrototype(raw: unknown): PrototypeResult {
+  if (!isRecord(raw)) throw new SchemaError("answer is not an object");
+  if (typeof raw.html !== "string" || !raw.html.trim()) throw new SchemaError("html is missing");
+  return {
+    screens: cleanStrings(raw.screens, PROTOTYPE_SCREENS_CAP, 60),
+    html: raw.html.trim().slice(0, PROTOTYPE_REPLY_CHARS),
+    summary: cleanString(raw.summary, 300),
+  };
+}
+
+export interface PrototypeEditsResult {
+  rewrite: boolean;
+  edits: Array<{ old_str: string; new_str: string }>;
+  summary: string;
+}
+
+export function prototypeEditsSchema(): NamedSchema {
+  return named(
+    "builder_prototype_edits",
+    obj({
+      rewrite: { type: "boolean", description: "True when the changes touch most screens and the document should be rebuilt instead." },
+      edits: list(
+        obj({
+          old_str: text("Text copied exactly from the current document, found exactly once in it."),
+          new_str: text("The replacement text."),
+        }),
+        "Search and replace edits, applied in order. At most 40.",
+      ),
+      summary: text("One plain sentence on what changed."),
+    }),
+  );
+}
+
+/** Edits are kept as written (no trimming: old_str must match exactly); items without a string old_str are dropped. */
+export function parsePrototypeEdits(raw: unknown): PrototypeEditsResult {
+  if (!isRecord(raw)) throw new SchemaError("answer is not an object");
+  const editsRaw = requireArray(raw, "edits");
+  const edits: Array<{ old_str: string; new_str: string }> = [];
+  for (const item of editsRaw) {
+    if (!isRecord(item) || typeof item.old_str !== "string") continue;
+    edits.push({ old_str: item.old_str, new_str: typeof item.new_str === "string" ? item.new_str : "" });
+    if (edits.length >= PROTOTYPE_EDITS_CAP) break;
+  }
+  return { rewrite: raw.rewrite === true, edits, summary: cleanString(raw.summary, 300) };
+}

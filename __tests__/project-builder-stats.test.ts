@@ -139,4 +139,21 @@ describe("aggregateStats", () => {
     assert.equal(t.briefsByStatus.find((b) => b.status === "quoted")?.count, 2);
     assert.equal(t.medianHoursToFirstStatusChange, 48);
   });
+
+  test("prototype counts by mode, failures, corrected runs and style status", () => {
+    const protoEvents: EventRow[] = [
+      ev("builder_prototype_run", { mode: "created", path: "create", ok: true, corrected: false, style: "found" }),
+      ev("builder_prototype_run", { mode: "created", path: "create", ok: true, corrected: true, style: "none" }),
+      ev("builder_prototype_run", { mode: "updated", path: "edits", ok: true, corrected: false, style: "found" }),
+      ev("builder_prototype_run", { mode: "updated", path: "rebuild", ok: false, reason: "invalid" }),
+      ev("builder_prototype_run", { mode: "created", path: "create", ok: true, corrected: false }, 45),
+      ev("builder_prototype_style", { status: "found", reason: "" }),
+      ev("builder_prototype_style", { status: "partial", reason: "" }),
+      ev("builder_prototype_style", { status: "none", reason: "no-website" }),
+      ev("builder_prototype_style", { status: "none", reason: "unreadable" }),
+    ];
+    const p = aggregateStats({ events: protoEvents, calls: [], briefs: [], window }).prototypes;
+    assert.deepEqual(p, { created: 2, updated: 1, failed: 1, corrected: 1, styleFound: 1, stylePartial: 1, styleNone: 2 });
+    assert.deepEqual(t.prototypes, { created: 0, updated: 0, failed: 0, corrected: 0, styleFound: 0, stylePartial: 0, styleNone: 0 });
+  });
 });

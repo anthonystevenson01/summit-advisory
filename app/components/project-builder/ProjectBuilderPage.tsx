@@ -25,12 +25,20 @@
  * Every JSON body carries `website: ""`: that top level field is the
  * honeypot on every builder route, which is why the real website inputs
  * are named `businessWebsite` and `companyWebsite`.
+ *
+ * The dock has two tabs, "Your blueprint" and "Prototype so far"; one panel
+ * is open at a time. A prototype is only ever drawn when the prospect
+ * presses its button. It needs a saved brief, so an unsaved press opens the
+ * Save sheet (name and email) and continues once the save lands. The
+ * prototype HTML is never kept in localStorage; after a refresh it is read
+ * back once from the brief.
  */
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { BRAND } from "@/app/lib/brand";
 import {
   BRIEF_ID_PATTERN,
+  PROTOTYPE_RUNS_PER_BRIEF,
   SOURCE_MAX_CHARS,
   blank,
   isFreeMailAddress,
@@ -40,6 +48,7 @@ import {
   validateContact,
   type BriefState,
   type BriefStatus,
+  type ContactMode,
   type SuggestStep,
 } from "@/app/lib/project-builder/brief";
 import { STEPS, type Priority } from "@/app/lib/project-builder/catalogue";
@@ -52,6 +61,7 @@ import {
   LINK_REQUEST_ANSWER,
   OFFLINE_LINE,
   PROJECT_BUILDER_PATH,
+  PROTOTYPE,
   SAVE,
   SAVED_LINE,
   SAVED_LOCAL_ONLY_LINE,
@@ -63,6 +73,13 @@ import {
 } from "@/app/lib/project-builder/copy";
 import { buildReplacementRequirements, type Requirement } from "@/app/lib/project-builder/requirements";
 import { devAnswer, type DevAnswer } from "@/app/lib/project-builder/suggestions";
+import {
+  PROTOTYPE_VIEW_PARAM,
+  PROTOTYPE_VIEW_VALUE,
+  resolvePrototypeWebsite,
+  type PrototypeView,
+  type StyleStatus,
+} from "@/app/lib/project-builder/prototype";
 import { page as pageStyle, wrap } from "./builder-styles";
 import Stepper from "./Stepper";
 import SaveButton from "./SaveButton";
@@ -74,6 +91,7 @@ import StepSmart from "./StepSmart";
 import StepSubmit from "./StepSubmit";
 import SaveSheet from "./SaveSheet";
 import BlueprintDock from "./BlueprintDock";
+import PrototypeDock, { type PrototypeStage } from "./PrototypeDock";
 import ReadOnlyView from "./ReadOnlyView";
 import DonePanel from "./DonePanel";
 import LinkRequest from "./LinkRequest";
@@ -87,6 +105,11 @@ const STORAGE_KEY = "summit-project-builder-v3";
 const STARTED_KEY = "summit-project-builder-started";
 
 type Phase = "building" | "loading" | "submitting" | "done" | "locked";
+type DockTab = "blueprint" | "prototype" | null;
+
+/** The staged lines move on timers; the request is one call, so they are honest about being estimates. */
+const STAGE_DRAWING_MS = 12_000;
+const STAGE_LONG_MS = 60_000;
 
 interface SavedInfo {
   id: string;
@@ -97,6 +120,7 @@ interface SavedInfo {
   suggestCount: number;
   ideasCount: number;
   readCount: number;
+  prototypeCount: number;
 }
 
 interface Stored {
@@ -142,6 +166,7 @@ function readStored(): { state: BriefState; source: string; contact: ContactDraf
             suggestCount: Number(s.suggestCount) || 0,
             ideasCount: Number(s.ideasCount) || 0,
             readCount: Number(s.readCount) || 0,
+            prototypeCount: Number(s.prototypeCount) || 0,
           }
         : null;
     return { state, source, contact, saved, srcTag: normaliseSourceTag(parsed.srcTag) };
@@ -181,8 +206,8 @@ function sendEvent(name: "builder_started" | "builder_step_completed", step?: nu
   }
 }
 
-/** Reads `b`, `t` and `src` under Suspense so the page stays static. State is handed back only in the async continuation. */
-function ResumeLoader({ onResume, onSrc }: { onResume: (id: string, token: string) => void; onSrc: (tag: string) => void }) {
+/** Reads `b`, `t`, `view` and `src` under Suspense so the page stays static. State is handed back only in the async continuation. */
+function ResumeLoader({ onResume, onSrc }: { onResume: (id: string, token: string, view: string) => void; onSrc: (tag: string) => void }) {
   const searchParams = useSearchParams();
   const started = useRef(false);
   useEffect(() => {
@@ -190,10 +215,11 @@ function ResumeLoader({ onResume, onSrc }: { onResume: (id: string, token: strin
     started.current = true;
     const b = searchParams.get("b") ?? "";
     const t = searchParams.get("t") ?? "";
+    const view = searchParams.get(PROTOTYPE_VIEW_PARAM) ?? "";
     const src = normaliseSourceTag(searchParams.get("src"));
     Promise.resolve().then(() => {
       if (src) onSrc(src);
-      if (BRIEF_ID_PATTERN.test(b) && t) onResume(b, t);
+      if (BRIEF_ID_PATTERN.test(b) && t) onResume(b, t, view);
     });
   }, [searchParams, onResume, onSrc]);
   return null;
@@ -211,7 +237,8 @@ export default function ProjectBuilderPage() {
   const [contactError, setContactError] = useState("");
   const [saved, setSaved] = useState<SavedInfo | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [dockOpen, setDockOpen] = useState(false);
+  const [sheetNote, setSheetNote] = useState("");
+  const [dockTab, setDockTab] = useState<DockTab>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("building");
   const [srcTag, setSrcTag] = useState("");
@@ -219,6 +246,15 @@ export default function ProjectBuilderPage() {
   const [localIdeasRuns, setLocalIdeasRuns] = useState(0);
   const [ideasLoading, setIdeasLoading] = useState(false);
   const [toast, setToast] = useState("");
+  const [prototype, setPrototype] = useState<PrototypeView | null>(null);
+  const [protoBusy, setProtoBusy] = useState(false);
+  const [protoStage, setProtoStage] = useState<PrototypeStage | null>(null);
+  const [protoNote, setProtoNote] = useState("");
+  const [protoError, setProtoError] = useState("");
+  const [styleStatus, setStyleStatus] = useState<StyleStatus | null>(null);
+  const [scrollToPrototype, setScrollToPrototype] = useState(false);
+  const pendingPrototype = useRef(false);
+  const protoTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const startedRef = useRef(false);
   const saveInFlight = useRef(false);
   const saveQueued = useRef<BriefState | null>(null);
@@ -237,6 +273,18 @@ export default function ProjectBuilderPage() {
         setSaved(stored.saved);
         setSrcTag(stored.srcTag);
         if (stored.saved && stored.saved.status !== "draft") setPhase("locked");
+        // The prototype HTML is not kept on this device; read it back once from the brief.
+        const s = stored.saved;
+        if (s && s.token && s.prototypeCount > 0) {
+          void fetch(`/api/project-builder/briefs/${encodeURIComponent(s.id)}?t=${encodeURIComponent(s.token)}`, { cache: "no-store" })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data: { prototype?: PrototypeView | null; styleStatus?: StyleStatus | null } | null) => {
+              if (cancelled || !data) return;
+              setPrototype(data.prototype ?? null);
+              setStyleStatus(data.styleStatus ?? null);
+            })
+            .catch(() => undefined);
+        }
       }
       setReady(true);
     });
@@ -257,7 +305,18 @@ export default function ProjectBuilderPage() {
 
   useEffect(() => () => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
+    for (const t of protoTimers.current) clearTimeout(t);
   }, []);
+
+  // A `view=prototype` link to a submitted brief scrolls to the prototype once the read only view is on screen.
+  useEffect(() => {
+    if (!scrollToPrototype || phase !== "locked") return;
+    const timer = setTimeout(() => {
+      document.getElementById("pb-prototype")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToPrototype(false);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [scrollToPrototype, phase]);
 
   const showToast = (text: string) => {
     setToast(text);
@@ -325,6 +384,16 @@ export default function ProjectBuilderPage() {
     }
   };
 
+  /** Submit asks for the website a save may have skipped: Step 1's, else a company email domain. */
+  const prefillSubmitWebsite = () => {
+    if (contact.website.trim()) return;
+    const fromStep = normaliseDomain(state.biz.website);
+    const at = contact.email.lastIndexOf("@");
+    const fromEmail = at > 0 && !isFreeMailAddress(contact.email) ? normaliseDomain(contact.email.slice(at + 1)) : null;
+    const domain = fromStep ?? fromEmail;
+    if (domain) setContact((c) => ({ ...c, website: c.website.trim() ? c.website : domain }));
+  };
+
   const go = (to: number) => {
     const from = state.step;
     if (to === from) return;
@@ -332,6 +401,7 @@ export default function ProjectBuilderPage() {
     if (target > from && stepHasContent(state, from)) sendEvent("builder_step_completed", from + 1);
     const next = { ...state, step: target };
     setState(next);
+    if (target === STEPS.length - 1) prefillSubmitWebsite();
     setSelectedKey(null);
     window.scrollTo({ top: 0 });
     void autosave(next);
@@ -425,18 +495,28 @@ export default function ProjectBuilderPage() {
     note("running", r.message);
   };
 
-  const openSave = () => {
+  const openSave = (why = "") => {
     if (!contact.website.trim() && state.biz.website.trim()) {
       const d = normaliseDomain(state.biz.website);
       if (d) setContact((c) => ({ ...c, website: d }));
     }
     setContactError("");
+    setSheetNote(why);
     setSheetOpen(true);
   };
 
-  /** The first save (POST) or a details update (PUT with the contact). Returns the saved info, or null on failure. */
-  const doSave = async (): Promise<SavedInfo | null> => {
-    const validated = validateContact(contact);
+  const closeSheet = () => {
+    pendingPrototype.current = false;
+    setSheetOpen(false);
+  };
+
+  /**
+   * The first save (POST) or a details update (PUT with the contact). The
+   * Save sheet saves with a name and email; Submit asks for all four.
+   * Returns the saved info, or null on failure.
+   */
+  const doSave = async (mode: ContactMode = "save"): Promise<SavedInfo | null> => {
+    const validated = validateContact(contact, mode);
     if (!validated.ok) {
       setContactError(validated.error);
       return null;
@@ -483,6 +563,7 @@ export default function ProjectBuilderPage() {
         suggestCount: 0,
         ideasCount: localIdeasRuns,
         readCount: 0,
+        prototypeCount: 0,
       };
       setSaved(info);
       setContact((c) => ({ ...c, website: validated.contact.website }));
@@ -497,11 +578,102 @@ export default function ProjectBuilderPage() {
     }
   };
 
+  const clearProtoTimers = () => {
+    for (const t of protoTimers.current) clearTimeout(t);
+    protoTimers.current = [];
+  };
+
+  /**
+   * One press of Create or Update. Unsaved: the Save sheet opens with the
+   * reason and the press runs once the save lands. The previous prototype
+   * stays on screen through the wait and on any failure.
+   */
+  const generatePrototype = async (info: SavedInfo | null = saved) => {
+    if (protoBusy) return;
+    if (!info) {
+      pendingPrototype.current = true;
+      setProtoError("");
+      openSave(PROTOTYPE.saveFirst);
+      return;
+    }
+    if (!info.token) {
+      setProtoError(SAVED_LOCAL_ONLY_LINE);
+      return;
+    }
+    setProtoBusy(true);
+    setProtoError("");
+    setProtoNote("");
+    const reading = styleStatus === null && resolvePrototypeWebsite(state, contact) !== null;
+    setProtoStage(reading ? "reading" : "drawing");
+    clearProtoTimers();
+    if (reading) protoTimers.current.push(setTimeout(() => setProtoStage("drawing"), STAGE_DRAWING_MS));
+    protoTimers.current.push(setTimeout(() => setProtoStage("long"), STAGE_LONG_MS));
+    try {
+      const res = await fetch("/api/project-builder/prototype", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ briefId: info.id, token: info.token, state, website: "" }),
+      });
+      const data = (await res.json().catch(() => ({ error: OFFLINE_LINE }))) as {
+        ok?: boolean;
+        prototype?: PrototypeView | null;
+        runs?: number;
+        message?: string;
+        error?: string;
+        needSave?: boolean;
+        cap?: boolean;
+      };
+      if (res.status === 409) {
+        lock();
+        return;
+      }
+      if (res.ok && data.ok && data.prototype) {
+        const view = data.prototype;
+        setPrototype(view);
+        setStyleStatus(view.styleStatus);
+        setProtoNote(data.message ?? "");
+        if (typeof data.runs === "number") setSaved((s) => (s ? { ...s, prototypeCount: data.runs as number } : s));
+        return;
+      }
+      if (data.needSave) {
+        pendingPrototype.current = true;
+        openSave(PROTOTYPE.saveFirst);
+        return;
+      }
+      if (data.cap) setSaved((s) => (s ? { ...s, prototypeCount: PROTOTYPE_RUNS_PER_BRIEF } : s));
+      if (typeof data.runs === "number") setSaved((s) => (s ? { ...s, prototypeCount: data.runs as number } : s));
+      setProtoError(data.error ?? OFFLINE_LINE);
+    } catch {
+      setProtoError(OFFLINE_LINE);
+    } finally {
+      clearProtoTimers();
+      setProtoBusy(false);
+      setProtoStage(null);
+    }
+  };
+
+  /** The sheet's Save: a pending prototype press runs once the brief exists. */
+  const saveFromSheet = async () => {
+    const info = await doSave("save");
+    if (info && pendingPrototype.current) {
+      pendingPrototype.current = false;
+      void generatePrototype(info);
+    }
+  };
+
   const submit = async () => {
     if (busy) return;
+    // Submit needs all four details; a save by name and email may have left two blank.
+    const checked = validateContact(contact, "submit");
+    if (!checked.ok) {
+      setContactError(checked.error);
+      note("submit", checked.error);
+      return;
+    }
+    setContactError("");
     let info = saved;
     if (!info) {
-      info = await doSave();
+      info = await doSave("submit");
       if (!info) return;
     }
     if (!info.token) {
@@ -515,21 +687,23 @@ export default function ProjectBuilderPage() {
       const res = await fetch(`/api/project-builder/briefs/${encodeURIComponent(info.id)}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: info.token, state, source, website: "" }),
+        body: JSON.stringify({ token: info.token, state, source, contact: checked.contact, website: "" }),
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; submittedAt?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; submittedAt?: string; error?: string; needContact?: boolean };
       if (res.status === 409) {
         lock();
         return;
       }
       if (!res.ok || !data.ok) {
         setPhase("building");
+        if (data.needContact) setContactError(data.error ?? "");
         note("submit", data.error ?? OFFLINE_LINE);
         return;
       }
+      setContact((c) => ({ ...c, website: checked.contact.website }));
       setSaved({ ...info, status: "submitted", submittedAt: data.submittedAt ?? new Date().toISOString() });
       setUndo(null);
-      setDockOpen(false);
+      setDockTab(null);
       setPhase("done");
       window.scrollTo({ top: 0 });
     } catch {
@@ -540,7 +714,7 @@ export default function ProjectBuilderPage() {
     }
   };
 
-  const resume = useCallback(async (id: string, token: string) => {
+  const resume = useCallback(async (id: string, token: string, view: string) => {
     setPhase("loading");
     try {
       const res = await fetch(`/api/project-builder/briefs/${encodeURIComponent(id)}?t=${encodeURIComponent(token)}`, { cache: "no-store" });
@@ -559,6 +733,9 @@ export default function ProjectBuilderPage() {
         suggestCount?: number;
         ideasCount?: number;
         readCount?: number;
+        prototypeCount?: number;
+        prototype?: PrototypeView | null;
+        styleStatus?: StyleStatus | null;
       };
       const loaded = parseBriefState(data.state);
       setState(loaded);
@@ -580,10 +757,19 @@ export default function ProjectBuilderPage() {
         suggestCount: data.suggestCount ?? 0,
         ideasCount: data.ideasCount ?? 0,
         readCount: data.readCount ?? 0,
+        prototypeCount: data.prototypeCount ?? 0,
       });
+      setPrototype(data.prototype ?? null);
+      setStyleStatus(data.styleStatus ?? null);
+      setProtoNote("");
+      setProtoError("");
       setNotes({});
       setUndo(null);
       setPhase(status === "draft" ? "building" : "locked");
+      if (view === PROTOTYPE_VIEW_VALUE) {
+        if (status === "draft") setDockTab("prototype");
+        else setScrollToPrototype(true);
+      }
     } catch {
       setPhase("building");
       note("link", LINK_INVALID_LINE);
@@ -636,7 +822,12 @@ export default function ProjectBuilderPage() {
     setContactError("");
     setSaved(null);
     setSheetOpen(false);
-    setDockOpen(false);
+    setDockTab(null);
+    setPrototype(null);
+    setProtoNote("");
+    setProtoError("");
+    setStyleStatus(null);
+    pendingPrototype.current = false;
     setSelectedKey(null);
     setLocalIdeasRuns(0);
     setPhase("building");
@@ -702,7 +893,7 @@ export default function ProjectBuilderPage() {
         <div style={wrap}>
           <SaveButton savedAt={null} onSave={() => undefined} onReset={reset} resetLabel={SAVE.startNew} busy />
           {phase === "done" && <DonePanel firstName={firstName} />}
-          <ReadOnlyView state={state} status={saved.status} submittedAt={saved.submittedAt} onChangeRequest={changeRequest} changeNote={notes.change ?? ""} onReset={reset} />
+          <ReadOnlyView state={state} status={saved.status} submittedAt={saved.submittedAt} onChangeRequest={changeRequest} changeNote={notes.change ?? ""} onReset={reset} prototype={prototype} />
         </div>
       </div>
     );
@@ -713,7 +904,7 @@ export default function ProjectBuilderPage() {
     <div className="pb-page" style={pageStyle}>
       {resumeLoader}
       <div style={wrap}>
-        <SaveButton savedAt={saved?.savedAt ?? null} onSave={openSave} onReset={reset} busy={busy} />
+        <SaveButton savedAt={saved?.savedAt ?? null} onSave={() => openSave()} onReset={reset} busy={busy} />
         {notes.link && <p style={{ color: BRAND.red, fontSize: 15, margin: "8px 0 0" }}>{notes.link}</p>}
         {notes.save && <p style={{ color: BRAND.teal, fontSize: 14, margin: "8px 0 0" }}>{notes.save}</p>}
         <Stepper step={step} onGo={go} />
@@ -768,16 +959,45 @@ export default function ProjectBuilderPage() {
               busy={busy || phase === "submitting"}
               note={notes.submit ?? ""}
               onGoto={go}
-              onOpenSave={openSave}
+              onOpenSave={() => openSave()}
               onSubmit={() => void submit()}
             />
           )}
         </main>
       </div>
-      <SaveSheet open={sheetOpen} saved={Boolean(saved)} contact={contact} onChange={(patch) => setContact((c) => ({ ...c, ...patch }))} error={contactError} busy={busy} onCancel={() => setSheetOpen(false)} onSave={() => void doSave()} />
-      <BlueprintDock state={state} open={dockOpen} onToggle={() => setDockOpen((o) => !o)} selectedKey={selectedKey} onSelect={setSelectedKey} onPriority={setPriority} onRemove={removeReq} onGoto={(s) => { setDockOpen(false); go(s); }} />
+      <SaveSheet open={sheetOpen} saved={Boolean(saved)} contact={contact} onChange={(patch) => setContact((c) => ({ ...c, ...patch }))} error={contactError} busy={busy} onCancel={closeSheet} onSave={() => void saveFromSheet()} note={sheetNote} />
+      <div className="pb-dock">
+        <BlueprintDock
+          state={state}
+          open={dockTab === "blueprint"}
+          onToggle={() => setDockTab((t) => (t === "blueprint" ? null : "blueprint"))}
+          selectedKey={selectedKey}
+          onSelect={setSelectedKey}
+          onPriority={setPriority}
+          onRemove={removeReq}
+          onGoto={(s) => {
+            setDockTab(null);
+            go(s);
+          }}
+        />
+        <PrototypeDock
+          state={state}
+          contact={contact}
+          prototype={prototype}
+          open={dockTab === "prototype"}
+          onToggle={() => setDockTab((t) => (t === "prototype" ? null : "prototype"))}
+          saved={Boolean(saved)}
+          locked={false}
+          busy={protoBusy}
+          stage={protoStage}
+          note={protoNote}
+          error={protoError}
+          runsLeft={PROTOTYPE_RUNS_PER_BRIEF - (saved?.prototypeCount ?? 0)}
+          onGenerate={() => void generatePrototype()}
+        />
+      </div>
       {toast && (
-        <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(80px + env(safe-area-inset-bottom, 0px))", background: BRAND.darkGreen, color: BRAND.white, padding: "10px 18px", zIndex: 60, fontWeight: 700, fontSize: 15, maxWidth: "90vw" }}>
+        <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(132px + env(safe-area-inset-bottom, 0px))", background: BRAND.darkGreen, color: BRAND.white, padding: "10px 18px", zIndex: 60, fontWeight: 700, fontSize: 15, maxWidth: "90vw" }}>
           {toast}
         </div>
       )}

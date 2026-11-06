@@ -16,10 +16,12 @@ export interface SaveSheetProps {
   busy: boolean;
   onCancel: () => void;
   onSave: () => void;
+  /** An extra line under the lede, e.g. why the sheet opened from the prototype tab. */
+  note?: string;
 }
 
 /** The modal sheet around the contact fields; Escape and the scrim close it. */
-export default function SaveSheet({ open, saved, contact, onChange, error, busy, onCancel, onSave }: SaveSheetProps) {
+export default function SaveSheet({ open, saved, contact, onChange, error, busy, onCancel, onSave, note = "" }: SaveSheetProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -43,7 +45,8 @@ export default function SaveSheet({ open, saved, contact, onChange, error, busy,
           {saved ? SAVE.sheetTitleSaved : SAVE.sheetTitleNew}
         </h2>
         <p style={{ margin: "0 0 18px", fontFamily: SANS, color: BRAND.teal, fontSize: 15, lineHeight: 1.5 }}>{saved ? SAVE.sheetLedeSaved : SAVE.sheetLedeNew}</p>
-        <ContactFields contact={contact} onChange={onChange} error={error} idPrefix="pb-sheet" />
+        {note && <p style={{ margin: "-8px 0 18px", fontFamily: SANS, color: BRAND.darkGreen, fontSize: 15, lineHeight: 1.5 }}>{note}</p>}
+        <ContactFields contact={contact} onChange={onChange} error={error} idPrefix="pb-sheet" mode="save" />
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button type="button" onClick={onCancel} style={btnAlt}>{SAVE.cancel}</button>
           <button type="button" onClick={onSave} disabled={busy} style={{ ...btn, ...(busy ? btnDisabled : {}) }}>{SAVE.save}</button>

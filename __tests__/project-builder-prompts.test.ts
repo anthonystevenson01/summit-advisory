@@ -8,8 +8,35 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
 import { blank, type BriefState } from "../app/lib/project-builder/brief.ts";
-import { HEAD, DATA_GUARD, MATERIAL_GUARD, contextBlock, ideasPrompt, lookupPrompt, readPrompt, suggestPrompt } from "../app/lib/project-builder/prompts.ts";
-import { ideasSchema, lookupSchema, parseIdeas, parseLookup, parseRead, parseSuggest, readSchema, suggestSchema } from "../app/lib/project-builder/schemas.ts";
+import {
+  HEAD,
+  DATA_GUARD,
+  MATERIAL_GUARD,
+  contextBlock,
+  houseStyleBlock,
+  ideasPrompt,
+  lookupPrompt,
+  prototypeCreatePrompt,
+  prototypeEditPrompt,
+  prototypeFixPrompt,
+  readPrompt,
+  suggestPrompt,
+} from "../app/lib/project-builder/prompts.ts";
+import {
+  ideasSchema,
+  lookupSchema,
+  parseIdeas,
+  parseLookup,
+  parsePrototype,
+  parsePrototypeEdits,
+  parseRead,
+  parseSuggest,
+  prototypeEditsSchema,
+  prototypeSchema,
+  readSchema,
+  suggestSchema,
+} from "../app/lib/project-builder/schemas.ts";
+import { NEUTRAL_HOUSE_STYLE, fontChoice, type HouseStyle } from "../app/lib/project-builder/house-style.ts";
 import { SUGGEST_STEPS } from "../app/lib/project-builder/brief.ts";
 import { IDEA_KINDS, IDEA_SIZES } from "../app/lib/project-builder/catalogue.ts";
 import { SchemaError } from "../app/lib/tools/schema.ts";
@@ -130,7 +157,7 @@ function checkStrict(schema: Record<string, unknown>, path: string): void {
 
 describe("schemas", () => {
   test("every schema is strict with unique names and required equal to the property keys at every level", () => {
-    const all = [readSchema(), lookupSchema(), ideasSchema(), ...SUGGEST_STEPS.map((s) => suggestSchema(s))];
+    const all = [readSchema(), lookupSchema(), ideasSchema(), prototypeSchema(), prototypeEditsSchema(), ...SUGGEST_STEPS.map((s) => suggestSchema(s))];
     assert.equal(new Set(all.map((s) => s.name)).size, all.length);
     for (const s of all) {
       assert.equal(s.strict, true, s.name);
@@ -189,5 +216,81 @@ describe("parsers", () => {
     assert.equal(r.ideas[0].human, false);
     assert.equal(r.note, "n");
     assert.throws(() => parseIdeas([]), SchemaError);
+  });
+});
+
+describe("prototype prompts", () => {
+  const s = everything();
+  const ctx = { companyName: "Acme Ltd", source: "Material here" };
+  const style: HouseStyle = {
+    ...NEUTRAL_HOUSE_STYLE,
+    status: "found",
+    reason: "",
+    host: "acme.com",
+    siteName: "Acme Garages",
+    tagline: "TAGLINE FROM THE SITE",
+    colours: ["#c0392b"],
+    headingFont: fontChoice("Lora"),
+    bodyFont: fontChoice("Inter"),
+    logo: { dataUri: "data:image/png;base64,AA==", mime: "image/png", bytes: 1 },
+  };
+  const current = "<!DOCTYPE html><html><head></head><body>CURRENT DOC</body></html>";
+  const prompts = [
+    prototypeCreatePrompt(s, style, ctx),
+    prototypeEditPrompt(s, style, current, ["Added feature: Approvals (Must)"], ctx),
+    prototypeFixPrompt(s, style, "BROKEN DOC", ["The document has 2 <body> tags. It must have exactly 1."], ctx),
+  ];
+
+  test("each carries the house rules and the data guard; the user turn carries the context and the style", () => {
+    for (const p of prompts) {
+      assert.ok(p.system.includes("British spelling. No em or en dashes."));
+      assert.ok(p.system.includes("Reply with only JSON"));
+      assert.ok(p.system.includes(DATA_GUARD));
+      assert.ok(p.system.includes("{{LOGO}}"));
+      assert.ok(p.user.includes("Project name: Garage CRM"));
+      assert.ok(p.user.includes("Wording from their website: TAGLINE FROM THE SITE"));
+      assert.ok(p.user.includes("Heading font: Lora"));
+    }
+  });
+
+  test("no prospect text and no tagline in any system turn", () => {
+    for (const p of prompts) {
+      for (const leak of ["Garage CRM", "Acme", "TAGLINE", "widgets", "Salesforce", "CURRENT DOC", "BROKEN DOC", "Approvals"]) {
+        assert.ok(!p.system.includes(leak), leak);
+      }
+    }
+  });
+
+  test("the edit user turn carries the change lines and the fenced current document; the fix carries the issues", () => {
+    assert.ok(prompts[1].user.includes("- Added feature: Approvals (Must)"));
+    assert.ok(prompts[1].user.includes(`"""\n${current}\n"""`));
+    assert.ok(prompts[1].user.includes(MATERIAL_GUARD));
+    assert.ok(prompts[2].user.includes("- The document has 2 <body> tags."));
+    assert.ok(prompts[2].user.includes('"""\nBROKEN DOC\n"""'));
+  });
+
+  test("the style block says when there is no logo and falls back to the site name", () => {
+    const block = houseStyleBlock({ ...NEUTRAL_HOUSE_STYLE, siteName: "Site Name" });
+    assert.ok(block.includes("Company name: Site Name"));
+    assert.ok(block.includes("Logo: none"));
+  });
+
+  test("parsePrototype rejects a missing html and caps the screens", () => {
+    assert.throws(() => parsePrototype({ screens: [], summary: "" }), SchemaError);
+    assert.throws(() => parsePrototype({ html: "  ", screens: [], summary: "" }), SchemaError);
+    assert.throws(() => parsePrototype("x"), SchemaError);
+    const r = parsePrototype({ html: " <html></html> ", screens: ["a", "b", "c", "d", "e", "f"], summary: "s" });
+    assert.equal(r.html, "<html></html>");
+    assert.equal(r.screens.length, 5);
+  });
+
+  test("parsePrototypeEdits keeps edits as written, drops bad items and caps at 40", () => {
+    const edits = Array.from({ length: 45 }, (_, i) => ({ old_str: ` a${i} `, new_str: `b${i}` }));
+    const r = parsePrototypeEdits({ rewrite: false, edits: [{ new_str: "x" }, ...edits], summary: "" });
+    assert.equal(r.edits.length, 40);
+    assert.equal(r.edits[0].old_str, " a0 ");
+    assert.equal(r.rewrite, false);
+    assert.equal(parsePrototypeEdits({ rewrite: true, edits: [] }).rewrite, true);
+    assert.throws(() => parsePrototypeEdits({ rewrite: true }), SchemaError);
   });
 });

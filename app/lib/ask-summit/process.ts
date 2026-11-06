@@ -16,8 +16,7 @@ import { scoreModel } from "../tools/built-to-scale.ts";
 import { redactAddresses } from "../tools/result-email.ts";
 import type { BtsPartKey } from "../tools/built-to-scale-method.ts";
 import type { Confidence } from "../tools/schema.ts";
-import { DEFAULT_USER_AGENT } from "./crawl-rules.ts";
-import { crawlSite } from "./crawler.ts";
+import { crawlSite, crawlerUserAgent } from "./crawler.ts";
 import { readDocuments } from "./documents.ts";
 import { draftParts } from "./extraction.ts";
 import { partsForScoring } from "./extraction-schema.ts";
@@ -43,7 +42,7 @@ function errorMessage(err: unknown): string {
 
 /** ASK_SUMMIT_USER_AGENT overrides the default so a token that sites start blocking can be changed without a deploy. */
 export function userAgent(): string {
-  return process.env.ASK_SUMMIT_USER_AGENT?.trim() || DEFAULT_USER_AGENT;
+  return crawlerUserAgent();
 }
 
 /**

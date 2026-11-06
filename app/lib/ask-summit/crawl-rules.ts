@@ -18,6 +18,8 @@ export const PAGE_BODY_CAP = 2_000_000;
 export const CRAWL_CONCURRENCY = 4;
 export const CRAWL_DELAY_CAP_MS = 5_000;
 export const START_PAGE_SCORE = 100;
+/** Raw HTML kept per page when a caller asks for it (the Project Builder house style read). */
+export const PAGE_HTML_CAP = 500_000;
 
 export interface CrawledPage {
   url: string;
@@ -27,6 +29,8 @@ export interface CrawledPage {
   score: number;
   status: number;
   text: string;
+  /** The raw HTML, capped at PAGE_HTML_CAP; only when the crawl was asked to keep it. */
+  html?: string;
 }
 
 export interface CrawlSkipped {

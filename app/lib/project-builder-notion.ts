@@ -81,7 +81,13 @@ async function request(method: "POST" | "PATCH", path: string, payload: unknown)
   return last;
 }
 
-function pageArgs(brief: BriefRecord, source: string | null, adminUrl: string): BriefPageArgs {
+/** The prototype links the submitted copy of the body carries, when a prototype exists. */
+export interface BriefPageExtras {
+  prototypeUrl?: string | null;
+  prototypeAdminUrl?: string | null;
+}
+
+function pageArgs(brief: BriefRecord, source: string | null, adminUrl: string, extras: BriefPageExtras = {}): BriefPageArgs {
   return {
     id: brief.id,
     state: brief.state,
@@ -91,6 +97,8 @@ function pageArgs(brief: BriefRecord, source: string | null, adminUrl: string): 
     status: brief.status,
     submittedAt: brief.submittedAt,
     adminUrl,
+    prototypeUrl: extras.prototypeUrl ?? null,
+    prototypeAdminUrl: extras.prototypeAdminUrl ?? null,
   };
 }
 
@@ -103,9 +111,9 @@ async function appendChildren(pageId: string, chunks: NotionBlock[][]): Promise<
 }
 
 /** POSTs the page with its properties and the first 100 body blocks, then appends further chunks. */
-export async function createBriefPage(brief: BriefRecord, source: string | null, adminUrl: string): Promise<NotionWriteResult> {
+export async function createBriefPage(brief: BriefRecord, source: string | null, adminUrl: string, extras: BriefPageExtras = {}): Promise<NotionWriteResult> {
   if (!isNotionBriefsConfigured()) return { ok: false, error: "Notion briefs database not configured" };
-  const args = pageArgs(brief, source, adminUrl);
+  const args = pageArgs(brief, source, adminUrl, extras);
   const [first, ...rest] = chunkBlocks(briefPageBlocks(args));
   const r = await request("POST", "pages", {
     parent: { database_id: process.env.NOTION_BRIEFS_DB_ID },
@@ -128,10 +136,11 @@ export async function updateBriefPage(
   source: string | null,
   adminUrl: string,
   options: { appendBody: boolean },
+  extras: BriefPageExtras = {},
 ): Promise<NotionWriteResult> {
   if (!isNotionBriefsConfigured()) return { ok: false, error: "Notion briefs database not configured" };
   if (!brief.notionPageId) return { ok: false, error: "no Notion page id on the brief" };
-  const args = pageArgs(brief, source, adminUrl);
+  const args = pageArgs(brief, source, adminUrl, extras);
   const r = await request("PATCH", `pages/${brief.notionPageId}`, { properties: briefPageProperties(args) });
   if (!r.ok) return { ok: false, error: r.error };
   if (options.appendBody) {

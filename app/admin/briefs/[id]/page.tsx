@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { getRedis } from "@/app/lib/redis";
 import { AI_CALLS_KEY, type AiCallLog } from "@/app/lib/llm";
-import { getBrief, getBriefSource, type BriefRecord } from "@/app/lib/briefs";
+import { getBrief, getBriefPrototype, getBriefSource, getBriefStyle, type BriefRecord } from "@/app/lib/briefs";
+import { prototypeHash, type PrototypeRecord } from "@/app/lib/project-builder/prototype";
+import { prototypeView } from "@/app/lib/project-builder/prototype-html";
+import type { HouseStyle } from "@/app/lib/project-builder/house-style";
+import PrototypeFrame from "@/app/components/project-builder/PrototypeFrame";
 import { BRIEF_STATUSES, isBriefId, statusLabel } from "@/app/lib/project-builder/brief";
 import { HANDOVER, PATHS, RUN_OPTIONS, STEPS } from "@/app/lib/project-builder/catalogue";
 import { notionPageUrl } from "@/app/lib/project-builder/notion-brief";
@@ -60,7 +64,9 @@ async function callsFor(id: string): Promise<AiCallLog[]> {
  * Notion and email outcomes, the counters, every answer by step, the
  * requirements table in Notion order, the ideas added and passed on, the
  * change request, the pasted material while its 90 day key still exists,
- * and the model calls logged under this id), plus three plain form POSTs to
+ * the latest prototype in the same sandboxed frame the prospect sees, with a
+ * link to a full screen page, and the model calls logged under this id),
+ * plus three plain form POSTs to
  * `/api/admin/briefs/[id]`: the status select with Save, Unlock on a
  * submitted brief, and Delete behind a confirm box. No client JavaScript,
  * as on the rubrics page. Calls made before the first save carry no brief
@@ -74,12 +80,15 @@ export default async function BriefPage({ params, searchParams }: { params: Prom
   let brief: BriefRecord | null = null;
   let source: string | null = null;
   let calls: AiCallLog[] = [];
+  let prototype: PrototypeRecord | null = null;
+  let style: HouseStyle | null = null;
   let loadError = false;
   try {
     brief = await getBrief(id);
     if (brief) {
       source = await getBriefSource(id);
       calls = await callsFor(id);
+      [prototype, style] = await Promise.all([getBriefPrototype(id), getBriefStyle(id)]);
     }
   } catch (err) {
     console.error("Admin brief Redis error", err instanceof Error ? err.message : err);
@@ -122,7 +131,7 @@ export default async function BriefPage({ params, searchParams }: { params: Prom
             ["Source tag", brief.sourceTag || "(none)"],
             ["Notion", `${brief.notionStatus ?? "none"}${brief.notionPageId ? ` ${notionPageUrl(brief.notionPageId)}` : ""}`],
             ["Last email", brief.lastEmailStatus ?? "none"],
-            ["Counts", `suggestions ${brief.suggestCount}, ideas runs ${brief.ideasCount}, reads ${brief.readCount}`],
+            ["Counts", `suggestions ${brief.suggestCount}, ideas runs ${brief.ideasCount}, reads ${brief.readCount}, prototypes ${brief.prototypeCount}`],
             ["Brief id", brief.id],
           ]}
         />
@@ -210,6 +219,30 @@ export default async function BriefPage({ params, searchParams }: { params: Prom
           </div>
         </>
       )}
+
+      <h2 style={h2}>Prototype</h2>
+      <div style={box}>
+        {prototype ? (
+          <>
+            <Pairs
+              pairs={[
+                ["Last updated", formatDate(prototype.updatedAt)],
+                ["Version", String(prototype.version)],
+                ["Last mode", prototype.lastMode],
+                ["Model", prototype.model],
+                ["Against the brief", prototype.hash === prototypeHash(s, brief.contact) ? "up to date" : "out of date"],
+                ["House style", style ? `${style.status}${style.host ? `, ${style.host}` : ""}${style.reason ? `, ${style.reason}` : ""}` : "none stored"],
+              ]}
+            />
+            <div style={{ margin: "14px 0 8px" }}>
+              <PrototypeFrame html={prototypeView(prototype, style).html} height="640px" />
+            </div>
+            <Link href={`/admin/briefs/${brief.id}/prototype`} style={{ color: "#005A66", fontWeight: 600, fontSize: 13 }}>Open full screen</Link>
+          </>
+        ) : (
+          <p style={{ fontSize: 13, color: "#666", margin: 0 }}>No prototype made.</p>
+        )}
+      </div>
 
       <h2 style={h2}>Pasted material</h2>
       <div style={box}>{source ? <pre style={preStyle}>{source}</pre> : <p style={{ fontSize: 13, color: "#666", margin: 0 }}>Expired or none.</p>}</div>

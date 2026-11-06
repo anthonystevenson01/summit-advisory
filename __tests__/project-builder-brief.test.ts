@@ -11,6 +11,7 @@ import {
   BRIEF_LINK_MAX_AGE_SECONDS,
   BRIEF_LINK_PURPOSE,
   BriefStateError,
+  CONTACT_ERRORS,
   blank,
   canTransition,
   isFreeMailAddress,
@@ -105,6 +106,25 @@ describe("validateContact", () => {
     assert.deepEqual(ok, { ok: true, contact: { name: "Ann", email: "ann@acme.com", company: "Acme", website: "acme.com", marketing: true } });
     const off = validateContact({ name: "Ann", email: "ann@acme.com", company: "Acme", website: "acme.com" });
     assert.ok(off.ok && off.contact.marketing === false);
+  });
+
+  test("save mode needs a name and a valid email only", () => {
+    const ok = validateContact({ name: "Ann", email: "ann@acme.com" }, "save");
+    assert.deepEqual(ok, { ok: true, contact: { name: "Ann", email: "ann@acme.com", company: "", website: "", marketing: false } });
+    assert.deepEqual(validateContact({ email: "ann@acme.com" }, "save"), { ok: false, error: CONTACT_ERRORS.saveMissing });
+    assert.deepEqual(validateContact({ name: "Ann", email: "" }, "save"), { ok: false, error: CONTACT_ERRORS.saveMissing });
+    assert.deepEqual(validateContact({ name: "Ann", email: "nope" }, "save"), { ok: false, error: CONTACT_ERRORS.email });
+  });
+
+  test("save mode refuses a bad optional website and keeps a good one", () => {
+    assert.deepEqual(validateContact({ name: "Ann", email: "ann@acme.com", website: "acme" }, "save"), { ok: false, error: CONTACT_ERRORS.website });
+    const ok = validateContact({ name: "Ann", email: "ann@acme.com", company: "Acme", website: "www.acme.com" }, "save");
+    assert.ok(ok.ok && ok.contact.website === "acme.com" && ok.contact.company === "Acme");
+  });
+
+  test("submit mode is the default and still needs all four", () => {
+    assert.deepEqual(validateContact({ name: "Ann", email: "ann@acme.com" }), { ok: false, error: CONTACT_ERRORS.missing });
+    assert.deepEqual(validateContact({ name: "Ann", email: "ann@acme.com" }, "submit"), { ok: false, error: CONTACT_ERRORS.missing });
   });
 });
 

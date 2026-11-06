@@ -34,6 +34,9 @@ import {
 } from "./catalogue.ts";
 import { otherIntegrations, systemCapabilities } from "./requirements.ts";
 import type { BriefState, SuggestStep } from "./brief.ts";
+import type { HouseStyle } from "./house-style.ts";
+import { LOGO_PLACEHOLDER, SAFE_BLOCK_END, SAFE_BLOCK_START } from "./prototype-html.ts";
+import { PROTOTYPE_EDITS_MAX, PROTOTYPE_SCREENS_MAX, PROTOTYPE_SCREENS_MIN } from "./prototype.ts";
 
 export const HEAD =
   "You are helping a business owner define a software project they want built. Base everything on what they have told you. British spelling. No em or en dashes. Plain language, no jargon. Reply with only JSON.";
@@ -199,4 +202,114 @@ export function ideasPrompt(state: BriefState, ctx: PromptContext = {}): Prompt 
     DATA_GUARD,
   ].join("\n");
   return { system, user: userTurn(state, ctx) };
+}
+
+// ── Prototype ────────────────────────────────────────────────────────────────
+
+/** The house rules for every prototype prompt, adapted from HEAD for a document rather than a list. */
+const PROTOTYPE_HEAD =
+  "You are a product designer drawing a clickable prototype of the software a business owner has described. Base every screen on what they have told you. British spelling. No em or en dashes. Plain language, no jargon. Reply with only JSON.";
+
+/** The build rules every prototype prompt shares. No prospect text in here. */
+const PROTOTYPE_RULES = [
+  "Build rules:",
+  "- One complete, self contained HTML document: <!DOCTYPE html>, one <html>, one <head> with a <title> and one <style>, one <body>.",
+  `- ${PROTOTYPE_SCREENS_MIN} to ${PROTOTYPE_SCREENS_MAX} screens. Each screen is a <section data-screen="slug"> and only one is visible at a time. No other element carries data-screen.`,
+  "- A top navigation bar with one button per screen. Buttons carry data-go=\"slug\". Switch screens with one inline <script> at the end of the body, using addEventListener.",
+  "- Every button and tab responds when clicked. Forms are inputs plus a <button type=\"button\"> that shows a short success message on the page. Never submit a form.",
+  "- Invented sample data only, realistic for this business. No real people, emails or phone numbers.",
+  "- Never use fetch, XMLHttpRequest, WebSocket, localStorage, sessionStorage, document.cookie, alert, confirm, prompt or window.open.",
+  "- No <link> tags, no external URLs, no images, no icon fonts. Use CSS shapes or text for icons.",
+  `- When a logo is available, use ${LOGO_PLACEHOLDER} as the src of a single <img> in the navigation bar, with the company name as its alt text. Otherwise write the company name as a text wordmark.`,
+  "- In :root set the CSS custom properties --brand-1, --brand-2, --brand-3, --bg, --text, --font-heading and --font-body from the house style given, and use them throughout.",
+  "- Choose the screens from the brief. The default shape is sign in, dashboard, the main list of records, one record in detail and settings. Label everything with the brief's own words.",
+  "- Every id is unique. Keep the document under 45,000 characters.",
+  `- Leave anything between ${SAFE_BLOCK_START} and ${SAFE_BLOCK_END} alone; the server manages it.`,
+].join("\n");
+
+function styleLine(label: string, value: string): string {
+  return value ? `${label}: ${value}` : "";
+}
+
+/** The house style as plain lines for the user turn. The site's own wording is labelled as such. */
+export function houseStyleBlock(style: HouseStyle, companyName?: string): string {
+  const name = (companyName ?? "").trim() || style.siteName.trim();
+  return [
+    "House style:",
+    styleLine("Company name", name),
+    styleLine("Brand colours", style.colours.join(", ")),
+    styleLine("Background colour", style.background),
+    styleLine("Text colour", style.text),
+    `Heading font: ${style.headingFont.family ?? "system fonts"} (CSS: ${style.headingFont.stack})`,
+    `Body font: ${style.bodyFont.family ?? "system fonts"} (CSS: ${style.bodyFont.stack})`,
+    style.logo ? `Logo: available, use ${LOGO_PLACEHOLDER}` : "Logo: none, use a text wordmark",
+    styleLine("Wording from their website", style.tagline),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function prototypeUser(state: BriefState, style: HouseStyle, ctx: PromptContext): string {
+  return [DATA_GUARD, userTurn(state, ctx), "", houseStyleBlock(style, ctx.companyName)].join("\n");
+}
+
+function fenced(html: string): string {
+  return ['"""', html, '"""'].join("\n");
+}
+
+/** A first prototype, or a rebuild after a large change. */
+export function prototypeCreatePrompt(state: BriefState, style: HouseStyle, ctx: PromptContext = {}): Prompt {
+  const system = [
+    PROTOTYPE_HEAD,
+    PROTOTYPE_RULES,
+    `${DATA_GUARD} Everything about the business is in the message.`,
+    'Reply with only JSON: {"screens":["screen name"],"html":"the whole document","summary":"one plain sentence"}',
+  ].join("\n");
+  return { system, user: prototypeUser(state, style, ctx) };
+}
+
+/** An update: the change lines and the current document, answered with search and replace edits. */
+export function prototypeEditPrompt(state: BriefState, style: HouseStyle, current: string, changes: readonly string[], ctx: PromptContext = {}): Prompt {
+  const system = [
+    PROTOTYPE_HEAD,
+    PROTOTYPE_RULES,
+    "Edit protocol: bring the current prototype in line with the changes listed in the message using the smallest edits that do it, and keep everything else exactly as it is.",
+    `Each edit has old_str, copied exactly from the current document and found exactly once in it, and new_str, its replacement. Edits apply in order. At most ${PROTOTYPE_EDITS_MAX} edits.`,
+    "When the changes touch most of the screens, set rewrite to true and return no edits.",
+    `${DATA_GUARD} ${MATERIAL_GUARD}`,
+    'Reply with only JSON: {"rewrite":false,"edits":[{"old_str":"","new_str":""}],"summary":"one plain sentence"}',
+  ].join("\n");
+  const user = [
+    "What changed in the brief since the current prototype:",
+    changes.length > 0 ? changes.map((c) => `- ${c}`).join("\n") : "- Small wording changes",
+    "",
+    prototypeUser(state, style, ctx),
+    "",
+    MATERIAL_GUARD,
+    "Current prototype:",
+    fenced(current),
+  ].join("\n");
+  return { system, user };
+}
+
+/** The one corrective round: the validator's issues and the document that failed them. */
+export function prototypeFixPrompt(state: BriefState, style: HouseStyle, broken: string, issues: readonly string[], ctx: PromptContext = {}): Prompt {
+  const system = [
+    PROTOTYPE_HEAD,
+    PROTOTYPE_RULES,
+    "Your previous document failed the checks listed in the message. Return the whole corrected document, keeping the screens and wording that were fine.",
+    `${DATA_GUARD} ${MATERIAL_GUARD}`,
+    'Reply with only JSON: {"screens":["screen name"],"html":"the whole document","summary":"one plain sentence"}',
+  ].join("\n");
+  const user = [
+    "The checks it failed:",
+    issues.map((i) => `- ${i}`).join("\n"),
+    "",
+    prototypeUser(state, style, ctx),
+    "",
+    MATERIAL_GUARD,
+    "Document to correct:",
+    fenced(broken),
+  ].join("\n");
+  return { system, user };
 }

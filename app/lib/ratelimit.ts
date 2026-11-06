@@ -121,6 +121,11 @@ export function getBuilderIdeasLimiter() {
   return builderLimiter(6, "1 h", "rl:builder-ideas");
 }
 
+// 6 prototype presses per IP per hour (each can be up to three long calls)
+export function getBuilderPrototypeLimiter() {
+  return builderLimiter(6, "1 h", "rl:builder-prototype");
+}
+
 // 20 saves per IP per hour, shared by create, autosave, submit and change
 export function getBuilderSaveLimiter() {
   return builderLimiter(20, "1 h", "rl:builder-save");
