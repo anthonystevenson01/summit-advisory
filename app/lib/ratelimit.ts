@@ -1,6 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { BUILDER_DAILY_CAP } from "./project-builder/brief.ts";
+import { BTS_HOURLY_LIMIT } from "./tools/built-to-scale-method.ts";
 
 function getRedisForRateLimit() {
   const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
@@ -31,13 +32,13 @@ export function getDetailsLimiter() {
   });
 }
 
-// 2 Built to Scale? runs per IP per hour (seven scoring calls plus one synthesis per run)
+// 10 Built to Scale? runs per IP per hour (seven scoring calls plus one synthesis per run)
 export function getBuiltToScaleLimiter() {
   const redis = getRedisForRateLimit();
   if (!redis) return null;
   return new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(2, "1 h"),
+    limiter: Ratelimit.slidingWindow(BTS_HOURLY_LIMIT, "1 h"),
     prefix: "rl:bts",
   });
 }

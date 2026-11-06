@@ -14,8 +14,10 @@ import {
   AUTOMATED_LABEL,
   AUTOMATED_LINE,
   BANDS,
+  BTS_HOURLY_LIMIT,
   BTS_PARTS,
   BTS_PART_KEYS,
+  BTS_RATE_LIMIT_MESSAGE,
   LOCKED_COMMENT,
   PART_MAX,
   PART_MIN,
@@ -269,5 +271,16 @@ describe("prompt instructions", () => {
     const absent = absentToolsInstruction(["unit-of-value"]);
     assert.ok(absent.includes("unit-of-value"));
     assert.doesNotMatch(absent, DASH_RE);
+  });
+});
+
+describe("score rate limit", () => {
+  test("the cap is 10 runs per IP per hour", () => {
+    assert.equal(BTS_HOURLY_LIMIT, 10);
+  });
+
+  test("the 429 message states the cap and has no em or en dash", () => {
+    assert.ok(BTS_RATE_LIMIT_MESSAGE.includes("10 an hour"));
+    assert.doesNotMatch(BTS_RATE_LIMIT_MESSAGE, DASH_RE);
   });
 });
