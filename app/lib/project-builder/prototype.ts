@@ -363,3 +363,56 @@ export function styleNoteFor(status: StyleStatus, reason: string): string {
   if (reason === "nothing-usable") return PROTOTYPE.nothingUsable;
   return PROTOTYPE.unreadable;
 }
+
+// ── The button ───────────────────────────────────────────────────────────────
+
+/** "6 November, 14:05" in the viewer's time zone. */
+export function formatPrototypeTime(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  return new Date(t).toLocaleString("en-GB", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+}
+
+export interface PrototypeButtonInput {
+  state: BriefState;
+  contact: PrototypeContact;
+  prototype: Pick<PrototypeView, "hash" | "updatedAt"> | null;
+  saved: boolean;
+  locked: boolean;
+  busy: boolean;
+  runsLeft: number;
+}
+
+export interface PrototypeButtonState {
+  /** False on a submitted brief: there is no button. */
+  show: boolean;
+  /** "Create prototype" until one exists, then "Update prototype". */
+  label: string;
+  enabled: boolean;
+  /** Why it is disabled, or what pressing it will do; shown in the tab and as the button's description. */
+  line: string;
+  /** The stored prototype was drawn from the brief as it is now. */
+  current: boolean;
+}
+
+/** The one Create or Update button, first match wins: locked, busy, not ready, up to date, out of runs, unsaved, ready. */
+export function prototypeButtonState(input: PrototypeButtonInput): PrototypeButtonState {
+  const { prototype } = input;
+  const current = prototype !== null && prototype.hash === prototypeHash(input.state, input.contact);
+  const label = prototype ? PROTOTYPE.update : PROTOTYPE.create;
+  const last = prototype ? PROTOTYPE.lastUpdated(formatPrototypeTime(prototype.updatedAt)) : "";
+  const base = { label, current };
+  if (input.locked) return { ...base, show: false, enabled: false, line: "" };
+  if (input.busy) return { ...base, show: true, enabled: false, line: "" };
+  const readiness = prototypeReadiness(input.state);
+  if (!readiness.ready) return { ...base, show: true, enabled: false, line: readinessLine(readiness.missing) };
+  if (current) return { ...base, show: true, enabled: false, line: `${PROTOTYPE.upToDate}. ${last}.` };
+  if (input.runsLeft <= 0) return { ...base, show: true, enabled: false, line: PROTOTYPE.cap };
+  if (!input.saved) return { ...base, show: true, enabled: true, line: PROTOTYPE.saveFirst };
+  return { ...base, show: true, enabled: true, line: last ? `${last}.` : "" };
+}
+
+/** The tab's line when there is no prototype: what is still needed, or where the button is. */
+export function prototypeEmptyLine(state: BriefState): string {
+  return prototypeReadiness(state).ready ? PROTOTYPE.emptyReady : PROTOTYPE.empty;
+}

@@ -76,6 +76,7 @@ import { devAnswer, type DevAnswer } from "@/app/lib/project-builder/suggestions
 import {
   PROTOTYPE_VIEW_PARAM,
   PROTOTYPE_VIEW_VALUE,
+  prototypeButtonState,
   resolvePrototypeWebsite,
   type PrototypeView,
   type StyleStatus,
@@ -600,6 +601,8 @@ export default function ProjectBuilderPage() {
       setProtoError(SAVED_LOCAL_ONLY_LINE);
       return;
     }
+    // The tab opens on the press so the staged lines and then the result are seen, and stays open.
+    setDockTab("prototype");
     setProtoBusy(true);
     setProtoError("");
     setProtoNote("");
@@ -649,6 +652,7 @@ export default function ProjectBuilderPage() {
       clearProtoTimers();
       setProtoBusy(false);
       setProtoStage(null);
+      setDockTab("prototype");
     }
   };
 
@@ -900,11 +904,26 @@ export default function ProjectBuilderPage() {
   }
 
   const step = state.step;
+  const protoButton = prototypeButtonState({
+    state,
+    contact,
+    prototype,
+    saved: Boolean(saved),
+    locked: false,
+    busy: protoBusy,
+    runsLeft: PROTOTYPE_RUNS_PER_BRIEF - (saved?.prototypeCount ?? 0),
+  });
   return (
     <div className="pb-page" style={pageStyle}>
       {resumeLoader}
       <div style={wrap}>
-        <SaveButton savedAt={saved?.savedAt ?? null} onSave={() => openSave()} onReset={reset} busy={busy} />
+        <SaveButton
+          savedAt={saved?.savedAt ?? null}
+          onSave={() => openSave()}
+          onReset={reset}
+          busy={busy}
+          prototype={{ state: protoButton, onPress: () => void generatePrototype() }}
+        />
         {notes.link && <p style={{ color: BRAND.red, fontSize: 15, margin: "8px 0 0" }}>{notes.link}</p>}
         {notes.save && <p style={{ color: BRAND.teal, fontSize: 14, margin: "8px 0 0" }}>{notes.save}</p>}
         <Stepper step={step} onGo={go} />
@@ -982,18 +1001,14 @@ export default function ProjectBuilderPage() {
         />
         <PrototypeDock
           state={state}
-          contact={contact}
           prototype={prototype}
           open={dockTab === "prototype"}
           onToggle={() => setDockTab((t) => (t === "prototype" ? null : "prototype"))}
-          saved={Boolean(saved)}
-          locked={false}
+          button={protoButton}
           busy={protoBusy}
           stage={protoStage}
           note={protoNote}
           error={protoError}
-          runsLeft={PROTOTYPE_RUNS_PER_BRIEF - (saved?.prototypeCount ?? 0)}
-          onGenerate={() => void generatePrototype()}
         />
       </div>
       {toast && (

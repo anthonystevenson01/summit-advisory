@@ -10,16 +10,16 @@ export interface PrototypeViewerProps {
   html: string;
   /** The frame height in place, e.g. "min(60vh, 560px)". */
   height: string;
-  /** Light text on the dark dock, dark text on the page. */
-  onDark?: boolean;
 }
 
 /**
- * The mockup label, the framed prototype and "Open full screen": a fixed
- * overlay with the same srcdoc (nothing refetched), a Close button that
- * takes focus when it opens, and Escape to close.
+ * Used by the read only view; the builder's tab frames the prototype
+ * directly in its tall panel. The mockup label, the framed prototype and
+ * "Open full screen": a fixed overlay with the same srcdoc (nothing
+ * refetched), a Close button that takes focus when it opens, and Escape
+ * to close.
  */
-export default function PrototypeViewer({ html, height, onDark = false }: PrototypeViewerProps) {
+export default function PrototypeViewer({ html, height }: PrototypeViewerProps) {
   const [full, setFull] = useState(false);
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
@@ -36,8 +36,8 @@ export default function PrototypeViewer({ html, height, onDark = false }: Protot
   return (
     <div style={{ fontFamily: SANS }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 0 10px" }}>
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: onDark ? BRAND.white : BRAND.teal, flex: "1 1 260px" }}>{PROTOTYPE.mockup}</p>
-        <button type="button" onClick={() => setFull(true)} style={onDark ? { ...btnAltSmall, color: BRAND.white, borderColor: BRAND.white } : btnAltSmall}>
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.45, color: BRAND.teal, flex: "1 1 260px" }}>{PROTOTYPE.mockup}</p>
+        <button type="button" onClick={() => setFull(true)} style={btnAltSmall}>
           {PROTOTYPE.openFull}
         </button>
       </div>

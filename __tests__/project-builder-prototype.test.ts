@@ -13,6 +13,8 @@ import {
   PROTOTYPE_SANDBOX,
   describeChanges,
   isLargeChange,
+  prototypeButtonState,
+  prototypeEmptyLine,
   prototypeHash,
   prototypeReadiness,
   prototypeSnapshot,
@@ -199,5 +201,44 @@ describe("PROTOTYPE_SANDBOX", () => {
     for (const banned of ["allow-same-origin", "allow-forms", "allow-popups", "allow-top-navigation"]) {
       assert.ok(!PROTOTYPE_SANDBOX.includes(banned), banned);
     }
+  });
+});
+
+describe("prototypeButtonState and prototypeEmptyLine", () => {
+  const contact = { email: "ann@acme.com", website: "" };
+  const base = { contact, prototype: null, saved: true, locked: false, busy: false, runsLeft: 10 };
+
+  test("Create until one exists, then Update; enabled when ready and saved", () => {
+    const s = sample();
+    const create = prototypeButtonState({ ...base, state: s });
+    assert.deepEqual([create.show, create.label, create.enabled, create.current], [true, PROTOTYPE.create, true, false]);
+    const stale = prototypeButtonState({ ...base, state: s, prototype: { hash: "p1-00000000000000", updatedAt: "2026-11-06T14:05:00.000Z" } });
+    assert.equal(stale.label, PROTOTYPE.update);
+    assert.equal(stale.enabled, true);
+    assert.ok(stale.line.startsWith("Last updated"));
+  });
+
+  test("disabled with the reason: not ready, up to date, busy, out of runs; hidden when locked", () => {
+    const s = sample();
+    const notReady = prototypeButtonState({ ...base, state: blank() });
+    assert.equal(notReady.enabled, false);
+    assert.equal(notReady.line, PROTOTYPE.needs.both);
+    const current = prototypeButtonState({ ...base, state: s, prototype: { hash: prototypeHash(s, contact), updatedAt: "2026-11-06T14:05:00.000Z" } });
+    assert.deepEqual([current.label, current.enabled, current.current], [PROTOTYPE.update, false, true]);
+    assert.ok(current.line.startsWith(PROTOTYPE.upToDate));
+    assert.equal(prototypeButtonState({ ...base, state: s, busy: true }).enabled, false);
+    const out = prototypeButtonState({ ...base, state: s, runsLeft: 0 });
+    assert.deepEqual([out.enabled, out.line], [false, PROTOTYPE.cap]);
+    assert.equal(prototypeButtonState({ ...base, state: s, locked: true }).show, false);
+  });
+
+  test("unsaved and ready: enabled, saying the save comes first", () => {
+    const b = prototypeButtonState({ ...base, state: sample(), saved: false });
+    assert.deepEqual([b.enabled, b.label, b.line], [true, PROTOTYPE.create, PROTOTYPE.saveFirst]);
+  });
+
+  test("the empty line says what is needed only when the brief is not ready", () => {
+    assert.equal(prototypeEmptyLine(blank()), PROTOTYPE.empty);
+    assert.equal(prototypeEmptyLine(sample()), PROTOTYPE.emptyReady);
   });
 });

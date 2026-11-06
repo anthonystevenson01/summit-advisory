@@ -36,3 +36,21 @@ The gates pass: npm test 503/503, lint 0, tsc clean, build ok.
 - **Frame navigation.** Script inside the sandbox can still navigate the frame itself. The sandbox keeps the builder's own origin safe.
 - **Time limit.** `maxDuration = 300` needs a Vercel plan that allows it.
 - **No live run yet.** Smoke test Create, then Update through edits, against a real company site before merging.
+
+## UI change round (after preview test): APPROVE
+
+Anthony asked for six changes after testing the preview. All six are done:
+
+1. The prototype tab is teal, so it no longer looks like the blueprint tab.
+2. When open, the panel fills most of the screen.
+3. The builder tab no longer offers full screen. The read-only and admin views keep it.
+4. One Create/Update button sits next to Save.
+5. The tab opens when the button is pressed and stays open when the prototype is ready.
+6. The empty line has been fixed.
+
+The gates pass: npm test 507/507, lint 0 errors, tsc clean. The sandbox and the frame are unchanged.
+
+Non-blocking notes:
+- When the brief is not ready, the readiness line and the empty line repeat each other.
+- `finally` reopens the tab even if the user closed it during generation.
+- Check a phone held sideways on a real device.

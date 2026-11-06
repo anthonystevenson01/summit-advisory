@@ -2941,7 +2941,10 @@ body {
 .pb-dock-panel { padding: 6px 24px 22px; max-width: 1240px; margin: 0 auto; max-height: min(62vh, 600px); overflow: auto; box-sizing: border-box; }
 .pb-dock-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 36px; }
 .pb-dock-tab + .pb-dock-tab { border-top: 1px solid #4A8E8E; }
-.pb-proto-panel { max-height: min(72vh, 720px); overflow: auto; }
+/* The open prototype tab takes most of the window: 330px leaves the site
+   header, the Save row with the prototype button, the step rail and the two
+   dock bars visible. The frame fills the width and the height that is left. */
+.pb-proto-panel { display: flex; flex-direction: column; box-sizing: border-box; max-width: 1240px; margin: 0 auto; padding: 6px 24px 16px; height: calc(100vh - 330px); height: calc(100dvh - 330px); min-height: 300px; overflow: hidden; }
 .pb-proto-full { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
 .pb-mdots { display: flex; gap: 3px; flex-wrap: wrap; max-width: 200px; }
 .pb-modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 50; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
@@ -2950,6 +2953,7 @@ body {
   .pb-dock-grid { grid-template-columns: 1fr; gap: 12px; }
   .pb-dock-k, .pb-dock-pc { display: none; }
   .pb-mdots { max-width: 90px; }
+  .pb-proto-panel { padding: 6px 12px 12px; }
 }
 @media (max-width: 700px) {
   .pb-paths { grid-template-columns: 1fr; }
