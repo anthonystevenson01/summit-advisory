@@ -131,6 +131,16 @@ export const QUICK_NOTE = "Quick check from one description: confidence is one s
 export const LOCKED_COMMENT = "Unlock the full view to read the comment.";
 
 /**
+ * Score runs allowed per IP per hour, and the 429 message built from it.
+ * Kept here because this module is pure: the limiter in `ratelimit.ts`, the
+ * score route and the test all read one number, so the cap and the message
+ * cannot drift apart.
+ */
+export const BTS_HOURLY_LIMIT = 10;
+
+export const BTS_RATE_LIMIT_MESSAGE = `Built to Scale? runs are limited to ${BTS_HOURLY_LIMIT} an hour from one connection. Please try again later.`;
+
+/**
  * Prefixed to every composed input in quick mode. The tool scoring prompts
  * are fixed, so this is the only way to tell a tool it is reading one
  * unstructured description; without it an absent answer would read as a

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBuiltToScaleLimiter, getClientIp } from "@/app/lib/ratelimit";
-import { validateParts } from "@/app/lib/tools/built-to-scale-method";
+import { BTS_RATE_LIMIT_MESSAGE, validateParts } from "@/app/lib/tools/built-to-scale-method";
 import { scoreModel } from "@/app/lib/tools/built-to-scale";
 import { UNLOCK_COOKIE, verifyUnlockCookie } from "@/app/lib/unlock";
 import { errorResponse } from "@/app/api/tools/[tool]/errors";
@@ -17,9 +17,6 @@ export const maxDuration = 60;
  */
 const ROUTE_DEADLINE_MS = 57_000;
 
-const RATE_LIMIT_MESSAGE =
-  "Built to Scale? runs are limited to 2 an hour from one connection. Please try again later.";
-
 type Body = { parts?: unknown; description?: unknown; website?: unknown };
 
 /**
@@ -27,7 +24,7 @@ type Body = { parts?: unknown; description?: unknown; website?: unknown };
  * the limiter so a malformed body spends no token), limiter, scoreModel with
  * the deadline, respond with the free view and `unlocked` from the cookie.
  *
- * The limiter is this route's own (`rl:bts`, 2 per IP per hour): one run is
+ * The limiter is this route's own (`rl:bts`, 10 per IP per hour): one run is
  * every public tool's scoring call plus one synthesis, so it never spends a
  * tool token and the tool limits are unchanged. Errors go through the shared
  * errorResponse: InputError 400, a Draft composite row 503, and a
@@ -60,7 +57,7 @@ export async function POST(req: NextRequest) {
     const { success, remaining } = await limiter.limit(ip);
     if (!success) {
       return NextResponse.json(
-        { error: RATE_LIMIT_MESSAGE },
+        { error: BTS_RATE_LIMIT_MESSAGE },
         { status: 429, headers: { "Retry-After": "3600", "X-RateLimit-Remaining": String(remaining) } },
       );
     }
