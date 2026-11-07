@@ -87,6 +87,18 @@ export interface PrototypeStats {
   styleFound: number;
   stylePartial: number;
   styleNone: number;
+  /** Live Brandfetch calls (the quota spend): hit, miss or error. */
+  brandLookups: number;
+  /** A brand record was available: hit or cached hit. */
+  brandHits: number;
+  brandCached: number;
+  brandMisses: number;
+  brandErrors: number;
+  brandCapped: number;
+  sourceSite: number;
+  sourceBrand: number;
+  sourceSiteBrand: number;
+  sourceNeutral: number;
 }
 
 export interface StatsTables {
@@ -177,6 +189,16 @@ export function aggregateStats(input: StatsInput): StatsTables {
     styleFound: count("builder_prototype_style", (p) => p.status === "found"),
     stylePartial: count("builder_prototype_style", (p) => p.status === "partial"),
     styleNone: count("builder_prototype_style", (p) => p.status === "none"),
+    brandLookups: count("builder_prototype_style", (p) => p.brand === "hit" || p.brand === "miss" || p.brand === "error"),
+    brandHits: count("builder_prototype_style", (p) => p.brand === "hit" || p.brand === "cached-hit"),
+    brandCached: count("builder_prototype_style", (p) => p.brand === "cached-hit" || p.brand === "cached-miss"),
+    brandMisses: count("builder_prototype_style", (p) => p.brand === "miss" || p.brand === "cached-miss"),
+    brandErrors: count("builder_prototype_style", (p) => p.brand === "error"),
+    brandCapped: count("builder_prototype_style", (p) => p.brand === "cap"),
+    sourceSite: count("builder_prototype_style", (p) => p.source === "site"),
+    sourceBrand: count("builder_prototype_style", (p) => p.source === "brand"),
+    sourceSiteBrand: count("builder_prototype_style", (p) => p.source === "site+brand"),
+    sourceNeutral: count("builder_prototype_style", (p) => p.source === "neutral"),
   };
 
   const calls = input.calls.filter((c) => typeof c.key === "string" && c.key.startsWith("builder-") && inWindow(c.ts, window));

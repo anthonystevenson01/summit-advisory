@@ -269,6 +269,33 @@ describe("prototype prompts", () => {
     assert.ok(prompts[2].user.includes('"""\nBROKEN DOC\n"""'));
   });
 
+  test("the design quality rules and the first screen rule are in every prototype system turn", () => {
+    for (const p of prompts) {
+      for (const rule of [
+        "The first <section data-screen> in the document is the main working screen",
+        "A sign in screen is optional; if you include one it is the last screen",
+        "Design quality:",
+        "8 to 12 rows",
+        "three or four figure cards",
+        "bar or line chart",
+        "Aim for 40,000 to 60,000 characters and never go over 70,000.",
+        "Draw icons and charts with CSS or inline <svg> written in the document.",
+        "max-width 1280px",
+        "nav background colour from the house style",
+      ]) {
+        assert.ok(p.system.includes(rule), rule);
+      }
+      assert.ok(!p.system.includes("The default shape is sign in"));
+      assert.ok(!p.system.includes("Acme Garages"));
+    }
+  });
+
+  test("the style block carries the two nav colour lines", () => {
+    const block = houseStyleBlock({ ...style, navBackground: "#0a1f44", navText: "#FFFFFF" });
+    assert.ok(block.includes("Nav background colour: #0a1f44"));
+    assert.ok(block.includes("Nav text colour: #FFFFFF"));
+  });
+
   test("the style block says when there is no logo and falls back to the site name", () => {
     const block = houseStyleBlock({ ...NEUTRAL_HOUSE_STYLE, siteName: "Site Name" });
     assert.ok(block.includes("Company name: Site Name"));

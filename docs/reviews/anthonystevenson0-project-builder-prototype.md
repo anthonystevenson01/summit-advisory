@@ -54,3 +54,20 @@ Non-blocking notes:
 - When the brief is not ready, the readiness line and the empty line repeat each other.
 - `finally` reopens the tab even if the user closed it during generation.
 - Check a phone held sideways on a real device.
+
+## Round 2 (brand data, full width, design quality): APPROVE
+
+All of R1 to R9 are met on the first pass. The gates pass: npm test 534/534, lint 0 errors, tsc clean, build ok.
+
+- The Brandfetch key is only ever sent in the Authorization header.
+- Only hex colours, allow-listed fonts and checked logo bytes reach the prototype or the prompt.
+- The sandbox, CSP and safety pass are untouched.
+- Nothing tries to get past bot protection.
+
+Material risk: a Sonnet create of 17,000 to 20,000 output tokens may not finish inside the 210 s call cap. Time one create on preview using `ms` in ai:calls. If it runs too long, lower the size guidance, turn reasoning off, or switch back to Haiku in /admin/models.
+
+Non-blocking notes:
+- The `fromBrand` copy starts "We could not read your website", which does not fit a site that was read but gave nothing usable.
+- `brandLookups` counts refused or skipped calls as live calls.
+- `res.text()` reads the whole response before the 512 KB slice.
+- Cached records are not re-validated when read back.

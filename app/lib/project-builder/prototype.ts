@@ -10,6 +10,9 @@ import { CAPABILITIES, FEATURES, type FeatureKey } from "./catalogue.ts";
 import { isFreeMailAddress, normaliseDomain, type BriefState } from "./brief.ts";
 import { PROTOTYPE } from "./copy.ts";
 import { validateWebsiteUrl } from "../ask-summit/validation.ts";
+import type { HouseStyle, StyleSource } from "./house-style.ts";
+
+export type { StyleSource };
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -355,13 +358,23 @@ export function resolvePrototypeWebsite(state: BriefState, contact: PrototypeCon
   return null;
 }
 
-/** The one line the dock shows under the prototype about where its look came from; empty when the style was found. */
-export function styleNoteFor(status: StyleStatus, reason: string): string {
-  if (status === "found") return "";
-  if (status === "partial") return PROTOTYPE.partial;
-  if (reason === "no-website") return PROTOTYPE.noSite;
-  if (reason === "nothing-usable") return PROTOTYPE.nothingUsable;
-  return PROTOTYPE.unreadable;
+/** The one line the dock shows about where the prototype's look came from: the website, Brandfetch, both, or a plain style and why. */
+export function styleNoteFor(style: Pick<HouseStyle, "status" | "reason" | "source" | "brandLookup"> | null): string {
+  if (!style) return PROTOTYPE.unreadable;
+  const suffix = style.status === "partial" ? PROTOTYPE.stillMissing : "";
+  switch (style.source) {
+    case "site":
+      return style.status === "found" ? PROTOTYPE.fromSite : PROTOTYPE.partial;
+    case "site+brand":
+      return PROTOTYPE.siteAndBrand + suffix;
+    case "brand":
+      return PROTOTYPE.fromBrand + suffix;
+    default:
+      if (style.reason === "no-website") return PROTOTYPE.noSite;
+      if (style.reason === "nothing-usable") return PROTOTYPE.nothingUsable;
+      if (style.brandLookup === "miss" || style.brandLookup === "cached-miss" || style.brandLookup === "error") return PROTOTYPE.noSiteNoBrand;
+      return PROTOTYPE.unreadable;
+  }
 }
 
 // ── The button ───────────────────────────────────────────────────────────────

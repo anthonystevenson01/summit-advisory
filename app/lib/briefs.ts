@@ -46,7 +46,7 @@ import {
   type BriefStatus,
 } from "./project-builder/brief.ts";
 import type { PrototypeRecord } from "./project-builder/prototype.ts";
-import type { HouseStyle } from "./project-builder/house-style.ts";
+import { normaliseHouseStyle, type HouseStyle } from "./project-builder/house-style.ts";
 
 export interface BriefContact {
   name: string;
@@ -507,7 +507,8 @@ export async function saveBriefPrototype(id: string, record: PrototypeRecord): P
 /** The stored house style, or null when the site has not been read for this brief. */
 export async function getBriefStyle(id: string): Promise<HouseStyle | null> {
   if (!isBriefId(id)) return null;
-  return parseStored<HouseStyle>(await getRedis().get(briefStyleKey(id)));
+  // A style stored before round 2 gains source, brandLookup, nav colours and logoTheme defaults; it is not rewritten.
+  return normaliseHouseStyle(parseStored<unknown>(await getRedis().get(briefStyleKey(id))));
 }
 
 /** SET the style with the brief's TTL, so the site is read once per brief and host. */

@@ -231,7 +231,7 @@ export default async function BriefPage({ params, searchParams }: { params: Prom
                 ["Last mode", prototype.lastMode],
                 ["Model", prototype.model],
                 ["Against the brief", prototype.hash === prototypeHash(s, brief.contact) ? "up to date" : "out of date"],
-                ["House style", style ? `${style.status}${style.host ? `, ${style.host}` : ""}${style.reason ? `, ${style.reason}` : ""}` : "none stored"],
+                ["House style", style ? `${style.status}, from ${style.source}, brand lookup ${style.brandLookup}${style.host ? `, host ${style.host}` : ""}${style.reason ? `, ${style.reason}` : ""}` : "none stored"],
               ]}
             />
             <div style={{ margin: "14px 0 8px" }}>

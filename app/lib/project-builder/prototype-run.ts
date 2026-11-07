@@ -8,8 +8,8 @@
  * replaces the previous prototype.
  *
  * Budget rule: no call starts with less than 45 s before the deadline; each
- * call's timeout is the smaller of its cap (150 s for create, rebuild and
- * fix, 75 s for an edit) and the time left less 20 s; the fix round also
+ * call's timeout is the smaller of its cap (210 s for create, rebuild and
+ * fix, 60 s for an edit) and the time left less 20 s; the fix round also
  * needs 75 s left. Every call first reserves one of the day's builder calls.
  */
 import { LlmNotConfiguredError, callModel } from "../llm.ts";
@@ -69,11 +69,11 @@ export interface RunPrototypeResult {
   calls: PrototypeCall[];
 }
 
-const STYLE_BUDGET_MS = 26_000;
+const STYLE_BUDGET_MS = 30_000;
 const MIN_CALL_MS = 45_000;
 const CALL_HEADROOM_MS = 20_000;
-const LONG_CALL_CAP_MS = 150_000;
-const EDIT_CALL_CAP_MS = 75_000;
+const LONG_CALL_CAP_MS = 210_000;
+const EDIT_CALL_CAP_MS = 60_000;
 const FIX_MIN_MS = 75_000;
 const TEMPERATURE = 0.4;
 
@@ -90,7 +90,7 @@ export async function runPrototype(input: RunPrototypeInput): Promise<RunPrototy
   if (!style || style.host !== targetHost) {
     style = await readHouseStyle(target, { deadlineAt: Math.min(deadlineAt, Date.now() + STYLE_BUDGET_MS) });
     await saveBriefStyle(id, style);
-    void track("builder_prototype_style", { status: style.status, reason: style.reason });
+    void track("builder_prototype_style", { status: style.status, reason: style.reason, source: style.source, brand: style.brandLookup });
   }
   const houseStyle = style;
   const fontHref = fontStylesheetUrl(houseStyle);

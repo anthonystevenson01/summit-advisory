@@ -16,6 +16,15 @@ import type { StyleStatus } from "./prototype.ts";
 /** Why the neutral style was used; empty when some of the look was found. Picks the one plain line the dock shows. */
 export type StyleReason = "" | "no-website" | "unreadable" | "nothing-usable";
 
+/** Where the look came from: the website, the brand data service, both, or neither. */
+export type StyleSource = "site" | "brand" | "site+brand" | "neutral";
+
+/** What the brand data step did for this read. Drives the style note and the stats. */
+export type BrandLookup = "not-needed" | "no-website" | "no-key" | "cap" | "cached-hit" | "cached-miss" | "hit" | "miss" | "error";
+
+/** A Brandfetch logo theme: a dark logo reads on a light background, a light logo on a dark one. */
+export type LogoTheme = "dark" | "light" | null;
+
 /** A font for the prototype: a Google Fonts family the CSP lets load, or none, plus the CSS stack to fall back on. */
 export interface FontChoice {
   /** Only ever a family on GOOGLE_FONTS. */
@@ -49,6 +58,13 @@ export interface HouseStyle {
   headingFont: FontChoice;
   bodyFont: FontChoice;
   logo: HouseLogo | null;
+  source: StyleSource;
+  brandLookup: BrandLookup;
+  /** The navigation bar's background and text colours the prompt is told to use. */
+  navBackground: string;
+  navText: string;
+  /** The Brandfetch theme of the chosen logo; null for a site logo or no logo. */
+  logoTheme: LogoTheme;
 }
 
 /** The caps on the read: a 200 KB logo, a 160 character tagline, and how many logos, stylesheets and colours are tried or kept. */
@@ -106,11 +122,21 @@ export const NEUTRAL_HOUSE_STYLE: HouseStyle = {
   headingFont: fontChoice("Inter"),
   bodyFont: fontChoice("Inter"),
   logo: null,
+  source: "neutral",
+  brandLookup: "no-website",
+  navBackground: "#2F5D7C",
+  navText: "#FFFFFF",
+  logoTheme: null,
 };
 
-/** The neutral style stamped with the reason, the host tried and the time, so the dock can say why the look is plain. */
-export function neutralStyle(reason: Exclude<StyleReason, "">, host: string | null = null, readAt = new Date().toISOString()): HouseStyle {
-  return { ...NEUTRAL_HOUSE_STYLE, reason, host, readAt, colours: [...NEUTRAL_HOUSE_STYLE.colours] };
+/** The neutral style stamped with the reason, the host tried, the time and what the brand step did, so the dock can say why the look is plain. */
+export function neutralStyle(
+  reason: Exclude<StyleReason, "">,
+  host: string | null = null,
+  readAt = new Date().toISOString(),
+  brandLookup: BrandLookup = reason === "no-website" ? "no-website" : "not-needed",
+): HouseStyle {
+  return { ...NEUTRAL_HOUSE_STYLE, reason, host, readAt, brandLookup, colours: [...NEUTRAL_HOUSE_STYLE.colours] };
 }
 
 // ── Small HTML helpers ───────────────────────────────────────────────────────
@@ -283,8 +309,8 @@ function rgbOf(hex: string): [number, number, number] {
   return [Number.parseInt(hex.slice(1, 3), 16), Number.parseInt(hex.slice(3, 5), 16), Number.parseInt(hex.slice(5, 7), 16)];
 }
 
-/** White, black and low saturation greys say nothing about a brand. */
-function isBrandish(hex: string): boolean {
+/** White, black and low saturation greys say nothing about a brand. Shared with the brand data mapping. */
+export function isBrandish(hex: string): boolean {
   const [r, g, b] = rgbOf(hex).map((v) => v / 255);
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -296,7 +322,8 @@ function isBrandish(hex: string): boolean {
   return s >= 0.18;
 }
 
-function isNear(a: string, b: string): boolean {
+/** Two colours close enough to count as one. */
+export function isNear(a: string, b: string): boolean {
   const [r1, g1, b1] = rgbOf(a);
   const [r2, g2, b2] = rgbOf(b);
   return Math.hypot(r1 - r2, g1 - g2, b1 - b2) < 40;
@@ -591,5 +618,156 @@ export function buildHouseStyle(parts: HouseStyleParts): HouseStyle {
     headingFont: hasFont ? parts.headingFont : NEUTRAL_HOUSE_STYLE.headingFont,
     bodyFont: hasFont ? parts.bodyFont : NEUTRAL_HOUSE_STYLE.bodyFont,
     logo: parts.logo,
+    source: "site",
+    brandLookup: "not-needed",
+    ...chooseNav(hasColour ? parts.colours : NEUTRAL_HOUSE_STYLE.colours, parts.background, parts.text, hasLogo, null, null),
+    logoTheme: null,
+  };
+}
+
+// ── Navigation colours ───────────────────────────────────────────────────────
+
+function luminance(hex: string): number {
+  const [r, g, b] = rgbOf(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** The WCAG contrast ratio of two hex colours, used to pick white or dark text on a coloured nav. */
+export function contrastRatio(a: string, b: string): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/**
+ * The navigation bar colours. A light themed brand logo (drawn for dark
+ * backgrounds) gets a dark nav; any other logo sits on the page background
+ * with the page text; with no logo the wordmark sits on the first brand
+ * colour with whichever of white or dark text reads better.
+ */
+export function chooseNav(
+  colours: readonly string[],
+  background: string,
+  text: string,
+  hasLogo: boolean,
+  logoTheme: LogoTheme,
+  darkSurface: string | null,
+): { navBackground: string; navText: string } {
+  const first = colours[0] ?? NEUTRAL_HOUSE_STYLE.colours[0];
+  if (hasLogo && logoTheme === "light") {
+    const navBackground = darkSurface ?? (luminance(first) < 0.35 ? first : "#1F2A37");
+    return { navBackground, navText: "#FFFFFF" };
+  }
+  if (hasLogo) return { navBackground: background, navText: text };
+  const navText = contrastRatio(first, "#FFFFFF") >= contrastRatio(first, "#1F2A37") ? "#FFFFFF" : "#1F2A37";
+  return { navBackground: first, navText };
+}
+
+// ── Brand top up and merge ───────────────────────────────────────────────────
+
+/** What the brand data service gave, already mapped: the logo checked and embedded, colours filtered, fonts on the allow list. */
+export interface BrandParts {
+  logo: HouseLogo | null;
+  logoTheme: LogoTheme;
+  colours: string[];
+  headingFamily: string | null;
+  bodyFamily: string | null;
+  /** A genuinely dark brand surface colour, for a dark nav under a light logo. */
+  darkSurface: string | null;
+}
+
+/** A lookup is spent only when the logo or the colours are missing; fonts alone do not justify one. */
+export function needsBrandLookup(parts: HouseStyleParts | null): boolean {
+  return parts === null || parts.logo === null || parts.colours.length === 0;
+}
+
+/** What the merge needs besides the two sets of parts: the host, the site's reason and what the brand step did. */
+export interface MergeMeta {
+  host: string | null;
+  /** Why the site gave nothing, used when the merge still ends neutral. */
+  reason: "unreadable" | "nothing-usable";
+  brandLookup: BrandLookup;
+  readAt?: string;
+}
+
+/**
+ * Site first, field by field: the site logo else the brand logo; the site
+ * colours topped up with brand colours that are not near one already kept,
+ * three at most; per font role the site family else the brand family;
+ * background, text, site name and tagline from the site only. Nothing at all
+ * gives the neutral style with the site's reason.
+ */
+export function mergeHouseStyle(site: HouseStyleParts | null, brand: BrandParts | null, meta: MergeMeta): HouseStyle {
+  const readAt = meta.readAt ?? new Date().toISOString();
+  const siteLogo = site?.logo ?? null;
+  const brandLogo = siteLogo ? null : brand?.logo ?? null;
+  const logo = siteLogo ?? brandLogo;
+  const logoTheme: LogoTheme = brandLogo ? brand?.logoTheme ?? null : null;
+
+  const colours: string[] = [...(site?.colours ?? [])].slice(0, MAX_COLOURS);
+  let brandColourUsed = false;
+  for (const c of brand?.colours ?? []) {
+    if (colours.length >= MAX_COLOURS) break;
+    if (colours.some((k) => isNear(k, c))) continue;
+    colours.push(c);
+    brandColourUsed = true;
+  }
+
+  const role = (siteFont: FontChoice | undefined, brandFamily: string | null | undefined): { font: FontChoice; fromBrand: boolean } => {
+    if (siteFont?.family) return { font: siteFont, fromBrand: false };
+    const mapped = brandFamily ? fontChoice(brandFamily) : null;
+    if (mapped?.family) return { font: mapped, fromBrand: true };
+    return { font: siteFont ?? fontChoice(null), fromBrand: false };
+  };
+  const heading = role(site?.headingFont, brand?.headingFamily);
+  const body = role(site?.bodyFont, brand?.bodyFamily);
+
+  const siteGave = Boolean(siteLogo || (site?.colours.length ?? 0) > 0 || site?.headingFont.family || site?.bodyFont.family);
+  const brandGave = Boolean(brandLogo || brandColourUsed || heading.fromBrand || body.fromBrand);
+  if (!siteGave && !brandGave) {
+    return { ...neutralStyle(meta.reason, meta.host, readAt, meta.brandLookup), siteName: site?.siteName ?? "", tagline: site?.tagline ?? "" };
+  }
+
+  const built = buildHouseStyle({
+    host: meta.host,
+    readAt,
+    siteName: site?.siteName ?? "",
+    tagline: site?.tagline ?? "",
+    colours,
+    background: site?.background ?? NEUTRAL_HOUSE_STYLE.background,
+    text: site?.text ?? NEUTRAL_HOUSE_STYLE.text,
+    headingFont: heading.font,
+    bodyFont: body.font,
+    logo,
+  });
+  const source: StyleSource = siteGave && brandGave ? "site+brand" : brandGave ? "brand" : "site";
+  return {
+    ...built,
+    source,
+    brandLookup: meta.brandLookup,
+    logoTheme,
+    ...chooseNav(built.colours, built.background, built.text, logo !== null, logoTheme, brandLogo ? brand?.darkSurface ?? null : null),
+  };
+}
+
+/** A stored style from before round 2 gains the new fields; anything that is not a style object is null. */
+export function normaliseHouseStyle(raw: unknown): HouseStyle | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const s = raw as Partial<HouseStyle>;
+  if (typeof s.status !== "string" || !Array.isArray(s.colours) || !s.headingFont || !s.bodyFont) return null;
+  const background = typeof s.background === "string" ? s.background : NEUTRAL_HOUSE_STYLE.background;
+  const text = typeof s.text === "string" ? s.text : NEUTRAL_HOUSE_STYLE.text;
+  return {
+    ...(s as HouseStyle),
+    background,
+    text,
+    source: s.source ?? (s.status === "none" ? "neutral" : "site"),
+    brandLookup: s.brandLookup ?? "not-needed",
+    navBackground: s.navBackground ?? background,
+    navText: s.navText ?? text,
+    logoTheme: s.logoTheme ?? null,
   };
 }

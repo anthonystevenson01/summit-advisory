@@ -245,6 +245,6 @@ export function prototypeView(record: PrototypeRecord, style: HouseStyle | null)
     updatedAt: record.updatedAt,
     version: record.version,
     styleStatus: status,
-    styleNote: styleNoteFor(status, style?.reason ?? "unreadable"),
+    styleNote: styleNoteFor(style),
   };
 }

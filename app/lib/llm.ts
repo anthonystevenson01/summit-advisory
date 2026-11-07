@@ -45,7 +45,7 @@ export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   "builder-read": { model: "anthropic/claude-haiku-5.5", maxTokens: 6000, fallback: "anthropic/claude-sonnet-5.5" },
   "builder-suggest": { model: "anthropic/claude-haiku-5.5", maxTokens: 1500 },
   "builder-ideas": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 3000 },
-  "builder-prototype": { model: "anthropic/claude-haiku-5.5", maxTokens: 16000, fallback: "anthropic/claude-sonnet-5.5" },
+  "builder-prototype": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 24000, fallback: "anthropic/claude-haiku-5.5" },
 };
 
 /** The admin dropdown is limited to this list; the admin route rejects anything else. */
@@ -78,7 +78,7 @@ export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
   "builder-suggest": "The one tap helpers on the Project Builder steps (goal, features, connections, guardrails, running it) and the lookup of a system not in the catalogue. Short JSON answers that fill blanks and add, never overwrite. Not calibration gated.",
   "builder-ideas": "Make it smarter: three to six AI or automation ideas grounded in the brief. Up to three runs per brief. Not calibration gated.",
   "builder-prototype":
-    "Prototype so far: draws one self contained HTML prototype of the brief in the prospect's house style, or returns search and replace edits to the current one. Up to three calls per press (edit, rebuild, one corrective round), 16,000 max tokens, a per call timeout of up to 150 s inside the route's 300 s. A slower model or reasoning needs that headroom. Has one fallback. Not calibration gated.",
+    "Prototype so far: draws one self contained HTML prototype of the brief in the prospect's house style, or returns search and replace edits to the current one. Sonnet 5.5 at low reasoning, 24,000 max tokens for a document of up to 70,000 characters plus the reasoning. Up to three calls per press (edit, rebuild, one corrective round), each with a timeout of up to 210 s inside the route's 300 s. Has one fallback. Not calibration gated.",
 };
 
 export const MODEL_CONFIG_KEY = "admin:model-config";

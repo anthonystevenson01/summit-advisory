@@ -193,5 +193,8 @@ describe("fontStylesheetUrl and buildHouseStyle", () => {
     assert.equal(none.status, "none");
     assert.equal(none.reason, "nothing-usable");
     assert.deepEqual(none.colours, NEUTRAL_HOUSE_STYLE.colours);
+    assert.equal(none.source, "neutral");
+    assert.equal(NEUTRAL_HOUSE_STYLE.source, "neutral");
+    assert.equal(buildHouseStyle({ ...base, colours: ["#c0392b"], logo }).source, "site");
   });
 });

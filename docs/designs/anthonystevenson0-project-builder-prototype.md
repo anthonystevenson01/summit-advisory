@@ -512,3 +512,333 @@ Not unit tested (network or Redis): `fetchAsset`, `readHouseStyle`, `runPrototyp
 - Screenshots or thumbnails of the prototype.
 - Changes to the admin briefs list page.
 - Any change to scoring, synthesis, rubrics or calibration.
+
+
+---
+
+# Round 2: brand data service, full width panel, design quality
+
+Branch `anthonystevenson0/project-builder-prototype` at `fccaaa8`. Task: `task-spec.md`, section "Round 2" (R1 to R9 and the round 2 constraints). Architect output only: no code.
+
+Why: on kroger.com the crawler is dropped by the site's bot protection (even `robots.txt`), so the style fell back to neutral; the open panel is held to the 1,240 px site column; Haiku produced a thin document that opened on a Sign in card. Nothing in this round tries to get past bot protection: the crawler keeps its own honest user agent, no header spoofing, no browser emulation. A blocked site simply counts as unreadable and the brand service fills in.
+
+## R2.0 What the Brandfetch docs say (checked 6 November 2026)
+
+Source: https://docs.brandfetch.com/reference/brand-api (read with WebFetch). What the design relies on:
+
+- Endpoint: `GET https://api.brandfetch.io/v2/brands/{identifier}`, where the identifier "can be a domain, website URL, email address, brand ID, ISIN, stock/ETF ticker, or crypto symbol". Explicit routes exist, including `/v2/brands/domain/{domain}`.
+- Auth: "Send an API key as a bearer token in the `Authorization` header." No credential gives `402`; an unusable token gives `401` `authorization_required`.
+- `logos[]`: `theme` (`dark`, `light` or null), `type` (`icon`, `logo`, `symbol`, `other`), `tags`, `formats[]` with `src`, `format` (`svg`, `webp`, `png`, `jpeg`), `size` (bytes), `width`, `height`, `background` (nullable, only listed value `transparent`). Theme describes the logo, not the background: "A dark logo should be displayed on a light background" and "A light logo should be displayed on a dark background". Types: logo is "The horizontal logo, seen on large surfaces"; symbol is "The universal mark that abstractly represents the brand"; icon is "The icon that is used on social profiles".
+- `colors[]`: `hex`, `type` (`accent`, `dark`, `light`, `brand`), `brightness` (float, "0.2126*R + 0.7152*G + 0.0722*B", range not stated). Accent is "The main color that represents the brand (used to draw attention e.g. call to action button)"; dark and light are "used for surfaces or backgrounds".
+- `fonts[]`: `name`, `type` (`title` or `body`), `origin` (`google`, `custom`, `system`), `originId` (nullable, format not documented), `weights`.
+- Example asset hosts in the docs: `cdn.brandfetch.io` and `asset.brandfetch.io`. The docs say the shortcut fields (`logo`, `icon` and so on) need a signed `c` client id; they do not say that for `formats[].src`.
+- Status codes: `200`; `204` only with `cachedOnly=true` ("not counted"); `400` (`identifier_invalid`, `url_invalid`; "Doesn't consume credit"); `401`; `402`; `403` (`api_key_invalid`, `no_api_credits`, `auth_unavailable`); `404` for an unknown domain, typically `brand_not_found`, also `domain_invalid`, `domain_unresolvable`, `domain_redirected`, and "Every 404 still consumes a credit"; `429` `quota_exceeded`, "The key's monthly quota is used up"; `500` `internal_error`.
+- Quota: monthly; "Image fetches don't count toward quota". No per second rate limit is stated.
+
+Design consequences: use the explicit domain route so a short domain is never read as a ticker; cache 404s too, because they cost a credit; treat 401, 402, 403, 429 and 5xx as errors that are not cached; fetch `formats[].src` without any client id and, if a host refuses it, try the next format (the docs do not promise these addresses work unsigned, so a refusal is an expected miss, not a failure).
+
+## R2.1 Files to change
+
+### Create
+
+| File | What and why |
+|---|---|
+| `app/lib/project-builder/brand-data.ts` | Pure: the trimmed `BrandData` shape, `parseBrandfetch(raw)`, `chooseBrandLogoFormats(data, navIsDark)`, `brandColours(data)`, `brandFonts(data)`, `chooseNav(colours, background, logoTheme)`. No network, no Redis, no env, so the mapping is unit tested. |
+| `app/lib/project-builder/brandfetch.ts` | Server only: `lookupBrand(domain, opts, deps?)`: key check, cache read, daily cap, the one GET with a short timeout, cache write, outcome. `deps` (fetch, cache get and set, reserve, env, logger) default to the real ones and are injected by tests. |
+| `__tests__/project-builder-brand-data.test.ts` | Mapping, selection, merge and note tests (R2.10). |
+| `__tests__/project-builder-brandfetch.test.ts` | Client tests with injected deps: no key, cache, cap, 404, errors, timeout, key never leaked. |
+
+### Modify
+
+| File | What and why |
+|---|---|
+| `app/lib/project-builder/house-style.ts` | `HouseStyle` gains `source`, `brandLookup`, `navBackground`, `navText`, `logoTheme`; new `StyleSource` and `BrandLookup` types; `needsBrandLookup(parts)`; `mergeHouseStyle(site, brand, meta)`; `normaliseHouseStyle(raw)` for records stored before round 2; neutral defaults for the new fields. `buildHouseStyle` stays as the status rule and is called by the merge. |
+| `app/lib/project-builder/house-style-read.ts` | Split into `readSiteParts` (today's crawl, returning the raw parts or the reason) and `readHouseStyle` (site, then brand top up, then merge). Budgets retuned (R2.2). Brand logo bytes go through `fetchAsset`, `checkLogoBytes`, `sanitiseSvg` and `logoDataUri`. |
+| `app/lib/project-builder/prototype-run.ts` | `STYLE_BUDGET_MS` 30 s; `LONG_CALL_CAP_MS` 210 s; `EDIT_CALL_CAP_MS` 60 s; the style event carries `source` and `brand`. |
+| `app/lib/project-builder/prototype.ts` | `styleNoteFor(style)` takes the whole style and picks the line by source and outcome; `StyleSource` re-exported for the page if needed. |
+| `app/lib/project-builder/prototype-html.ts` | `prototypeView` calls `styleNoteFor(style)`. |
+| `app/lib/briefs.ts` | `getBriefStyle` passes the stored value through `normaliseHouseStyle`. |
+| `app/lib/project-builder/prompts.ts` | New design quality rules, the first screen rule, the size guidance, the inline SVG clarification; `houseStyleBlock` gains the nav lines (R2.8). |
+| `app/lib/llm.ts` | `builder-prototype` default becomes Sonnet 5.5, low reasoning, 24,000 max tokens, Haiku 5.5 fallback; description updated (R2.7). |
+| `app/lib/ratelimit.ts` | `brandfetchDailyKey()` and `reserveBrandfetchDailyCall()` beside the builder daily cap. |
+| `app/lib/project-builder/copy.ts` | Style note lines by source; `stageLong` says four minutes. |
+| `app/lib/project-builder/stats.ts`, `app/admin/stats/page.tsx` | Brand lookup and hit counts, style source counts (R2.6). |
+| `app/admin/briefs/[id]/page.tsx` | The prototype box's style line shows the source and the brand outcome. |
+| `app/globals.css` | `.pb-proto-panel` full width (R2.5). |
+| `.env.example` | `BRANDFETCH_API_KEY`, `BRANDFETCH_DAILY_CAP` with a comment. |
+| `__tests__/project-builder-house-style.test.ts`, `__tests__/project-builder-prompts.test.ts`, `__tests__/project-builder-stats.test.ts`, `__tests__/project-builder-prototype.test.ts` | Merge, prompt rules, stats, notes. |
+| `docs/runbook.md` | Docs agent: the env vars, the cache key, the cap, how to read the stats. |
+
+Not touched: the sandbox, the CSP, the safety pass, the validator, the route's auth and limits, `fetchAsset` itself, the crawler's user agent.
+
+## R2.2 Merge order and the source field
+
+### Order
+
+1. Site read (`readSiteParts`): as today, through the crawler. Returns `{ parts, reason }` where `parts` is the raw `HouseStyleParts` (logo, colours, background, text, fonts, site name, tagline) or null with a reason (`unreadable` for a blocked or failing site, `nothing-usable` for a site with nothing found). With no website at all, the reason is `no-website` and there is no domain to look up, so the brand step is skipped.
+2. Brand top up: `needsBrandLookup(parts)` is true when `parts` is null, or the logo is null, or there are no colours. Fonts alone missing do not spend a lookup; when a lookup runs for another reason, its fonts fill an empty role. The domain looked up is the target host (the same host the site read used, `www.` stripped).
+3. Merge (`mergeHouseStyle`), field by field, site first:
+   - Logo: the site logo when present, else the brand logo.
+   - Colours: the site colours first, then brand colours not within a small distance of one already kept, capped at three. So a site with one colour is topped up, never replaced.
+   - Fonts: per role, the site family when it is on the allow list, else the brand family for that role when it maps onto the allow list, else the site stack.
+   - Background and text: the site's values when the site was read, else white and `#1F2A37`.
+   - Site name and tagline: the site's; Brandfetch fields beyond logos, colours and fonts are not used (prompt text from a third party stays minimal).
+   - Nav colours and `logoTheme`: computed last (R2.3.3).
+4. Neutral: when the merged parts still have no logo, no colour and no font, the neutral style with the site reason.
+
+`buildHouseStyle` then sets `status` (`found`, `partial`, `none`) by its existing rule on the merged parts.
+
+### New fields on `HouseStyle`
+
+- `source: "site" | "brand" | "site+brand" | "neutral"`: `site` when every used value came from the site; `brand` when the site gave nothing usable and the brand data gave something; `site+brand` when both contributed at least one of logo, colour or font; `neutral` when status is `none`.
+- `brandLookup: "not-needed" | "no-website" | "no-key" | "cap" | "cached-hit" | "cached-miss" | "hit" | "miss" | "error"`: what the brand step did. Drives the note and the stats.
+- `navBackground`, `navText`: the two colours the prompt is told to use for the navigation bar.
+- `logoTheme: "dark" | "light" | null`: the Brandfetch theme of the chosen logo, null for a site logo.
+
+`normaliseHouseStyle` fills these for a style stored before round 2: `source` is `neutral` when status is `none`, else `site`; `brandLookup` `not-needed`; nav is `background` and `text`; `logoTheme` null. The stored style is not rewritten; it is reused as before (read once per brief and host). Briefs already styled neutral will only get the brand top up when their host changes. Decision: acceptable, and it keeps "read once per brief" true. Anthony can clear `brief-style:{id}` by hand to force a fresh read for a brief he is testing (runbook line).
+
+## R2.3 The Brandfetch client
+
+### R2.3.1 `lookupBrand(domain, { deadlineAt })`
+
+Returns `{ outcome: BrandLookup, data: BrandData | null }`. Never throws.
+
+1. `process.env.BRANDFETCH_API_KEY` trimmed empty: `{ outcome: "no-key" }`. No log line (silent skip, R4).
+2. Domain check: `normaliseDomain(domain)` and `isPublicHostname`; anything else is `error` (should not happen; the target already passed `validateWebsiteUrl`).
+3. Cache read: `GET brandfetch:{domain}`. A stored `{ found: true, data }` is `cached-hit`; `{ found: false }` is `cached-miss`. A Redis failure is ignored and the lookup continues.
+4. Daily cap: `reserveBrandfetchDailyCall()`; refused is `{ outcome: "cap" }`. Reserved only on a cache miss, so cached domains never touch the cap.
+5. Request: `GET https://api.brandfetch.io/v2/brands/domain/{encodeURIComponent(domain)}` with headers `Authorization: Bearer {key}`, `Accept: application/json`; `signal: AbortSignal.timeout(min(4_000, deadlineAt - now - 500))`; `redirect: "error"`. Skipped (outcome `error`) when under 1 s is left.
+6. Response:
+   - `200`: body read as text capped at 512 KB, `JSON.parse`, `parseBrandfetch`. A body that does not parse is `error`. A parse with no usable logo, colour or font is still cached as found (it is a valid answer) and returned as `hit` with empty lists; the merge then adds nothing.
+   - `404`: `miss`, cached as `{ found: false }`.
+   - `400`: `miss`, not cached (no credit was spent; the domain is malformed).
+   - `401`, `402`, `403`, `429`, `5xx`, anything else, a network error, an abort or a timeout: `error`, not cached.
+7. Cache write: `SET brandfetch:{domain} {json} EX ttl`, with `ttl` 30 days (2,592,000 s) for a found brand and 7 days (604,800 s) for a 404. Decision: a 404 costs a credit, so it is cached, but for a shorter time because Brandfetch indexes new brands after a first request; a week lets a later brief pick the brand up.
+8. Logging: one line on `error` with the HTTP status and the Brandfetch error code only (for example `project-builder brandfetch: 429 quota_exceeded for kroger.com`). The key, the `Authorization` header and the request object are never logged, never put in the cache, never returned and never sent to the browser. The domain is a company domain and may be logged.
+
+Cached value shape (`BrandData`, trimmed by `parseBrandfetch` so the cache stays small): `{ logos: Array<{ type, theme, formats: Array<{ src, format, size, width, height, transparent }> }>, colours: Array<{ hex, type, brightness }>, fonts: Array<{ name, type, origin }>, fetchedAt }`. At most 12 logos, 8 formats each, 12 colours, 6 fonts. Only `https:` `src` values are kept.
+
+Cache key decision: the cache is per domain and shared by all briefs, as R6 asks, because it is public brand data, not prospect data. It is not deleted with a brief. The runbook says so.
+
+### R2.3.2 Daily cap (`ratelimit.ts`)
+
+- `brandfetchDailyKey(now) = "brandfetch:calls:{YYYY-MM-DD}"` (UTC).
+- `reserveBrandfetchDailyCall()`: INCR, EXPIRE 48 h on the first increment, `ok` when the count is at or under the cap. The cap is `BRANDFETCH_DAILY_CAP` parsed as a whole number, default 200 when unset or not a number, and `0` disables lookups. Without Redis it allows the call, matching `reserveBuilderDailyCall`. A reservation is spent even when the call then fails, the same rule as the builder cap.
+
+### R2.3.3 Logo and colour selection (`brand-data.ts`)
+
+Colours, `brandColours(data)`:
+
+1. Order by type: `accent` first, then `brand` in the order given, then `dark`, then `light`.
+2. Each hex goes through the existing `normaliseColour`; invalid values are dropped.
+3. The same filter the site read uses drops near white, near black and low saturation greys, and near duplicates are merged. `dark` and `light` colours that survive are kept (a strong dark brand colour is useful), greys are not.
+4. At most three. These become the brand side of the merge.
+
+Separately, `darkSurface(data)` returns the first `dark` colour that is genuinely dark (brightness under 80 on the 0 to 255 scale, computed from the hex, since the API's float range is undocumented) for the nav choice below.
+
+Nav, `chooseNav(colours, background, logoTheme, darkSurface)`:
+
+- With a Brandfetch logo whose theme is `light` (a light logo for dark backgrounds): nav background is `darkSurface`, else `colours[0]` when its relative luminance is under 0.35, else `#1F2A37`; nav text `#FFFFFF`.
+- With a Brandfetch logo whose theme is `dark` or null, or with a site logo (theme unknown; most site logos are drawn for the light header they sit in): nav background is the page `background` (white unless the site said otherwise); nav text is the page `text`; the prompt asks for a `--brand-1` accent line and active item, so the brand still shows.
+- With no logo (wordmark): nav background `colours[0]`, nav text white or `#1F2A37`, whichever has the higher contrast ratio against it.
+
+Logo, `chooseBrandLogoFormats(data, preferDarkNav)`:
+
+1. Logos with `type` `logo` first, then `symbol`, then `icon`; `other` is not used.
+2. Within a type, a theme that reads on the nav comes first. The nav is not known until the logo is chosen, so the rule is: prefer `dark` theme (reads on the default white nav), then null, then `light`; a `light` logo is still acceptable because the nav rule above then gives it a dark nav.
+3. Within a logo, formats in the order `svg`, `png`, `webp`, `jpeg`, skipping any with `size` over 204,800 bytes and, for raster formats, preferring `width` of at least 160 px; `transparent` formats first among equals.
+4. Returns an ordered list of at most four `src` candidates with the theme of each.
+
+`house-style-read.ts` tries the candidates in order, at most two fetches, each through `fetchAsset` (`maxBytes` 204,800, `accept: "image/svg+xml,image/png,image/webp,image/jpeg"`, the asset deadline), then `checkLogoBytes` (magic bytes, header agreement, size), `sanitiseSvg` for SVG, and `logoDataUri`. The first that passes is the logo; its theme becomes `logoTheme`. `fetchAsset` already refuses non public hosts and caps the bytes; the Brandfetch asset hosts are public, so they pass as any CDN asset does. Fetches of `formats[].src` do not count against the Brandfetch quota (docs) and are not counted against the daily cap.
+
+Fonts, `brandFonts(data)`: the first `title` font becomes the heading role and the first `body` font the body role, each through the existing `fontChoice` (allow list only), whatever its `origin`. A `custom` or `system` font whose name happens to be on the allow list is used; anything else yields no family. Font names never reach the prompt unless on the allow list.
+
+Mapping onto `HouseStyle`:
+
+| HouseStyle field | Site | Brandfetch |
+|---|---|---|
+| `logo` | site logo | chosen format, checked and embedded |
+| `colours` | site colours first | topped up from `brandColours` |
+| `headingFont`, `bodyFont` | site family per role | brand `title` and `body` when the site role is empty |
+| `background`, `text` | site values | defaults |
+| `navBackground`, `navText` | from `chooseNav` | from `chooseNav` |
+| `logoTheme` | null | the chosen logo's theme |
+| `siteName`, `tagline` | site values | not used |
+
+### R2.3.4 Time budget inside the style read
+
+The style read keeps one budget, raised from 26 s to 30 s (`STYLE_BUDGET_MS`), split as:
+
+- `robots.txt` plus crawl: 14 s (was 18 s). A dropped connection fails fast; a hanging one is cut by the crawler's own page timeout and the crawl deadline.
+- Site assets (stylesheets, site logo): 6 s (was 8 s).
+- Brand API call: up to 4 s.
+- Brand logo fetches: up to 4 s, two fetches at most.
+
+Each stage takes `min(its share, deadlineAt - now)`, so a slow early stage shrinks the later ones rather than overrunning. A skipped or failed brand stage costs nothing more.
+
+## R2.4 Style note copy (`copy.ts`)
+
+`styleNoteFor(style)` picks one line. New and changed strings (British spelling, no dashes, plain):
+
+- Source `site`, status `found`: `"Your logo and colours come from your website."`
+- Source `site`, status `partial`: `"We found some of your look on your website and filled the rest with a plain style."` (unchanged).
+- Source `site+brand`: `"Your look comes from your website, with the gaps filled from Brandfetch, a public directory of company logos and colours."`
+- Source `brand`: `"We could not read your website, so your logo and colours come from Brandfetch, a public directory of company logos and colours."`
+- Any of the three above with status `partial` and a source including `brand`: the line above plus `" Anything still missing uses a plain style."`
+- Source `neutral`, reason `no-website`: unchanged `noSite`.
+- Source `neutral`, reason `unreadable`, `brandLookup` `miss`, `cached-miss` or `error`: `"We could not read your website or find your logo and colours elsewhere, so the prototype uses a plain style."`
+- Source `neutral`, reason `unreadable`, any other lookup (no key, cap, not needed): unchanged `unreadable`.
+- Source `neutral`, reason `nothing-usable`: unchanged `nothingUsable`.
+
+Decision: the line now shows for a site sourced style too, so the prospect always knows where the look came from (R5). Brandfetch is named because "a brand service" alone does not tell the prospect where their logo was taken from.
+
+`stageLong` becomes `"Still drawing. A full brief can take up to four minutes."` to match R2.7.
+
+## R2.5 Full width panel CSS
+
+Only the open prototype panel changes; both bars keep `.pb-dock-bar` with its 1,240 px column (R7).
+
+- `.pb-proto-panel`: remove `max-width: 1240px` and `margin: 0 auto`; set `width: 100%`, `padding: 6px 16px 16px` (16 px gutter, matching the site's phone gutter); keep the flex column, the height rule and `overflow: hidden`.
+- The phone rule (`padding: 6px 12px 12px`) stays.
+- The frame already fills its flex child at `height: 100%` and `width: 100%`, so no component change is needed. `PrototypeFrame` keeps its inline width.
+- The blueprint panel (`.pb-dock-panel`) is not changed.
+
+## R2.6 Stats
+
+The `builder_prototype_style` event props gain `source` and `brand` (the `BrandLookup` value). No new event name.
+
+`PrototypeStats` gains:
+
+- `brandLookups`: style events with `brand` in `hit`, `miss` or `error` (live calls to the API, the quota spend).
+- `brandHits`: `brand` in `hit` or `cached-hit` (a brand record was available).
+- `brandCached`: `brand` in `cached-hit` or `cached-miss`.
+- `brandMisses`: `brand` in `miss` or `cached-miss`.
+- `brandErrors`: `brand` `error`.
+- `brandCapped`: `brand` `cap`.
+- `sourceSite`, `sourceBrand`, `sourceSiteBrand`, `sourceNeutral`: style events by `source`.
+
+`/admin/stats` adds these rows to the Prototypes table. The admin brief page's style line becomes `{status}, from {source}, brand lookup {brandLookup}, host {host}`. Brandfetch calls are not model calls and do not appear in `ai:calls` or the model cost rows.
+
+## R2.7 Model, max tokens and the time budget
+
+`llm.ts`, `DEFAULT_ROUTES["builder-prototype"]`: `{ model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 24000, fallback: "anthropic/claude-haiku-5.5" }`. Reasoning is `low` because Sonnet class models through OpenRouter refuse `enabled: false` (the existing comment in `llm.ts`). Both ids are already in `CURATED_MODELS`. The description becomes: "Prototype so far: draws one self contained HTML prototype of the brief in the prospect's house style, or returns search and replace edits to the current one. Sonnet 5.5 at low reasoning, 24,000 max tokens for a document of up to 70,000 characters plus the reasoning. Up to three calls per press (edit, rebuild, one corrective round), each with a timeout of up to 210 s inside the route's 300 s. Has one fallback. Not calibration gated."
+
+Sizing: 60,000 to 70,000 characters of HTML inside a JSON string is roughly 17,000 to 20,000 output tokens, plus low reasoning (a few hundred to about 2,000), so 24,000 covers the top of the guidance with a margin. `PROTOTYPE_HTML_MAX_CHARS` stays 90,000, so a document at the guidance ceiling still passes the validator.
+
+Time budget (`maxDuration = 300`, route deadline 285 s, unchanged):
+
+| Path | Steps | Worst case |
+|---|---|---|
+| Create | style 30 s, create up to 210 s | 240 s; the fix round needs 75 s left, so it runs only when the create finished early, with timeout `min(210, remaining - 20)` |
+| Update by edits | style 0 s (reused), edit up to 60 s | 60 s |
+| Update, edit failed | edit 60 s, rebuild up to `min(210, 285 - 60 - 20)` = 205 s | 265 s; no fix round |
+| Rebuild (large change or new host) | style up to 30 s, rebuild up to 210 s | 240 s |
+
+Constants in `prototype-run.ts`: `STYLE_BUDGET_MS = 30_000`, `LONG_CALL_CAP_MS = 210_000`, `EDIT_CALL_CAP_MS = 60_000`; `MIN_CALL_MS`, `CALL_HEADROOM_MS` and `FIX_MIN_MS` unchanged. `llm.ts`'s 240 s ceiling on `timeoutMs` already allows 210 s.
+
+Risk: Sonnet's output rate through OpenRouter varies. At about 90 tokens a second, 20,000 tokens takes about 220 s and would time out; the prompt therefore aims at 40,000 to 60,000 characters (about 12,000 to 17,000 tokens, 130 to 190 s) with 70,000 as the ceiling. The call log's `ms` per call shows real timings after the first smoke runs. If timeouts appear, the two levers are the admin model setting (back to Haiku with no deploy) and, if the Vercel project runs Fluid Compute on Pro, raising `maxDuration` to 600 with the route deadline and caps scaled to match. That second lever is out of scope here and needs Anthony to confirm the project setting.
+
+## R2.8 The new prompt rules, exact text
+
+In `PROTOTYPE_RULES` (`prompts.ts`), three existing lines change and a design block is added. The resulting rules, in order (lines not listed stay as they are):
+
+Changed line, images:
+
+```
+- No <link> tags, no external URLs, no <img> other than the logo, no icon fonts. Draw icons and charts with CSS or inline <svg> written in the document.
+```
+
+Changed line, screens (replaces the "default shape is sign in, dashboard..." line):
+
+```
+- Choose the screens from the brief. The first <section data-screen> in the document is the main working screen, a dashboard or the main list of records, and it is the one visible when the page opens. A sign in screen is optional; if you include one it is the last screen and the last navigation button.
+```
+
+Changed line, size (replaces "Every id is unique. Keep the document under 45,000 characters."):
+
+```
+- Every id is unique. Aim for 40,000 to 60,000 characters and never go over 70,000.
+```
+
+New block, appended after the build rules:
+
+```
+Design quality:
+- Use the full width of the frame. The navigation bar spans the whole width. Each screen's content sits in a centred container with max-width 1280px and 24px side padding.
+- Fill every screen with realistic, dense sample data for this business, as a real user would see it on a busy day. No large empty areas.
+- Every list screen has a table of 8 to 12 rows with at least five columns, and a search box plus at least one filter (a select or a row of buttons). Typing in the search box or choosing a filter hides the rows that do not match.
+- The dashboard has three or four figure cards (a number, a label and the change against last month) and at least one simple bar or line chart drawn with CSS or inline SVG, with labelled axes.
+- Show status as small coloured labels (for example Open, Pending, Done), with at least three different states across the data.
+- Use one spacing scale (4, 8, 12, 16, 24, 32 and 48px) and one type scale (12, 14, 16, 20, 24 and 32px). Headings use var(--font-heading); everything else uses var(--font-body). One border radius throughout.
+- The navigation bar background is the nav background colour from the house style and its text is the nav text colour. Primary buttons, the active navigation item, links, focus rings and the main chart series use var(--brand-1). Use var(--brand-2) and var(--brand-3) for secondary accents and further chart series. The page background is var(--bg) and body text is var(--text).
+```
+
+`houseStyleBlock` gains two lines after "Text colour": `Nav background colour: {navBackground}` and `Nav text colour: {navText}`. They are hex values from the merge, so no third party text enters the prompt through them. The system turn still carries no prospect or website text; the edit and fix prompts reuse `PROTOTYPE_RULES` and so get the same block.
+
+Not added: a validator check that the first screen is not a sign in screen. A miss would cost a whole fix round (up to 210 s) for a layout preference; the prompt rule is enough, and the smoke test checks it.
+
+## R2.9 `.env.example`
+
+Added under a new heading after the Ask Summit block:
+
+```
+# Project Builder brand data (Round 2)
+# Optional. When the prospect's website cannot be read, or gives no logo or colours, the prototype asks
+# the Brandfetch Brand API (https://docs.brandfetch.com) for the company's logo, colours and fonts.
+# Server side only; never sent to the browser or logged. Without it the step is skipped and the
+# prototype uses what the website gave, or a plain style.
+BRANDFETCH_API_KEY=
+# Optional. Live Brandfetch lookups allowed per UTC day across the site (cached domains do not count).
+# Default 200. 0 turns lookups off. Answers are cached per domain for 30 days (7 days for not found).
+BRANDFETCH_DAILY_CAP=200
+```
+
+## R2.10 Test plan
+
+All on `node:test` with `node:assert/strict`, no network and no Redis: pure modules directly, `brandfetch.ts` through injected deps.
+
+`__tests__/project-builder-brand-data.test.ts`
+
+- `parseBrandfetch`: a fixture shaped like the documented response (logos with types, themes and formats; colours with types; fonts with origins) maps to `BrandData`; missing arrays become empty; non `https:` `src` dropped; caps on logos, formats, colours and fonts; a non object throws nothing and returns empty data.
+- Logo choice: `logo` beats `symbol` beats `icon`; `other` ignored; `dark` theme before null before `light`; `svg` before `png` before `webp` before `jpeg`; a format with `size` over 204,800 skipped; a raster under 160 px wide ranked after a wider one; at most four candidates; each carries its theme.
+- Colour choice: `accent` first, then `brand`, then `dark`; an invalid hex dropped; white, black and a grey dropped; near duplicates merged; at most three.
+- Fonts: a `google` title font on the allow list becomes the heading family; a `custom` font not on the list gives no family; a `body` font fills the body role.
+- Nav: a `light` theme logo gives a dark nav with white text; a `dark` theme logo gives the page background; no logo gives `colours[0]` with the higher contrast text.
+- `needsBrandLookup`: true for null parts, no logo, no colours; false for a site with logo and colours but no fonts.
+- `mergeHouseStyle`: a partial site (two colours, no logo) plus brand data keeps both site colours first, adds one brand colour, takes the brand logo, keeps site background and text, and has source `site+brand`; a site with nothing plus brand data gives source `brand`; brand null keeps the site result with source `site`; both empty gives the neutral style with the site reason and source `neutral`; status follows `buildHouseStyle`.
+- `normaliseHouseStyle`: a round 1 stored style gains `source`, `brandLookup`, nav colours and `logoTheme` defaults.
+- `styleNoteFor`: one assertion per line in R2.4, including the brand miss line; no line contains an em or en dash.
+
+`__tests__/project-builder-brandfetch.test.ts` (fake fetch, in memory cache, fake reserve, fake env, captured logger)
+
+- No key: outcome `no-key`; fetch, cache and reserve never called; nothing logged.
+- Cache hit: a stored found record returns `cached-hit` with the data; no fetch, no reserve. A stored miss returns `cached-miss`.
+- Cap refused: outcome `cap`; no fetch.
+- 200: the request URL is `https://api.brandfetch.io/v2/brands/domain/acme.com`, the `Authorization` header is `Bearer {key}`; outcome `hit`; cache written with 2,592,000 s.
+- 404: outcome `miss`; cache written `{ found: false }` with 604,800 s.
+- 400: `miss`, not cached. 401, 403, 429 and 500: `error`, not cached.
+- Timeout: a fetch that rejects with a `TimeoutError` or `AbortError` gives `error`; under 1 s left skips the call.
+- Unparsable 200 body: `error`, not cached.
+- The key: no logged string, no cached value and no returned value contains the key.
+
+Updated tests
+
+- `project-builder-house-style.test.ts`: `buildHouseStyle` unchanged statuses; neutral style carries `source: "neutral"`.
+- `project-builder-prompts.test.ts`: the create prompt's system turn contains the first screen rule, "sign in screen is optional", "8 to 12 rows", "three or four figure cards", "bar or line chart", "40,000 to 60,000" and "70,000", the inline SVG clause and the `Design quality:` block; the edit and fix prompts contain the same block; `houseStyleBlock` carries the two nav lines; still no prospect text, tagline or site name in any system turn.
+- `project-builder-stats.test.ts`: brand lookups, hits, cached, misses, errors, capped and the four source counts from fixture style events.
+- `project-builder-prototype.test.ts`: `styleNoteFor` signature change.
+
+Not unit tested (network): `readHouseStyle` end to end and the live Brandfetch call. Smoke after deploy with the key set: kroger.com (blocked site, expect source `brand`), a WordPress site with a logo (expect `site`, no lookup), a site with colours but no logo (expect `site+brand`), and one run with the key unset (expect today's behaviour). Check the first screen is a dashboard or list, the panel spans the window, and the call log `ms` for the create.
+
+Gates: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build`. Calibration does not apply.
+
+## R2.11 Decisions and risks
+
+- Explicit `/v2/brands/domain/{domain}` route instead of the bare identifier route named in R1: the same Brand API, documented, and a short domain cannot be read as a ticker. The Reviewer can swap the path if Anthony prefers the literal R1 form; nothing else changes.
+- Lookup only when the logo or colours are missing (not for fonts alone): keeps quota for the cases that look poor.
+- 404s cached for 7 days, found brands for 30: a 404 costs a credit; a shorter miss window lets a newly indexed brand appear.
+- Brand logo addresses may refuse unsigned fetches (the docs only promise signed shortcut URLs). Expected: the next candidate is tried, then the wordmark. No signing or client id work is in scope.
+- A site logo has no theme; the nav defaults to the page background for it, so a light logo on a light nav is the remaining risk for site logos. The brand logo path avoids it by theme.
+- Third party text: only hex colours, allow listed font names and checked image bytes from Brandfetch reach the prototype or the prompt. The sandbox, CSP and safety pass are untouched.
+- The per domain cache is shared across briefs and outlives a deleted brief. It holds public brand data about a company, not anything the prospect typed.
+- Bot protection: a blocked site is treated as unreadable. No browser user agents, no header spoofing, no retries designed to get round a block.

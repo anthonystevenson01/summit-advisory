@@ -147,13 +147,35 @@ describe("aggregateStats", () => {
       ev("builder_prototype_run", { mode: "updated", path: "edits", ok: true, corrected: false, style: "found" }),
       ev("builder_prototype_run", { mode: "updated", path: "rebuild", ok: false, reason: "invalid" }),
       ev("builder_prototype_run", { mode: "created", path: "create", ok: true, corrected: false }, 45),
-      ev("builder_prototype_style", { status: "found", reason: "" }),
-      ev("builder_prototype_style", { status: "partial", reason: "" }),
-      ev("builder_prototype_style", { status: "none", reason: "no-website" }),
-      ev("builder_prototype_style", { status: "none", reason: "unreadable" }),
+      ev("builder_prototype_style", { status: "found", reason: "", source: "site", brand: "not-needed" }),
+      ev("builder_prototype_style", { status: "partial", reason: "", source: "site+brand", brand: "hit" }),
+      ev("builder_prototype_style", { status: "none", reason: "no-website", source: "neutral", brand: "no-website" }),
+      ev("builder_prototype_style", { status: "none", reason: "unreadable", source: "neutral", brand: "miss" }),
+      ev("builder_prototype_style", { status: "found", reason: "", source: "brand", brand: "cached-hit" }),
+      ev("builder_prototype_style", { status: "none", reason: "unreadable", source: "neutral", brand: "cached-miss" }),
+      ev("builder_prototype_style", { status: "none", reason: "unreadable", source: "neutral", brand: "error" }),
+      ev("builder_prototype_style", { status: "none", reason: "unreadable", source: "neutral", brand: "cap" }),
     ];
     const p = aggregateStats({ events: protoEvents, calls: [], briefs: [], window }).prototypes;
-    assert.deepEqual(p, { created: 2, updated: 1, failed: 1, corrected: 1, styleFound: 1, stylePartial: 1, styleNone: 2 });
-    assert.deepEqual(t.prototypes, { created: 0, updated: 0, failed: 0, corrected: 0, styleFound: 0, stylePartial: 0, styleNone: 0 });
+    assert.deepEqual(p, {
+      created: 2,
+      updated: 1,
+      failed: 1,
+      corrected: 1,
+      styleFound: 2,
+      stylePartial: 1,
+      styleNone: 5,
+      brandLookups: 3,
+      brandHits: 2,
+      brandCached: 2,
+      brandMisses: 2,
+      brandErrors: 1,
+      brandCapped: 1,
+      sourceSite: 1,
+      sourceBrand: 1,
+      sourceSiteBrand: 1,
+      sourceNeutral: 5,
+    });
+    assert.ok(Object.values(t.prototypes).every((n) => n === 0));
   });
 });
