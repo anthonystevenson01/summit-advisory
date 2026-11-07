@@ -7,8 +7,8 @@
  * table, the calibration gate and the ai:calls log.
  *
  * Routing keys are `scoring`, `details`, `synthesis` and `extraction`, each
- * optionally narrowed to `{task}:{tool}`, plus the three Project Builder keys
- * `builder-read`, `builder-suggest` and `builder-ideas` (never narrowed). Resolution order is the specific
+ * optionally narrowed to `{task}:{tool}`, plus the four Project Builder keys
+ * `builder-read`, `builder-suggest`, `builder-ideas` and `builder-prototype` (never narrowed). Resolution order is the specific
  * key (`scoring:moat`), then the task key (`scoring`), then DEFAULT_ROUTES
  * below. Overrides live in the Redis hash `admin:model-config`, written from
  * /admin/models and cached in memory for 30 seconds, so a model change needs
@@ -45,6 +45,7 @@ export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   "builder-read": { model: "anthropic/claude-haiku-5.5", maxTokens: 6000, fallback: "anthropic/claude-sonnet-5.5" },
   "builder-suggest": { model: "anthropic/claude-haiku-5.5", maxTokens: 1500 },
   "builder-ideas": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 3000 },
+  "builder-prototype": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 24000, fallback: "anthropic/claude-haiku-5.5" },
 };
 
 /** The admin dropdown is limited to this list; the admin route rejects anything else. */
@@ -65,6 +66,7 @@ export const TASK_LABELS: Record<RoutingTask, string> = {
   "builder-read": "Project Builder: read a document",
   "builder-suggest": "Project Builder: suggestions",
   "builder-ideas": "Project Builder: ideas",
+  "builder-prototype": "Project Builder: prototype",
 };
 
 export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
@@ -75,6 +77,8 @@ export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
   "builder-read": "Extracts a requirements baseline from pasted text on the document and partly built routes of the Project Builder. Up to 60,000 characters in, one JSON answer. Has one fallback so a Haiku outage does not stop a read. Not calibration gated.",
   "builder-suggest": "The one tap helpers on the Project Builder steps (goal, features, connections, guardrails, running it) and the lookup of a system not in the catalogue. Short JSON answers that fill blanks and add, never overwrite. Not calibration gated.",
   "builder-ideas": "Make it smarter: three to six AI or automation ideas grounded in the brief. Up to three runs per brief. Not calibration gated.",
+  "builder-prototype":
+    "Prototype so far: draws one self contained HTML prototype of the brief in the prospect's house style, or returns search and replace edits to the current one. Sonnet 5.5 at low reasoning, 24,000 max tokens for a document of up to 70,000 characters plus the reasoning. Up to three calls per press (edit, rebuild, one corrective round), each with a timeout of up to 210 s inside the route's 300 s. Has one fallback. Not calibration gated.",
 };
 
 export const MODEL_CONFIG_KEY = "admin:model-config";
@@ -200,8 +204,12 @@ let client: OpenAI | null = null;
 // isRetryable), so the worst case (an error just under 15 s, then one full
 // 40 s attempt) stays at about 55 s and inside the score and details routes'
 // maxDuration of 60. Raising either constant means re-checking that sum.
+// A caller with a longer route (the prototype, maxDuration 300) passes its
+// own `timeoutMs`, clamped to the bounds below, and budgets for the sum.
 const CALL_TIMEOUT_MS = 40_000;
 const RETRY_WINDOW_MS = 15_000;
+const MIN_CALL_TIMEOUT_MS = 15_000;
+const MAX_CALL_TIMEOUT_MS = 240_000;
 
 function getClient(): OpenAI {
   if (client) return client;
@@ -299,6 +307,8 @@ export interface CallModelArgs<T> {
   temperature?: number;
   /** Attach OpenRouter's web plugin. */
   web?: boolean;
+  /** Per request timeout in ms, clamped to 15 to 240 s. Absent: the client's 40 s default. */
+  timeoutMs?: number;
 }
 
 export interface CallUsage {
@@ -442,6 +452,11 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
   if (files.length > 0) plugins.push({ id: "file-parser", pdf: { engine: "native" } });
   if (plugins.length > 0) body.plugins = plugins;
 
+  const requestOptions =
+    typeof args.timeoutMs === "number" && Number.isFinite(args.timeoutMs)
+      ? { timeout: Math.min(MAX_CALL_TIMEOUT_MS, Math.max(MIN_CALL_TIMEOUT_MS, Math.round(args.timeoutMs))) }
+      : undefined;
+
   const started = Date.now();
   let answeredBy = route.model;
   let usage: CallUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: null };
@@ -456,7 +471,7 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
     (body.reasoning as { enabled?: boolean } | undefined)?.enabled === false;
 
   const attempt = async () => {
-    const completion = await openai.chat.completions.create(body as unknown as ChatCompletionCreateParamsNonStreaming);
+    const completion = await openai.chat.completions.create(body as unknown as ChatCompletionCreateParamsNonStreaming, requestOptions);
     answeredBy = completion.model || route.model;
     usage = readUsage(completion.usage);
     const choice = completion.choices?.[0];

@@ -43,6 +43,8 @@ export type EventName =
   | "builder_resumed"
   | "builder_submitted"
   | "builder_change_requested"
+  | "builder_prototype_run"
+  | "builder_prototype_style"
   | "brief_deleted";
 
 export const EVENTS_KEY = "events";

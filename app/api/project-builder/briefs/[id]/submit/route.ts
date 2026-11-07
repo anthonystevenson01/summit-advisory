@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBuilderSaveLimiter } from "@/app/lib/ratelimit";
-import { getBrief, getBriefSource, saveBriefState, setBriefStatus, updateBrief } from "@/app/lib/briefs";
+import { getBrief, getBriefSource, saveBriefState, setBriefStatus, updateBrief, type BriefContact } from "@/app/lib/briefs";
+import { hashEmail } from "@/app/lib/tools/unlock-token";
 import { track } from "@/app/lib/events";
 import { verifyBriefLinkToken } from "@/app/lib/unlock";
 import { createBriefPage, isNotionBriefsConfigured, updateBriefPage } from "@/app/lib/project-builder-notion";
 import { notionPageUrl } from "@/app/lib/project-builder/notion-brief";
-import { BRIEF_ID_PATTERN, SOURCE_MAX_CHARS, parseBriefState } from "@/app/lib/project-builder/brief";
+import { BRIEF_ID_PATTERN, SOURCE_MAX_CHARS, parseBriefState, validateContact } from "@/app/lib/project-builder/brief";
 import { buildRequirements, countByPriority } from "@/app/lib/project-builder/requirements";
 import { renderAlertEmail, renderConfirmationEmail } from "@/app/lib/project-builder/emails";
 import { builderErrorResponse } from "../../../errors";
 import {
   BRIEF_GONE,
   LINK_INVALID,
+  adminPrototypeUrlFor,
   adminUrlFor,
   briefLinks,
   emailContactOf,
@@ -31,9 +33,13 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * Submit. Order: parse, honeypot, pattern, token, limiter, record, already
- * submitted (409), the final state saved, the status moved (PERSIST), the
- * event, Notion (update with the body appended, or a second chance at a
+ * submitted (409), the contact (the body's, else the stored one) checked
+ * against all four details (400 with `needContact`, since a save now needs
+ * only a name and email), the final state saved, the status moved (PERSIST),
+ * the event, the links, Notion (update with the body appended, or a second chance at a
  * create), the confirmation to the prospect, the alert to NOTIFY_EMAIL.
+ * When a prototype exists, Notion, the confirmation and the alert carry a
+ * link to it (never its HTML).
  * After the status moves nothing can fail the prospect: every side effect
  * is a value on the record.
  */
@@ -58,7 +64,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
     const state = parseBriefState(body.state);
     const source = typeof body.source === "string" ? body.source.slice(0, SOURCE_MAX_CHARS) : undefined;
-    await saveBriefState(id, state, source);
+    const checked = validateContact(body.contact ?? existing.contact, "submit");
+    if (!checked.ok) return NextResponse.json({ error: checked.error, needContact: true }, { status: 400 });
+    const contact: BriefContact | undefined = body.contact !== undefined ? { ...checked.contact, emailHash: hashEmail(checked.contact.email) } : undefined;
+    await saveBriefState(id, state, source, contact);
     const record = await setBriefStatus(id, "submitted", "prospect");
     if (!record) return NextResponse.json({ error: BRIEF_GONE }, { status: 404 });
     const submittedAt = record.submittedAt ?? new Date().toISOString();
@@ -69,12 +78,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     const origin = req.nextUrl.origin;
     const adminUrl = adminUrlFor(origin, id);
     const storedSource = source ?? (await getBriefSource(id));
+    const hashPrefix = record.contact.emailHash.slice(0, 12);
+    const links = briefLinks(origin, id, record.contact.emailHash);
+    const prototypeUrl = record.prototypeAt && links ? links.prototypeUrl : null;
+    const notionExtras = { prototypeUrl, prototypeAdminUrl: record.prototypeAt ? adminPrototypeUrlFor(origin, id) : null };
     let notionStatus: "ok" | "failed" | null = record.notionStatus;
     let notionPageId = record.notionPageId;
     if (isNotionBriefsConfigured()) {
       const result = notionPageId
-        ? await updateBriefPage(record, storedSource, adminUrl, { appendBody: true })
-        : await createBriefPage(record, storedSource, adminUrl);
+        ? await updateBriefPage(record, storedSource, adminUrl, { appendBody: true }, notionExtras)
+        : await createBriefPage(record, storedSource, adminUrl, notionExtras);
       notionStatus = result.ok ? "ok" : "failed";
       if (result.ok) notionPageId = result.pageId;
       else console.error(`project-builder submit: Notion write failed for ${id}: ${result.error}`);
@@ -85,11 +98,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
     }
 
-    const hashPrefix = record.contact.emailHash.slice(0, 12);
-    const links = briefLinks(origin, id, record.contact.emailHash);
     let emailed = false;
     if (links) {
-      const email = renderConfirmationEmail({ state, contact: emailContactOf(record), viewUrl: links.resumeUrl, deleteUrl: links.deleteUrl });
+      const email = renderConfirmationEmail({ state, contact: emailContactOf(record), viewUrl: links.resumeUrl, deleteUrl: links.deleteUrl, prototypeUrl });
       emailed = await sendBudgeted({ to: record.contact.email, email, startedAt, context: "project-builder submit", hashPrefix });
     } else {
       console.error(`project-builder submit: no link for ${hashPrefix}: UNLOCK_SECRET is not set`);
@@ -109,6 +120,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         adminUrl,
         notionFailed: notionStatus !== "ok",
         notionUrl: notionPageId ? notionPageUrl(notionPageId) : null,
+        prototypeUrl,
       });
       await sendBudgeted({ to: notify, email: alert, startedAt, context: "project-builder alert", hashPrefix, from: notify });
     } else {

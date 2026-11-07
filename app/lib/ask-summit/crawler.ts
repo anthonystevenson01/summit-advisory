@@ -6,12 +6,19 @@
  * page never fails the stage: it is counted in `skipped` and the crawl goes
  * on; zero pages is a thin result, not an error. The rules live in
  * crawl-rules.ts and are tested; this file only fetches.
+ *
+ * The Project Builder's house style read uses the same crawler: a smaller
+ * page cap, the raw HTML kept, and `fetchAsset` for the stylesheets and the
+ * logo a page references, with the same user agent, timeout, host rule and
+ * robots rules. Without those options Ask Summit behaves as before.
  */
 import {
   CRAWL_CONCURRENCY,
   CRAWL_MAX_PAGES,
   CRAWL_TEXT_CAP,
+  DEFAULT_USER_AGENT,
   PAGE_BODY_CAP,
+  PAGE_HTML_CAP,
   PAGE_TIMEOUT_MS,
   START_PAGE_SCORE,
   cutAtWord,
@@ -25,12 +32,28 @@ import {
   type CrawledPage,
   type RobotsRules,
 } from "./crawl-rules.ts";
-import { isSameHost } from "./validation.ts";
+import { isPublicHostname, isSameHost } from "./validation.ts";
+
+export interface FetchedRobots {
+  rules: RobotsRules;
+  status: CrawlStore["robots"];
+}
 
 export interface CrawlOptions {
   /** Epoch ms; no fetch starts within PAGE_TIMEOUT_MS of it. */
   deadlineAt: number;
   userAgent: string;
+  /** Defaults to CRAWL_MAX_PAGES. */
+  maxPages?: number;
+  /** Keep each page's raw HTML (capped at PAGE_HTML_CAP); the start page is kept even when its visible text is short. */
+  keepHtml?: boolean;
+  /** Rules already fetched by the caller; skips the crawl's own robots.txt read. */
+  robots?: FetchedRobots;
+}
+
+/** ASK_SUMMIT_USER_AGENT overrides the default so a token that sites start blocking can be changed without a deploy. */
+export function crawlerUserAgent(): string {
+  return process.env.ASK_SUMMIT_USER_AGENT?.trim() || DEFAULT_USER_AGENT;
 }
 
 /** A page whose visible text is shorter than this is an empty shell and is not stored. */
@@ -50,7 +73,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchRobots(origin: string, userAgent: string): Promise<{ rules: RobotsRules; status: CrawlStore["robots"] }> {
+export async function fetchRobots(origin: string, userAgent: string): Promise<FetchedRobots> {
   try {
     const res = await fetch(`${origin}/robots.txt`, {
       signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
@@ -75,7 +98,8 @@ async function fetchRobots(origin: string, userAgent: string): Promise<{ rules: 
 export async function crawlSite(startUrl: string, opts: CrawlOptions): Promise<CrawlStore> {
   const start = new URL(startUrl);
   const userAgent = opts.userAgent;
-  const { rules, status: robots } = await fetchRobots(start.origin, userAgent);
+  const { rules, status: robots } = opts.robots ?? (await fetchRobots(start.origin, userAgent));
+  const maxPages = opts.maxPages ?? CRAWL_MAX_PAGES;
   const crawlDelayMs = rules.crawlDelayMs;
   // A Crawl-delay only means something with one request at a time; a site
   // that asks for one is the kind that blocks an impolite crawler.
@@ -104,7 +128,7 @@ export async function crawlSite(startUrl: string, opts: CrawlOptions): Promise<C
   let stopped = false;
   let lastFetchAt = 0;
 
-  const stopNow = () => stopped || attempts >= CRAWL_MAX_PAGES || store.totalChars >= CRAWL_TEXT_CAP || Date.now() >= opts.deadlineAt - PAGE_TIMEOUT_MS;
+  const stopNow = () => stopped || attempts >= maxPages || store.totalChars >= CRAWL_TEXT_CAP || Date.now() >= opts.deadlineAt - PAGE_TIMEOUT_MS;
 
   /** The highest scored candidate, the earliest found on a tie, so the preferred pages are fetched before the cap is reached. */
   const takeNext = (): Candidate | null => {
@@ -175,7 +199,8 @@ export async function crawlSite(startUrl: string, opts: CrawlOptions): Promise<C
     }
     const finalPath = new URL(res.url).pathname;
     const { title, text } = stripVisibleText(html);
-    if (text.length < MIN_PAGE_CHARS) {
+    const keepShortStart = opts.keepHtml === true && isStart;
+    if (text.length < MIN_PAGE_CHARS && !keepShortStart) {
       // A shell page (a cookie wall, a script-only front page) is not
       // stored, but the pages it links to may be real, so its links are kept.
       addLinks(html, res.url);
@@ -203,6 +228,7 @@ export async function crawlSite(startUrl: string, opts: CrawlOptions): Promise<C
       score: isStart ? START_PAGE_SCORE : scorePage(finalPath, title),
       status: res.status,
       text: kept,
+      ...(opts.keepHtml ? { html: html.slice(0, PAGE_HTML_CAP) } : {}),
     };
     store.pages.push(page);
     store.totalChars += kept.length;
@@ -239,4 +265,90 @@ export async function crawlSite(startUrl: string, opts: CrawlOptions): Promise<C
     store.pages.unshift(startPage);
   }
   return store;
+}
+
+// ── Assets ───────────────────────────────────────────────────────────────────
+
+export interface FetchAssetOptions {
+  /** Epoch ms; the request is cut at the earlier of this and PAGE_TIMEOUT_MS. */
+  deadlineAt: number;
+  userAgent: string;
+  maxBytes: number;
+  /** The accept header, e.g. "text/css" or "image/*". */
+  accept: string;
+  /** The crawled site's host: an asset on it must pass the robots rules. */
+  siteHost: string;
+  robots: RobotsRules;
+}
+
+export type FetchAssetResult =
+  | { ok: true; bytes: Uint8Array; contentType: string; finalUrl: string }
+  | { ok: false; reason: string };
+
+/**
+ * One GET for a stylesheet or an image a crawled page references. Refuses a
+ * non http(s) URL or a host the form would refuse, applies robots.txt on the
+ * site's own host, follows redirects but refuses a final host that fails the
+ * same rule, refuses a non 2xx answer, a declared length over the cap, and
+ * stops reading (and cancels the stream) once the cap is passed. The
+ * content type is the caller's to check. Never throws.
+ */
+export async function fetchAsset(url: string, opts: FetchAssetOptions): Promise<FetchAssetResult> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { ok: false, reason: "bad-url" };
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return { ok: false, reason: "bad-scheme" };
+  if (!isPublicHostname(parsed.hostname)) return { ok: false, reason: "blocked-host" };
+  if (isSameHost(parsed.hostname, opts.siteHost) && !isAllowed(opts.robots, parsed.pathname)) return { ok: false, reason: "disallowed" };
+  const remaining = opts.deadlineAt - Date.now();
+  if (remaining <= 500) return { ok: false, reason: "deadline" };
+  try {
+    const res = await fetch(parsed.toString(), {
+      signal: AbortSignal.timeout(Math.min(PAGE_TIMEOUT_MS, remaining)),
+      redirect: "follow",
+      headers: { "user-agent": opts.userAgent, accept: opts.accept },
+    });
+    const finalUrl = res.url || parsed.toString();
+    if (!isPublicHostname(new URL(finalUrl).hostname)) {
+      await res.body?.cancel().catch(() => undefined);
+      return { ok: false, reason: "blocked-redirect" };
+    }
+    if (res.status < 200 || res.status >= 300) {
+      await res.body?.cancel().catch(() => undefined);
+      return { ok: false, reason: `status-${res.status}` };
+    }
+    const declared = Number(res.headers.get("content-length") ?? 0);
+    if (declared > opts.maxBytes) {
+      await res.body?.cancel().catch(() => undefined);
+      return { ok: false, reason: "too-large" };
+    }
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!res.body) return { ok: true, bytes: new Uint8Array(0), contentType, finalUrl };
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > opts.maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return { ok: false, reason: "too-large" };
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return { ok: true, bytes, contentType, finalUrl };
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    return { ok: false, reason: name === "TimeoutError" || name === "AbortError" ? "timeout" : "failed" };
+  }
 }

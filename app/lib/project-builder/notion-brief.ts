@@ -37,7 +37,15 @@ export interface BriefPageArgs {
   status: BriefStatus;
   submittedAt: string | null;
   adminUrl: string;
+  /** The prospect's prototype link (the brief link with the prototype tab named), only when a prototype exists. */
+  prototypeUrl?: string | null;
+  /** The admin full screen view of the prototype. */
+  prototypeAdminUrl?: string | null;
 }
+
+export const PROTOTYPE_LINK_LABEL = "View the prototype";
+export const PROTOTYPE_ADMIN_LABEL = "Admin view of the prototype";
+export const PROTOTYPE_LINK_NOTE = "The prospect link works for 30 days. The admin link does not expire.";
 
 export type NotionProperties = Record<string, unknown>;
 export type NotionBlock = Record<string, unknown>;
@@ -105,6 +113,12 @@ function heading2(text: string): NotionBlock {
 
 function paragraph(text: string): NotionBlock {
   return { object: "block", type: "paragraph", paragraph: { rich_text: rt(text) } };
+}
+
+/** A paragraph whose whole text is a link. The HTML of the prototype never goes into Notion; only links do. */
+function linkParagraph(label: string, href: string): NotionBlock {
+  const text = plainDashes(label).slice(0, NOTION_TEXT_LIMIT);
+  return { object: "block", type: "paragraph", paragraph: { rich_text: [{ type: "text", text: { content: text, link: { url: href } } }] } };
 }
 
 function bullet(text: string): NotionBlock {
@@ -214,6 +228,13 @@ export function briefPageBlocks(args: BriefPageArgs): NotionBlock[] {
   if (state.biz.notes.trim()) notes.push(paragraph(state.biz.notes.trim()));
   for (const line of state.unplaced) notes.push(bullet(line));
   blocks.push(...(notes.length ? notes : [paragraph("None")]));
+
+  if (args.prototypeUrl) {
+    blocks.push(heading2("Prototype"));
+    blocks.push(linkParagraph(PROTOTYPE_LINK_LABEL, args.prototypeUrl));
+    blocks.push(paragraph(PROTOTYPE_LINK_NOTE));
+    if (args.prototypeAdminUrl) blocks.push(linkParagraph(PROTOTYPE_ADMIN_LABEL, args.prototypeAdminUrl));
+  }
 
   if (args.source && args.source.trim()) {
     blocks.push(heading2("Pasted material"));

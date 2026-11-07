@@ -39,6 +39,12 @@ export const RESUME_LINE = "Open the link on any device to carry on. It works fo
 export const VIEW_LINE = "Open the link on any device to see what you sent and to ask for a change.";
 export const REMINDER_OPT_OUT = "If you would rather we did not keep it, delete your brief and we will not write again.";
 export const UNLOCK_LINE = "Anthony has reopened your brief. Make your changes and submit it again when you are ready.";
+export const CARRY_ON_LABEL = "Carry on with your project";
+export const PROTOTYPE_LABEL = "View your prototype";
+export const NO_PROTOTYPE_LINE = "No prototype yet. You can make one from the builder.";
+export const PROTOTYPE_VIEW_LINE = "View your prototype:";
+export const PROTOTYPE_CONFIRM_LINE = "Open the link to see the prototype of what you described. It is an illustrative mockup, not a commitment.";
+export const PROTOTYPE_ALERT_LINE = "The prospect made a prototype from the brief.";
 
 const safe = (value: string) => escapeHtml(plainDashes(value));
 
@@ -46,6 +52,8 @@ interface Section {
   heading?: string;
   lines: string[];
   link?: string;
+  /** Shown as the link text in HTML and as `label: url` in the text version. */
+  linkLabel?: string;
 }
 
 /** The one layout: eyebrow, heading, sections of paragraphs with an optional link, the footer. */
@@ -54,7 +62,7 @@ function render(subject: string, heading: string, sections: Section[]): BriefEma
   for (const s of sections) {
     if (s.heading) t.push(plainDashes(s.heading));
     for (const line of s.lines) t.push(plainDashes(line));
-    if (s.link) t.push(s.link);
+    if (s.link) t.push(s.linkLabel ? `${plainDashes(s.linkLabel)}: ${s.link}` : s.link);
     t.push("");
   }
   t.push(FOOTER_LINE);
@@ -62,7 +70,7 @@ function render(subject: string, heading: string, sections: Section[]): BriefEma
   const p = (inner: string, colour: string = BRAND.dark, size = 15) =>
     `<p style="margin:0 0 12px;font-size:${size}px;line-height:1.6;color:${colour};">${inner}</p>`;
   const h2 = (inner: string) => `<h2 style="margin:24px 0 10px;font-size:17px;font-weight:600;color:${BRAND.darkGreen};">${inner}</h2>`;
-  const link = (url: string) => `<a href="${escapeHtml(url)}" style="color:${BRAND.teal};">${escapeHtml(url)}</a>`;
+  const link = (url: string, label?: string) => `<a href="${escapeHtml(url)}" style="color:${BRAND.teal};">${label ? safe(label) : escapeHtml(url)}</a>`;
   const h: string[] = [];
   h.push(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(subject)}</title></head>`);
   h.push(`<body style="margin:0;padding:0;background:${BRAND.white};font-family:${FONT};color:${BRAND.dark};">`);
@@ -72,7 +80,7 @@ function render(subject: string, heading: string, sections: Section[]): BriefEma
   for (const s of sections) {
     if (s.heading) h.push(h2(safe(s.heading)));
     for (const line of s.lines) h.push(p(safe(line)));
-    if (s.link) h.push(p(link(s.link), BRAND.dark, 14));
+    if (s.link) h.push(p(link(s.link, s.linkLabel), BRAND.dark, 14));
   }
   h.push(`<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid ${BRAND.border};font-size:12px;line-height:1.6;color:${BRAND.mid};">${FOOTER_LINE}</p>`);
   h.push(`</div></body></html>`);
@@ -87,6 +95,13 @@ function stepName(state: BriefState): string {
   return STEPS[state.step] ?? STEPS[0];
 }
 
+export interface EmailPrototype {
+  /** ISO time of the last prototype. */
+  updatedAt: string;
+  /** The brief link with the prototype tab named in it. */
+  url: string;
+}
+
 export interface SaveLinkArgs {
   state: BriefState;
   contact: EmailContact;
@@ -94,18 +109,60 @@ export interface SaveLinkArgs {
   deleteUrl: string;
   /** A submitted brief: the view wording and subject. */
   locked?: boolean;
+  /** The latest prototype, or null when none has been made. */
+  prototype?: EmailPrototype | null;
+}
+
+/** "6 November at 14:05 UTC" from an ISO time. */
+export function prototypeWhen(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = date.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+  return `${day} at ${date.toISOString().slice(11, 16)} UTC`;
+}
+
+function prototypeStatusLine(prototype: EmailPrototype | null | undefined): string {
+  if (!prototype) return NO_PROTOTYPE_LINE;
+  return `Your prototype was last updated on ${prototypeWhen(prototype.updatedAt)}.`;
+}
+
+/** Where the prospect is up to: the requirement count, the Must count and the percent ready. */
+export function progressLines(state: BriefState): string[] {
+  const reqs = buildRequirements(state);
+  const c = countByPriority(reqs);
+  return [
+    `${reqs.length} requirement${reqs.length === 1 ? "" : "s"}, ${c.Must} of them Must.`,
+    `${completeness(state)}% ready to submit.`,
+  ];
+}
+
+function prototypeSection(prototype: EmailPrototype | null | undefined): Section[] {
+  return prototype ? [{ lines: [PROTOTYPE_VIEW_LINE], link: prototype.url, linkLabel: PROTOTYPE_LABEL }] : [];
 }
 
 export function renderSaveLinkEmail(args: SaveLinkArgs): BriefEmail {
   const name = projectName(args.state);
   if (args.locked) {
+    const lines = ["Your brief has been submitted and is with Summit.", VIEW_LINE];
+    if (args.prototype) lines.push(prototypeStatusLine(args.prototype));
     return render(`Your project brief: ${name}`, name, [
-      { lines: ["Your brief has been submitted and is with Summit.", VIEW_LINE], link: args.resumeUrl },
+      { lines, link: args.resumeUrl },
+      ...prototypeSection(args.prototype),
       deleteSection(args.deleteUrl),
     ]);
   }
   return render("Pick up your project brief where you left off", name, [
-    { lines: [`Your brief is saved and is on the step "${stepName(args.state)}".`, RESUME_LINE], link: args.resumeUrl },
+    {
+      lines: [
+        `Your brief is saved and is on the step "${stepName(args.state)}".`,
+        ...progressLines(args.state),
+        prototypeStatusLine(args.prototype),
+        RESUME_LINE,
+      ],
+      link: args.resumeUrl,
+      linkLabel: CARRY_ON_LABEL,
+    },
+    ...prototypeSection(args.prototype),
     deleteSection(args.deleteUrl),
   ]);
 }
@@ -115,6 +172,8 @@ export interface ConfirmationArgs {
   contact: EmailContact;
   viewUrl: string;
   deleteUrl: string;
+  /** Present only when a prototype exists. */
+  prototypeUrl?: string | null;
 }
 
 export function renderConfirmationEmail(args: ConfirmationArgs): BriefEmail {
@@ -125,6 +184,7 @@ export function renderConfirmationEmail(args: ConfirmationArgs): BriefEmail {
   return render(`Your project brief is with Summit: ${name}`, `Thanks, ${args.contact.name.trim().split(/\s+/)[0] || "and well done"}. Your brief is with Summit.`, [
     { lines: [CONFIRMATION_LINE, summary] },
     { heading: "Your brief", lines: ["Open the link to see what you sent and to ask for a change."], link: args.viewUrl },
+    ...(args.prototypeUrl ? [{ heading: "Your prototype", lines: [PROTOTYPE_CONFIRM_LINE], link: args.prototypeUrl, linkLabel: PROTOTYPE_LABEL }] : []),
     deleteSection(args.deleteUrl),
   ]);
 }
@@ -136,6 +196,8 @@ export interface AlertArgs {
   adminUrl: string;
   notionFailed: boolean;
   notionUrl?: string | null;
+  /** Present only when a prototype exists. */
+  prototypeUrl?: string | null;
 }
 
 export function renderAlertEmail(args: AlertArgs): BriefEmail {
@@ -156,6 +218,7 @@ export function renderAlertEmail(args: AlertArgs): BriefEmail {
   if (args.notionFailed) lines.push(NOTION_FAILED_LINE);
   const sections: Section[] = [{ lines }, { heading: "Open in admin", lines: [], link: args.adminUrl }];
   if (args.notionUrl) sections.push({ heading: "Notion page", lines: [], link: args.notionUrl });
+  if (args.prototypeUrl) sections.push({ heading: "Prototype", lines: [PROTOTYPE_ALERT_LINE], link: args.prototypeUrl, linkLabel: PROTOTYPE_LABEL });
   return render(`New project brief: ${name} from ${args.contact.company}`, `New project brief: ${name}`, sections);
 }
 

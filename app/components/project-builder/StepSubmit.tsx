@@ -23,7 +23,8 @@ export interface StepSubmitProps {
 /**
  * Step 6: the six essentials as a checklist with "Add this" links, the
  * summary, the contact panel (the fields when not saved, "Submitting as"
- * with Change when saved) and "Submit to Summit". Submit is allowed with
+ * with Change when saved, plus the company and website when a save by name
+ * and email left them blank) and "Submit to Summit". Submit is allowed with
  * gaps; the line says how many are blank.
  */
 export default function StepSubmit({ state, saved, contact, onContact, contactError, busy, note, onGoto, onOpenSave, onSubmit }: StepSubmitProps) {
@@ -32,6 +33,8 @@ export default function StepSubmit({ state, saved, contact, onContact, contactEr
   const c = countByPriority(reqs);
   const missing = e.filter((x) => !x.met).length;
   const ideas = state.ideas.filter((i) => state.ideaPick[i.id] && state.ideaPick[i.id] !== "no").length;
+  const needsCompany = saved && (!contact.company.trim() || !contact.website.trim());
+  const who = [contact.name, contact.company.trim()].filter(Boolean).join(", ");
   return (
     <div style={{ fontFamily: SANS }}>
       <h2 style={h2}>{STEP_HEADINGS[5].title}</h2>
@@ -65,9 +68,10 @@ export default function StepSubmit({ state, saved, contact, onContact, contactEr
       {saved ? (
         <div style={panel}>
           <h3 style={panelTitle}>{SUBMIT.submittingAs}</h3>
-          <p style={{ margin: 0, color: BRAND.teal }}>
-            {contact.name}, {contact.company} ({contact.email}). <button type="button" onClick={onOpenSave} style={ghost}>{SUBMIT.change}</button>
+          <p style={{ margin: needsCompany ? "0 0 16px" : 0, color: BRAND.teal }}>
+            {who} ({contact.email}). <button type="button" onClick={onOpenSave} style={ghost}>{SUBMIT.change}</button>
           </p>
+          {needsCompany && <ContactFields contact={contact} onChange={onContact} error={contactError} idPrefix="pb-submit" mode="submit" onlyMissing />}
         </div>
       ) : (
         <div style={panel}>

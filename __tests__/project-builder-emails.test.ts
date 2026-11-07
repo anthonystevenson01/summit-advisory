@@ -8,7 +8,10 @@ import assert from "node:assert/strict";
 
 import { blank, type BriefState } from "../app/lib/project-builder/brief.ts";
 import {
+  CARRY_ON_LABEL,
+  NO_PROTOTYPE_LINE,
   NOTION_FAILED_LINE,
+  PROTOTYPE_LABEL,
   renderAlertEmail,
   renderChangeRequestEmail,
   renderConfirmationEmail,
@@ -110,5 +113,40 @@ describe("Project Builder emails", () => {
     assert.ok(all[6].text.includes("Anthony has reopened your brief"));
     assert.ok(all[6].text.includes(RESUME));
     assert.ok(all[6].text.includes(DELETE));
+  });
+
+  const PROTO = `${RESUME}&view=prototype`;
+
+  test("the save link email reports progress and says when there is no prototype", () => {
+    const e = all[0];
+    assert.ok(e.text.includes("1 requirement, 1 of them Must."), e.text);
+    assert.match(e.text, /\d+% ready to submit\./);
+    assert.ok(e.text.includes(NO_PROTOTYPE_LINE));
+    assert.ok(e.text.includes(`${CARRY_ON_LABEL}: ${RESUME}`));
+    assert.ok(e.html.includes(`>${CARRY_ON_LABEL}</a>`));
+    assert.ok(!e.text.includes(PROTO));
+  });
+
+  test("with a prototype the save link email has the last updated line and the prototype link", () => {
+    const e = renderSaveLinkEmail({ state, contact: CONTACT, resumeUrl: RESUME, deleteUrl: DELETE, prototype: { updatedAt: "2026-11-06T14:05:00.000Z", url: PROTO } });
+    assert.ok(e.text.includes("Your prototype was last updated on 6 November at 14:05 UTC."), e.text);
+    assert.ok(e.text.includes(`${PROTOTYPE_LABEL}: ${PROTO}`));
+    assert.ok(e.html.includes(`href="${PROTO.replace(/&/g, "&amp;")}"`));
+    assert.ok(!e.text.includes(NO_PROTOTYPE_LINE));
+    assert.doesNotMatch(e.text, DASH_RE);
+    assert.doesNotMatch(e.html, DASH_RE);
+  });
+
+  test("the confirmation and the alert carry the prototype line only with a URL", () => {
+    assert.ok(!all[2].text.includes(PROTOTYPE_LABEL));
+    assert.ok(!all[3].text.includes(PROTOTYPE_LABEL));
+    const c = renderConfirmationEmail({ state, contact: CONTACT, viewUrl: VIEW, deleteUrl: DELETE, prototypeUrl: PROTO });
+    const a = renderAlertEmail({ state, contact: CONTACT, sourceTag: "", adminUrl: ADMIN, notionFailed: false, prototypeUrl: PROTO });
+    for (const e of [c, a]) {
+      assert.ok(e.text.includes(`${PROTOTYPE_LABEL}: ${PROTO}`));
+      assert.doesNotMatch(e.text, DASH_RE);
+      assert.doesNotMatch(e.html, DASH_RE);
+      assert.ok(!e.html.includes("<iframe"));
+    }
   });
 });

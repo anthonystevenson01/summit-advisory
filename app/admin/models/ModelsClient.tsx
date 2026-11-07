@@ -277,7 +277,7 @@ export default function ModelsClient() {
           <input
             type="number"
             min={100}
-            max={16000}
+            max={task === "builder-prototype" ? 24000 : 16000}
             step={100}
             value={tokensValue}
             disabled={busy}
@@ -290,7 +290,7 @@ export default function ModelsClient() {
           />
         </td>
         <td style={td}>
-          {task === "synthesis" || task === "builder-read" ? (
+          {task === "synthesis" || task === "builder-read" || task === "builder-prototype" ? (
             <select
               value={cfg.fallback ?? ""}
               disabled={busy}

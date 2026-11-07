@@ -193,15 +193,17 @@ export async function PATCH(req: NextRequest) {
 
     if (body.maxTokens !== undefined && body.maxTokens !== null && body.maxTokens !== "") {
       const n = Number(body.maxTokens);
-      if (!Number.isInteger(n) || n < 100 || n > 16000) {
-        return NextResponse.json({ error: "Max tokens must be an integer from 100 to 16000." }, { status: 400 });
+      // The prototype's default is 24,000 (a 70,000 character document plus reasoning); every other key keeps 16,000.
+      const ceiling = parsed.task === "builder-prototype" ? 24000 : 16000;
+      if (!Number.isInteger(n) || n < 100 || n > ceiling) {
+        return NextResponse.json({ error: `Max tokens must be an integer from 100 to ${ceiling}.` }, { status: 400 });
       }
       override.maxTokens = n;
     }
 
     if (body.fallback !== undefined && body.fallback !== null && body.fallback !== "") {
-      if (parsed.task !== "synthesis" && parsed.task !== "builder-read") {
-        return NextResponse.json({ error: "Only synthesis and builder-read may have a fallback." }, { status: 400 });
+      if (parsed.task !== "synthesis" && parsed.task !== "builder-read" && parsed.task !== "builder-prototype") {
+        return NextResponse.json({ error: "Only synthesis, builder-read and builder-prototype may have a fallback." }, { status: 400 });
       }
       if (typeof body.fallback !== "string" || !CURATED_MODELS.includes(body.fallback)) {
         return NextResponse.json({ error: "Fallback is not in the curated list." }, { status: 400 });

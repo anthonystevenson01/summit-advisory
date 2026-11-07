@@ -78,6 +78,29 @@ export interface ModelRow {
   cost: number;
 }
 
+/** The Prototypes table on /admin/stats, counted from the builder_prototype_run and builder_prototype_style events. */
+export interface PrototypeStats {
+  created: number;
+  updated: number;
+  failed: number;
+  corrected: number;
+  styleFound: number;
+  stylePartial: number;
+  styleNone: number;
+  /** Live Brandfetch calls (the quota spend): hit, miss or error. */
+  brandLookups: number;
+  /** A brand record was available: hit or cached hit. */
+  brandHits: number;
+  brandCached: number;
+  brandMisses: number;
+  brandErrors: number;
+  brandCapped: number;
+  sourceSite: number;
+  sourceBrand: number;
+  sourceSiteBrand: number;
+  sourceNeutral: number;
+}
+
 export interface StatsTables {
   window: StatsWindow;
   funnel: FunnelRow[];
@@ -85,6 +108,7 @@ export interface StatsTables {
   helpers: HelperRow[];
   reads: { uses: number; fallbacks: number };
   ideasRuns: { uses: number; fallbacks: number };
+  prototypes: PrototypeStats;
   models: ModelRow[];
   modelsTotal: ModelRow;
   costIncomplete: boolean;
@@ -157,6 +181,26 @@ export function aggregateStats(input: StatsInput): StatsTables {
   const reads = { uses: count("builder_doc_read"), fallbacks: count("builder_doc_read", (p) => p.fallback === true) };
   const ideasRuns = { uses: count("builder_ideas_run"), fallbacks: count("builder_ideas_run", (p) => p.fallback === true) };
 
+  const prototypes: PrototypeStats = {
+    created: count("builder_prototype_run", (p) => p.ok === true && p.mode === "created"),
+    updated: count("builder_prototype_run", (p) => p.ok === true && p.mode === "updated"),
+    failed: count("builder_prototype_run", (p) => p.ok === false),
+    corrected: count("builder_prototype_run", (p) => p.ok === true && p.corrected === true),
+    styleFound: count("builder_prototype_style", (p) => p.status === "found"),
+    stylePartial: count("builder_prototype_style", (p) => p.status === "partial"),
+    styleNone: count("builder_prototype_style", (p) => p.status === "none"),
+    brandLookups: count("builder_prototype_style", (p) => p.brand === "hit" || p.brand === "miss" || p.brand === "error"),
+    brandHits: count("builder_prototype_style", (p) => p.brand === "hit" || p.brand === "cached-hit"),
+    brandCached: count("builder_prototype_style", (p) => p.brand === "cached-hit" || p.brand === "cached-miss"),
+    brandMisses: count("builder_prototype_style", (p) => p.brand === "miss" || p.brand === "cached-miss"),
+    brandErrors: count("builder_prototype_style", (p) => p.brand === "error"),
+    brandCapped: count("builder_prototype_style", (p) => p.brand === "cap"),
+    sourceSite: count("builder_prototype_style", (p) => p.source === "site"),
+    sourceBrand: count("builder_prototype_style", (p) => p.source === "brand"),
+    sourceSiteBrand: count("builder_prototype_style", (p) => p.source === "site+brand"),
+    sourceNeutral: count("builder_prototype_style", (p) => p.source === "neutral"),
+  };
+
   const calls = input.calls.filter((c) => typeof c.key === "string" && c.key.startsWith("builder-") && inWindow(c.ts, window));
   const byKey = new Map<string, ModelRow>();
   let costIncomplete = false;
@@ -196,6 +240,7 @@ export function aggregateStats(input: StatsInput): StatsTables {
     helpers,
     reads,
     ideasRuns,
+    prototypes,
     models,
     modelsTotal,
     costIncomplete,

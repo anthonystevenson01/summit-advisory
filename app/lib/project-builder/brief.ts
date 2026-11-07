@@ -53,6 +53,8 @@ export const SUGGEST_CAP_PER_BRIEF = 30;
 export const IDEAS_CAP_PER_BRIEF = 3;
 export const READS_PER_IP_PER_DAY = 5;
 export const BUILDER_DAILY_CAP = 200;
+/** Prototype presses that reach the model, per brief. The up to date answer spends none. */
+export const PROTOTYPE_RUNS_PER_BRIEF = 10;
 
 export const SUGGEST_STEPS = ["goal", "features", "connections", "guardrails", "running"] as const;
 export type SuggestStep = (typeof SUGGEST_STEPS)[number];
@@ -502,14 +504,33 @@ export const CONTACT_ERRORS = {
   missing: "Please fill in all four details.",
   email: "That email address doesn't look right.",
   website: "That website doesn't look right. Try something like acme.com.",
+  saveMissing: "Please add your name and email.",
 } as const;
 
-export function validateContact(raw: unknown): ContactValidation {
+export type ContactMode = "save" | "submit";
+
+/**
+ * Submit mode (the default) needs all four details. Save mode needs a name
+ * and a valid email only; company and website are optional, but a website
+ * that is given must still be domain shaped.
+ */
+export function validateContact(raw: unknown, mode: ContactMode = "submit"): ContactValidation {
   const source = isRecord(raw) ? raw : {};
   const name = str(source.name, 120).trim();
   const email = str(source.email, 254).trim();
   const company = str(source.company, 120).trim();
   const websiteRaw = str(source.website, 300).trim();
+  if (mode === "save") {
+    if (!name || !email) return { ok: false, error: CONTACT_ERRORS.saveMissing };
+    if (!EMAIL_REGEX.test(email)) return { ok: false, error: CONTACT_ERRORS.email };
+    let website = "";
+    if (websiteRaw) {
+      const domain = normaliseDomain(websiteRaw);
+      if (!domain) return { ok: false, error: CONTACT_ERRORS.website };
+      website = domain;
+    }
+    return { ok: true, contact: { name, email, company, website, marketing: bool(source.marketing) } };
+  }
   if (!name || !email || !company || !websiteRaw) return { ok: false, error: CONTACT_ERRORS.missing };
   if (!EMAIL_REGEX.test(email)) return { ok: false, error: CONTACT_ERRORS.email };
   const website = normaliseDomain(websiteRaw);
