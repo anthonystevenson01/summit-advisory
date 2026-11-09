@@ -816,3 +816,174 @@ The stored style records `source` (`site`, `brand`, `site+brand`, `neutral`), `b
 - The `brandfetch:{domain}` cache outlives a deleted brief by design (public brand data).
 - The safety pass is regex based (no HTML parser is allowed without a new dependency); the CSP and the sandbox are the real boundary.
 - No live run before this entry was written: the preview smoke test above is required before merging.
+
+## Project Builder prototype, Round 3: staged build, change requests, model choice, added November 2026
+
+**Trigger:** The same Create or Update press as Rounds 1 and 2 (`POST /api/project-builder/prototype`), and one new box under the prototype, "What would you like changed?", whose Send posts `POST /api/project-builder/prototype/request`. The prospect sees the same tab, button, panel, staged lines and keep-the-last-good-prototype behaviour; behind the button the server now runs a hidden pipeline of five stages. The company profile may also be built in the background after the first save when a website is known, so the first Create is faster. Nothing from the pipeline is shown to the prospect: the panel carries the prototype, the button, the request box, the loading lines, the style line and the error sentences only.
+
+**Service/Function:**
+- `app/lib/project-builder/prototype-run.ts` (`runPrototype`, `mode: "press" | "request"`): the pipeline and every time budget. Routes stay thin: `prototype/route.ts` (presses) and `prototype/request/route.ts` (change requests) authenticate, limit, lock and call it.
+- Stage 1, research: `research-read.ts` (`buildCompanyProfile`, the crawl, the Brandfetch record and the one call) and `research.ts` (the profile shape, parse, caps and the lines later prompts receive).
+- Stage 2, plan: `plan.ts` (coverage items with `REQ-nnn` and `ROLE-{slug}` ids, the plan shape and parse, `checkPlanCoverage`, the diff for a change request or a brief change, `screensToRebuild`).
+- Stage 3, senior review: `review.ts` (parse, `mergeReviewIntoPlan`, `suggestionLines` for Notion).
+- Stage 4, build and assemble: `shell.ts` (the server written document skeleton and the base stylesheet) and `screens.ts` (`parseScreenBuild`, `checkScreen`, `placeScreens`, `assembleDocument` which runs the Round 1 safety pass and validator unchanged).
+- Stage 5, audit: `audit.ts` (parse and the items the audit asks about).
+- Change requests: `requests.ts` (the record, the caps, the text clean, the Notion lines).
+- Prompts: `prompts.ts` (`researchPrompt`, `planPrompt`, `planDiffPrompt`, `reviewPrompt` with `REVIEW_SCOPE_GUARD`, `screenPrompt`, `screenFixPrompt`, `auditPrompt`). Schemas in `schemas.ts`. Copy in `copy.ts` (`PROTOTYPE.request*`, `capPresses`, `capRequests`).
+- Models: `app/lib/llm.ts` (the five keys, `CURATED_MODELS`, `MODEL_PRICES`, the reasoning policy, the provider block, the pinned fallback resend). `scripts/openrouter-models.ts` refreshes the catalogue fixture.
+- Admin: `/admin/models` (the five keys with the new controls), `/admin/briefs/{id}` (the new sections), `/admin/stats` (the Prototype pipeline table). `/admin/briefs/{id}/prototype` is unchanged.
+
+**The pipeline, stage by stage, and what each stores:**
+
+| Stage | Routing key | Input | Output and where it is stored |
+|---|---|---|---|
+| Style (unchanged) | none | The resolved website | `brief-style:{id}`; the pages and the Brandfetch record it saw are handed to research so a first press crawls once |
+| 1 Research | `builder-prototype-research` | Up to 3 same host pages (6,000 characters each, 20,000 in all, same robots rules and crawler as the style read) plus the Brandfetch description and industry. Never the brief, the document or the contact | The company profile (summary, products, services, plans, vocabulary, locations, currency, units, team size) at `brief-research:{id}` with the host it came from; `researchHost` on the brief hash is a hint. Built once per host, reused by every later press, rebuilt only when the resolved host changes. Empty when nothing could be read; research never fails a build |
+| 2 Plan | `builder-prototype-plan` | The full brief context (with the document excerpt), the items to cover, the profile, the house style | 3 to 5 screens (slug, title, purpose, role, components, entities), a coverage map against every requirement row and role, an `unplaced` list. The server checks it in code: every role and every Must that is a Feature, AI idea, Integration or Guardrail must be mapped; if not, one gap round (stage name `gap`, same key) and the second answer is accepted whatever it says. Unplaced items are logged (`unplaced after the plan:`), never shown. Stored at `brief-plan:{id}` with `builtFrom` (the snapshot hash), `version`, `producedVersion` (the prototype version it produced), `accepted` (change requests carried forward), `reviewApplied` and `reviewSuggested` |
+| 3 Senior review | `builder-prototype-review` | The plan, the brief context, the items, the profile and the ideas the prospect turned down. Never the HTML | Up to 8 gaps and 5 recommendations, each `apply` or `suggest`. Apply items are merged into the plan by the server (a component appended to its screen, a new screen while the count stays at or under 5, a gap with an item and a screen adds a coverage entry). Suggest items are stored only. A recommendation naming a turned down idea is dropped and listed with "(turned down, not applied)". Stored at `brief-critique:{id}`. One review per full plan; none on a diff; a failed review never blocks |
+| 4 Build | `builder-prototype-build` | Per screen: its plan entry, the items mapped to it, the profile, the house style lines, the shell's class names and the Round 2 build rules. Never the raw document excerpt | One call per screen in parallel, each returning `html`, `css` and `js` as separate fields. Each is checked in code (`checkScreen`): no `data-screen`, every id prefixed with the slug and unique, no id belonging to a longer planned slug, no banned tag, URL, `@import`, `url()` or outside-the-screen script, under the per screen budget. A failing screen is retried once with the issues named; if it still fails the previous build of that screen is kept when one exists, else the press fails with `invalid`. The server writes the shell (`renderShell`), places the screens, then runs the Round 1 safety pass and validator unchanged. Stored at `brief-prototype:{id}` with the Round 1 shape plus `planVersion`, `screens` (slug, model, ms, retried, kept), `screenBuilds` (the three parts per screen, so a later diff rebuilds only what changed), `stages` (stage, model, ms, ok) and `audit` |
+| 5 Audit | `builder-prototype-audit` | The Must and Should requirement lines and the assembled document | The ids no screen visibly shows, with a note each, written onto the stored prototype record as `audit`. Admin page only. Never blocks or changes the prototype. Skipped when the key is switched off in /admin/models or under 35 s remain |
+
+The plan is saved after the prototype, so the stored plan always describes the stored document. Nothing is stored until a valid document exists. The side keys follow the brief's TTL through `briefSideKeys` (refreshed on a draft save, PERSISTed on submit, deleted with the brief and by the delete link). `brief-research-lock:{id}` (60 s) is held while a profile is built, by the save route in the background or by a press; a press that finds it held waits up to 10 s, then carries on with an empty profile.
+
+**Change requests:** a request is a plan diff on `builder-prototype-plan`: the current plan, the request text (data in the user turn, under the data guard, never in a system prompt), the brief context and the profile go in; the whole updated plan, the slugs that changed and `outOfRemit` come back. A brief driven Update that is not a large change takes the same path with the lines from `describeChanges`. Only the changed screens are rebuilt; the first screen changing, more than half changing, or any screen added or removed rebuilds everything. The accepted request is carried in the plan's `accepted` list, so a later brief driven Update does not undo it. Every request is recorded at `brief-requests:{id}` (text, time, screens changed, model, outcome `built` or `declined`, newest last, at most 20) and listed on the admin page and the Notion page.
+
+The box: label "What would you like changed?", a 600 character input and a Send button. It is enabled only when a prototype from the staged build exists (`planVersion > 0`), nothing is generating and requests remain. Enter sends. While it runs the same staged lines show and the previous prototype stays on screen. The answers:
+- Built: the prototype refreshes in place, the note reads "Done. The prototype shows your change." and the text is cleared.
+- Declined, outside the remit: the planner set `outOfRemit.refused` (sending messages, logging in to a real service, loading external content, real data, payments, anything not a change to the screens). The panel shows "That is outside what this prototype can show. It is a mockup of screens, so it cannot send messages, sign in to real systems or load live data." No build, no new version; the request is recorded as declined and still counts against the cap (a model call was spent). The text is cleared, since the server answered.
+- Declined, nothing to change: the planner accepted it but no screen changed. The panel shows "Nothing on the screens needed to change for that. Your prototype is as it was." Same storage as above.
+- Failed (502): "That change could not be made just now. Your prototype is as it was." The text is kept.
+- 409 for a pre-Round 3 prototype (`planVersion` 0, a record from Rounds 1 and 2 with no plan): "Press Update prototype first, then ask for a change." The box shows the same line and is disabled until an Update has run the full pipeline.
+- 400 under 4 characters: "Say a little more about the change, at least 4 characters."
+- 429 at the per brief cap: "You have sent the most change requests this brief allows: 20 for each brief. Anthony will take it from here." A press at its own cap now says "...10 for each brief..." so the two caps read apart.
+- 429 while a press or request runs: the Round 1 busy line, `Retry-After: 60`.
+
+**Routing keys, defaults and the admin panel:** the five keys replace `builder-prototype` in `ROUTING_TASKS`, `DEFAULT_ROUTES`, `TASK_LABELS` and `TASK_DESCRIPTIONS`. The old key stays readable on stored records (the admin page can say how an old record was made) and is gone from /admin/models.
+
+| Key | Label | Default | Reasoning | Max tokens | Fallback | Per call cap |
+|---|---|---|---|---|---|---|
+| `builder-prototype-research` | Prototype 1: research | DeepSeek V4 Flash (`deepseek/deepseek-v4-flash`, pinned) | off | 2,000 | Haiku 5.5 | 30 s |
+| `builder-prototype-plan` | Prototype 2: plan | Fable 5.1 (`anthropic/claude-fable-5.1`) | low | 4,000 | Sonnet 5.5 | 30 s (plan, gap, diff) |
+| `builder-prototype-review` | Prototype 3: senior review | Opus 5.5 (`anthropic/claude-opus-5.5`) | medium | 3,000 | Fable 5.1 | 30 s |
+| `builder-prototype-build` | Prototype 4: build a screen | GPT-6 Astra (`openai/gpt-6-astra`) | off, sent as low (see below) | 12,000 | Sonnet 5.5 | 90 s per screen, one retry |
+| `builder-prototype-audit` | Prototype 5: audit | Kimi K3 (`moonshotai/kimi-k3`, pinned) | off | 1,000 | Haiku 5.5 | 30 s |
+
+On `/admin/models`, per key: the model dropdown grouped by provider (Anthropic, OpenAI, Google, Moonshot, DeepSeek, Z.ai, Meta) with the data location beside each name and "(retired)" on an id the catalogue no longer lists; the fallback dropdown (the five prototype keys, `synthesis` and `builder-read` may carry one); the reasoning control (off, low, medium, high; "Not available" for a model with no reasoning, and the off option reads "Low (this model cannot turn reasoning off)" for a model that refuses off); the max tokens field (ceiling 24,000 on the build key, 16,000 elsewhere, with the line that the cap covers the reasoning plus the answer when reasoning is on); and on the audit key only an "Audit on" checkbox. Reasoning, max tokens, fallback and the audit switch are stored beside the model override in the Redis hash `admin:model-config` and resolved by `resolveRoute` the same way (`enabled: false` is the only form the switch is stored in). The admin route rejects an id outside the curated list, an effort on a model with no reasoning, a fallback on any other key and the switch on any key but audit. Overrides are cached in memory for 30 s per process, so a change reaches the prototype function within 30 s, as before.
+
+**The curated list** (`CURATED_MODELS` in `llm.ts`; every entry has a provider, a display name, a location, a reasoning policy and a pin; the admin route rejects anything else):
+
+| Provider | Model | OpenRouter id | Location | Reasoning | Pin |
+|---|---|---|---|---|---|
+| Anthropic | Fable 5.1 | `anthropic/claude-fable-5.1` | US | always | none |
+| Anthropic | Opus 5.5 | `anthropic/claude-opus-5.5` | US | always | none |
+| Anthropic | Sonnet 5.5 | `anthropic/claude-sonnet-5.5` | US | always | none |
+| Anthropic | Haiku 5.5 | `anthropic/claude-haiku-5.5` | US | optional | none |
+| Anthropic | Opus 5 | `anthropic/claude-opus-5` | US | optional | none |
+| Anthropic | Sonnet 5 | `anthropic/claude-sonnet-5` | US | optional | none |
+| Anthropic | Haiku 4.5 | `anthropic/claude-haiku-4.5` | US | optional | none |
+| OpenAI | GPT-6 Astra | `openai/gpt-6-astra` | US | always | none |
+| OpenAI | GPT-6 Luna | `openai/gpt-6-luna` | US | optional | none |
+| Google | Gemini 3.8 Flash | `google/gemini-3.8-flash` | US, provider's choice | always | none |
+| Moonshot | Kimi K3 | `moonshotai/kimi-k3` | US | optional | `amazon-bedrock/us-east-2`, `wafer/us`, `inference-net/us` |
+| DeepSeek | DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | US | optional | `azure/us`, `deepinfra/fp8` |
+| DeepSeek | DeepSeek V4 Pro | `deepseek/deepseek-v4-pro` | US or EU | optional | `azure/us`, `nebius/fp8` |
+| Z.ai | GLM 5.2 | `z-ai/glm-5.2` | EU or US | optional | `mistral/eu`, `baseten/fp8/us`, `wafer/us` |
+| Meta | Muse Spark 1.3 | `meta/muse-spark-1.3` | US | always | none |
+
+Gemini 3.8 Pro is left out: OpenRouter did not serve it on 8 November 2026 (only 3.8 Flash and a 3.1 Pro preview), and a preview id was not substituted. Muse Spark 1.3 is served under `meta/`.
+
+- Reasoning policy, probed live per id on 8 November 2026 at off and at low. `always`: the endpoint refuses `reasoning: { enabled: false }` with a 400 "Reasoning is mandatory", so the route's off is sent as `{ effort: "low" }` from the start and the call log says `reasoningForced: true` (Sonnet 5.5, Opus 5.5, Fable 5.1, GPT-6 Astra, Gemini 3.8 Flash, Muse Spark 1.3). `optional`: off is accepted (Haiku 5.5, Haiku 4.5, Opus 5, Sonnet 5, GPT-6 Luna, Kimi K3, DeepSeek V4 Flash and Pro, GLM 5.2). `none`: the field is never sent and an effort set on the key is ignored with one warning per process (no entry today). When any model still answers the 400, the client resends once with low effort and logs `reasoningFallback: true`, so that flag only ever means the provider refused.
+- Provider pins: Moonshot, DeepSeek and Z.ai entries are sent with `provider.order` (the slugs above), `allow_fallbacks: false` and `data_collection: "deny"`, so they run on a US or EU host or not at all. Every other call sends `data_collection: "deny"` alone. Every call asks for usage, so the completion returns the cost and the provider; the call log records `provider` (the host OpenRouter used), `fallbackUsed`, `costSource` (`reported` or `estimated`) and `tag`.
+- The pinned fallback resend: a pin applies to the whole request, so it would bind the `models` fallback too (an Anthropic model has no permitted host in a DeepSeek pin). A pinned primary therefore sends no `models` array; when it fails with anything but a reasoning refusal or a timeout, `callModel` resends once on the route's fallback with the fallback's own provider block and reasoning policy (none, the route's effort, forced low for an always entry, else off). The log carries the fallback as `model` with `fallbackUsed: true`. An unpinned primary still sends `models: [primary, fallback]` and OpenRouter moves the call itself.
+- Prices: `MODEL_PRICES` in `llm.ts`, USD per million tokens, one row per curated id, dated by `PRICES_CHECKED_AT`. Used when OpenRouter reports no cost on a call and by /admin/stats; such rows are marked `estimated`.
+
+**Refreshing the model fixture:** `__tests__/fixtures/openrouter-model-ids.json` holds every id the OpenRouter catalogue served on its `checkedAt` date, and `__tests__/llm-models.test.ts` holds every curated id, default and fallback against it with no network, so a typo or a retired id fails `npm test`. To refresh:
+
+```
+node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/openrouter-models.ts
+```
+
+`OPENROUTER_API_KEY` is optional but recommended (an unauthenticated listing can omit models the account has access to). The script rewrites the fixture, prints the catalogue price beside the table price for every curated id so `MODEL_PRICES` can be checked by eye, and exits 0 when every id is served, 1 when one is missing (it names them; the fixture is still rewritten so `npm test` then fails on the same id), 2 when the catalogue could not be read (the fixture is left alone). When an id disappears: the test names it; at run time OpenRouter would refuse the primary and the fallback answers (`fallbackUsed: true` on every row of that key) and /admin/models marks the entry "(retired)" once its catalogue cache refreshes. Fix by moving the key to another curated model in /admin/models (no deploy), then retire the entry from `CURATED_MODELS` and `MODEL_PRICES` together (the price test requires the two sets to match).
+
+**Limits and caps:**
+- Presses: 6 per IP per hour (`rl:builder-prototype`), 10 per brief that reach the model (`prototypeCount`).
+- Change requests: their own per IP limiter of 20 per hour (`rl:builder-prototype-request`) and a per brief cap of 20 (`requestCount`), separate from the presses. A declined request counts.
+- Daily cap: `BUILDER_DAILY_CAP` stays at 200. One reservation per press or change request, whatever the stage count (up to eleven model calls on a five screen first Create), and one per background research build at save. Per call counts go to `ai:calls` and the stats.
+- Locks: `brief-prototype-lock:{id}` 300 s (shared by presses and requests), `brief-research-lock:{id}` 60 s.
+- Time: the route budget is 285 s inside `maxDuration = 300`. Per call caps: 30 s research, plan, gap, diff, review and audit; 90 s per screen build and per retry. Each call's timeout is the smaller of its cap and the time left less the headroom. A stage that cannot start is skipped (gap, review, audit) or fails the press with `time` (plan, build). The save route's `maxDuration` is 90 so the background profile (40 s budget) fits after the save.
+- Sizes: 3 to 5 screens; each screen's html, css and js together at most `min(16,000, (90,000 - shell - 1,000) / screens)` characters; the stored document still at most 90,000 characters after the safety pass; a request at most 600 characters.
+
+**Admin brief page (`/admin/briefs/{id}`), top to bottom:** Change request (the admin's own, unchanged); Prototype (as before plus `planVersion`, the per screen list with model, ms, retried and kept, and the stages with model, ms and ok); Company profile (the stored profile with its host, sources and built time); Plan (version, built from, model, the screens with their components, then "Coverage map" with every item id against its screen and component, then "Unplaced" with reasons); Senior review (gaps, then recommendations with mode, basedOn and why, applied and suggested apart); Audit (the missing Must and Should ids with notes, checked time and model); Change requests (text, time, screens changed, model, outcome). The Notion page gains two headings under Prototype: "Senior review suggestions" (suggest only items as bullets) and "Change requests" (time and text as bullets, with "(outside the prototype's remit, not built)" on a declined one). No HTML, no plan JSON.
+
+**Stats (`/admin/stats`):** the "Prototype pipeline" table has one row per key in stage order (Research, Plan, Senior review, Build a screen, Audit) with Calls, Failed, Median ms, p95 ms, Prompt tokens, Completion tokens, Cost (what OpenRouter reported, else the price table, marked "(part estimated)"), Fix retries (rows tagged `retry` or `gap`) and Fallbacks (rows with `fallbackUsed`). Under it a "Change requests" row: count, declined, median screens changed (from `builder_prototype_request` events). The existing Prototypes and model cost tables stay; `corrected` now means at least one screen retry.
+
+**Events:** `builder_prototype_run` gains `planned`, `reviewed`, `screens`, `retries` and `audited`; new `builder_prototype_stage` (stage, ok, ms, model, tag), `builder_prototype_research` (ok, empty, pages, brand, model or reason) and `builder_prototype_request` (ok, declined, kind, screens, retries, audited, reason).
+
+**Failure mode:**
+- Research cannot read the site and Brandfetch has nothing, or the call fails: an empty profile, the pipeline continues, the prompts carry "Company profile: none found." Research never fails a build. The empty profile is stored with the host so the next press does not try the same host again; delete `brief-research:{id}` to force a rebuild.
+- Plan fails or under 100 s remain: the press fails with `model` or `time`, the previous prototype is kept, the route answers as in Round 1.
+- Gap round or review fails: logged, the plan is used as it stands.
+- A screen fails its check twice: the previous build of that screen is kept when one exists (`kept: true` on the record); otherwise `invalid` and the previous prototype is kept.
+- The assembled document fails the Round 1 validator: `invalid`, nothing stored.
+- Audit fails or is switched off: logged, the record keeps `audit: null`.
+- A pinned provider is down: one resend on the fallback (see above). A timed out attempt is not resent.
+- The other failures (daily cap, per brief caps, lock, per IP limit, `OPENROUTER_API_KEY` unset, Redis down) answer as in Rounds 1 and 2, with the new cap sentences above.
+
+**To disable:**
+- The audit alone: untick "Audit on" for `builder-prototype-audit` on `/admin/models`. Takes effect within 30 s, no deploy.
+- Change requests alone: with a deploy, return 503 at the top of `prototype/request/route.ts`; the dock shows the error line and keeps the prototype. There is no runtime switch for the box.
+- The whole prototype: as before (503 at the top of the press route with a deploy, or point the keys at a cheaper model without one).
+- Background research at save: with a deploy, remove the `after(...)` call in `app/api/project-builder/briefs/route.ts`; the first press then builds the profile itself.
+
+**Measured so far (8 November 2026, before the preview smoke test):** one live screen build on GPT-6 Astra took 72 s (1,678 tokens in, 5,370 out, about $0.29). With five screens in parallel a first Create is therefore expected to run well over the 45 s target in AC 20: the target is to measure and report here, not a gate; the per call caps are the gates. Sonnet 5.5 on the build key is the first lever to try.
+
+**Smoke test on a preview deploy (AC 33, before merging):** with OpenRouter (the account must have access to the OpenAI, Google, DeepSeek, Moonshot and Z.ai models), Upstash, `UNLOCK_SECRET`, `BRANDFETCH_API_KEY` and Notion set, on a plan that allows `maxDuration = 300`. Fill the table in as you go.
+
+1. First Create on a real company site: start a brief with the website in Step 1, three or more Must requirements, one role and one integration; press Create. Note the wall time from press to prototype. On `/admin/briefs/{id}` the Prototype section lists the stages with a model and ms each; Company profile is filled; Plan shows 3 to 5 screens and the Coverage map lists every Must and the role; Senior review shows gaps and recommendations with applied and suggested apart; Audit lists what was missed (ideally nothing).
+2. First screen: the prototype opens on a dashboard or main list with figure cards or a table, search and a filter that respond. Click through every screen.
+3. Every Must on a screen: for each Must requirement find the screen and component the coverage map names and confirm it is visible. Record any that is not, and whether the audit caught it.
+4. Change request, named screens: send "add a column for X to the Y list" (one screen). Only that screen's section should change; the others keep their exact content (compare `screens` on the admin page: one `kept: false`, the rest `kept: true`). The note reads "Done." and the request appears under Change requests with the one slug.
+5. Change request, declined: send "email the report to my team". The panel shows the out-of-remit sentence, no new version, the request is recorded as declined. Then send a request that needs nothing ("keep it as it is"): the nothing-to-change sentence.
+6. Pinned providers: in `ai:calls` (or the function logs) read `provider` on the research row (DeepSeek V4 Flash) and the audit row (Kimi K3). Each must be one of the pinned slugs. Switch the audit key to GLM 5.2 and DeepSeek V4 Pro in turn and press Update after a small change; record the provider served.
+7. Reasoning per provider: on the same rows, `reasoningForced` should be true for Fable (plan), Opus (review) and Astra (build) and false for DeepSeek and Kimi; `reasoningFallback` should be false everywhere. Record any provider that sets it true.
+8. Fallback: a pinned outage cannot be forced from the panel, so only watch for it: note whether any row carries `fallbackUsed: true` during the runs above (none expected on a good day). A row that does should show the fallback as `model` and the primary key as `key`.
+9. Stats: `/admin/stats` shows all five keys in the Prototype pipeline table with calls, ms and cost, and the Change requests row counts steps 4 and 5.
+10. Background research: start a new brief with a website, save, wait 40 s, open the admin page: Company profile is filled before any press. Press Create: the stages list has no `research` entry (the stored profile was reused) and the press is faster than step 1.
+11. Pre-Round 3 record: open a brief made before this release (or set `planVersion` to 0 on a test record). The box shows "Press Update prototype first" and Send is disabled; an Update rebuilds through the full pipeline and the box comes alive.
+12. Notion: submit the brief; the page carries "Senior review suggestions" and "Change requests" with bullets, no HTML and no JSON.
+
+| Measure | Target or expectation | Result |
+|---|---|---|
+| First Create, press to prototype (s) | 45 s target, measure | |
+| Stage ms: research, plan, gap, review, build (slowest screen), audit | caps 30, 30, 30, 30, 90, 30 s | |
+| Provider served, DeepSeek V4 Flash (research) | `azure/us` or `deepinfra/fp8` | |
+| Provider served, Kimi K3 (audit) | `amazon-bedrock/us-east-2`, `wafer/us` or `inference-net/us` | |
+| Provider served, DeepSeek V4 Pro (audit, trial) | `azure/us` or `nebius/fp8` | |
+| Provider served, GLM 5.2 (audit, trial) | `mistral/eu`, `baseten/fp8/us` or `wafer/us` | |
+| `reasoningForced` true on Fable, Opus, Astra rows; false on DeepSeek, Kimi | as stated | |
+| `reasoningFallback` true on any row (name the provider) | none | |
+| Every Must on a screen (count found of total) | all | |
+| Audit misses that were real (count) | matches step 3 | |
+| Request changing only the named screen (slugs rebuilt) | one | |
+| Declined request sentence shown, no new version | yes | |
+| Stats: five keys with cost; change requests row | yes | |
+| Background research filled before the first press | yes | |
+
+**If a first Create is slow** (well over the target, or `time` failures): in this order, each on `/admin/models` with no deploy. (1) Switch `builder-prototype-build` to Sonnet 5.5 (the fallback today); it writes a screen in a fraction of Astra's time at a fifth of the price. (2) Lower the per screen budget: with a deploy, reduce `SCREEN_BUDGET_MAX` in `shell.ts` (16,000 today) or the screen prompt's size guidance, so each screen has less to write. (3) Switch `builder-prototype-review` to Fable 5.1 at low reasoning (the review runs before the build, so its time is on the critical path). Kimi K3 on build and Haiku 5.5 on research and audit are the other trial alternatives Anthony named. Watch `/admin/stats` after each change: median and p95 ms per key, cost per key, and the fix retries column (a model that fails the per screen check often doubles its own time).
+
+**Known limits (from the review, non-blocking):**
+- Reasoning flag on the fallback leg: when a pinned primary falls back to an always model with the route at off, low effort is sent but `reasoningForced` stays false on that log row; `fallbackUsed: true` shows which model answered.
+- Fallback timing: a pinned primary that fails fast is followed by one full attempt on the fallback under the same timeout, so a pinned model on the build key (an admin choice) can spend a fast fail plus 90 s. The defaults pin only research and audit, both non blocking.
+- A request answered "nothing needed to change" is stored with outcome `declined`, so its Notion bullet carries the "outside the prototype's remit" suffix. Cosmetic; a third outcome would make it exact.
+- Function death between the prototype save and the plan save: the record has `planVersion > 0` with no plan at `brief-plan:{id}`. The request route then answers "Press Update prototype first", while an unchanged brief answers "up to date". Make any small change and press Update; the run finds no current plan and replans in full.
+- Unquoted ids: `checkScreen` and the validator read quoted `id="..."` only; an unquoted `id=foo` is invisible to both. Cosmetic, inside the sandbox.
+- Parallel failure: `Promise.all` rejects on the first failed screen while the other in flight calls keep running and logging, so a failed press can still spend the remaining screen calls.
+- The 30 s override cache: a switch flipped in /admin/models reaches a running function only on its next `resolveRoute`, within 30 s per process.
+- Turned down ideas are kept out of the review by a substring match on the idea title; a reworded recommendation can pass, but it is only advice to the builder and never adds a requirement.
+
+**Troubleshooting:**
+- The prototype uses generic words rather than the company's: open Company profile on the admin page. `empty: true` with `sources.pages` 0 means the site could not be read (see the Round 2 notes on `reason` and `brandLookup`); delete `brief-research:{id}` and press Update after a small change to try again.
+- A Must is missing from every screen: check Plan, Unplaced for the reason the planner gave, then Audit. A Must in the "Running it" category does not gate the plan by design.
+- "Press Update prototype first" on a brief that has a prototype: the record predates Round 3 or the plan key is missing (see Known limits). An Update after any small change repairs it.
+- A request keeps rebuilding every screen: the planner named the first screen, more than half the screens, or added or removed one. The Change requests section shows the slugs it changed.
+- `fallbackUsed` on every row of one key: the primary id is refused by OpenRouter (retired, or the account lacks access). Run the fixture script; move the key in /admin/models.

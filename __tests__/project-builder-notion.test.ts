@@ -7,7 +7,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
 import { blank, type BriefState } from "../app/lib/project-builder/brief.ts";
-import { PROTOTYPE_LINK_LABEL, briefPageBlocks, briefPageProperties, chunkBlocks, notionPageUrl, type BriefPageArgs } from "../app/lib/project-builder/notion-brief.ts";
+import { CHANGE_REQUESTS_HEADING, PROTOTYPE_LINK_LABEL, REVIEW_SUGGESTIONS_HEADING, briefPageBlocks, briefPageProperties, chunkBlocks, notionPageUrl, type BriefPageArgs } from "../app/lib/project-builder/notion-brief.ts";
 
 const DASH_RE = /[–—]/;
 
@@ -134,6 +134,34 @@ describe("briefPageBlocks", () => {
     const adminLink = blocks[idx + 3] as { paragraph: { rich_text: Array<{ text: { link: { url: string } } }> } };
     assert.equal(adminLink.paragraph.rich_text[0].text.link.url, admin);
     assert.ok(!JSON.stringify(blocks).includes("<html"));
+  });
+
+  test("the two staged build headings sit under Prototype with bullets, or None, and only when a prototype URL exists", () => {
+    const proto = "https://summitstrategyadvisory.com/project-builder?b=brief_0123456789abcdef&t=a.b&view=prototype";
+    const none = briefPageBlocks(args({ reviewSuggestions: ["Approvals view: managers need one"], changeRequests: [{ text: "Add a column", at: "2026-11-08T10:05:00.000Z" }] })) as Array<Record<string, unknown>>;
+    assert.ok(!none.some((b) => b.type === "heading_2" && texts(b)[0] === REVIEW_SUGGESTIONS_HEADING));
+    assert.ok(!none.some((b) => b.type === "heading_2" && texts(b)[0] === CHANGE_REQUESTS_HEADING));
+
+    const blocks = briefPageBlocks(args({ prototypeUrl: proto, reviewSuggestions: ["Approvals view: managers need one", "Reporting – weekly"], changeRequests: [{ text: "Add a column", at: "2026-11-08T10:05:00.000Z" }, { text: "Email the customer", at: "2026-11-08T10:09:00.000Z", declined: true }] })) as Array<Record<string, unknown>>;
+    const headings = blocks.map((b) => (b.type === "heading_2" ? texts(b)[0] : ""));
+    const protoAt = headings.indexOf("Prototype");
+    assert.ok(protoAt > 0);
+    assert.equal(headings.indexOf(REVIEW_SUGGESTIONS_HEADING) > protoAt, true);
+    assert.equal(headings.indexOf(CHANGE_REQUESTS_HEADING) > headings.indexOf(REVIEW_SUGGESTIONS_HEADING), true);
+    const bullets = blocks.filter((b) => b.type === "bulleted_list_item").map((b) => texts(b)[0]);
+    assert.ok(bullets.includes("Approvals view: managers need one"));
+    assert.ok(bullets.includes("Reporting, weekly"));
+    assert.ok(bullets.some((b) => /^8 November 2026.*10:05 UTC: Add a column$/.test(b)), bullets.join(" | "));
+    assert.ok(bullets.some((b) => /^8 November 2026.*10:09 UTC: Email the customer \(outside the prototype's remit, not built\)$/.test(b)));
+    assert.ok(!JSON.stringify(blocks).includes("<html"));
+    assert.ok(!JSON.stringify(blocks).includes('"slug"'));
+    for (const t of texts(blocks)) assert.doesNotMatch(t, DASH_RE, t);
+
+    const empty = briefPageBlocks(args({ prototypeUrl: proto })) as Array<Record<string, unknown>>;
+    const at = empty.findIndex((b) => b.type === "heading_2" && texts(b)[0] === REVIEW_SUGGESTIONS_HEADING);
+    assert.equal(texts(empty[at + 1])[0], "None");
+    const at2 = empty.findIndex((b) => b.type === "heading_2" && texts(b)[0] === CHANGE_REQUESTS_HEADING);
+    assert.equal(texts(empty[at2 + 1])[0], "None");
   });
 
   test("chunkBlocks and notionPageUrl", () => {

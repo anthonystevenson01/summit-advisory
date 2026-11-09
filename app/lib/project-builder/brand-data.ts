@@ -52,13 +52,20 @@ export interface BrandFont {
   origin: string;
 }
 
-/** What is cached per domain: small, and nothing but logos, colours and fonts. */
+/** What is cached per domain: small, and nothing but logos, colours, fonts and, since round 3, the description and industry the research stage reads. */
 export interface BrandData {
   logos: BrandLogo[];
   colours: BrandColour[];
   fonts: BrandFont[];
   fetchedAt: string;
+  /** Brandfetch's one paragraph description of the company, capped at 600 characters; "" when absent (and on entries cached before round 3). */
+  description?: string;
+  /** Brandfetch's industry label, capped at 120 characters; "" when absent. */
+  industry?: string;
 }
+
+export const BRAND_DESCRIPTION_CHARS = 600;
+export const BRAND_INDUSTRY_CHARS = 120;
 
 /** Caps on what is kept from one answer, so the per domain cache value stays small, and on the logo files tried. */
 export const BRAND_MAX_LOGOS = 12;
@@ -89,6 +96,15 @@ function list(value: unknown): unknown[] {
 export function parseBrandfetch(raw: unknown, fetchedAt = new Date().toISOString()): BrandData {
   const data: BrandData = { logos: [], colours: [], fonts: [], fetchedAt };
   if (!isRecord(raw)) return data;
+  const description = typeof raw.description === "string" ? raw.description.replace(/\s+/g, " ").trim().slice(0, BRAND_DESCRIPTION_CHARS) : "";
+  if (description) data.description = description;
+  // Brandfetch gives the industry as a `company.industries[]` list with a `name`, or as a plain string on older answers; the first name is kept.
+  const company = isRecord(raw.company) ? raw.company : {};
+  const industries = list(company.industries);
+  const first = industries.find((i) => isRecord(i) && typeof i.name === "string") as Record<string, unknown> | undefined;
+  const industry = first ? String(first.name) : typeof raw.industry === "string" ? raw.industry : "";
+  const cleanIndustry = industry.replace(/\s+/g, " ").trim().slice(0, BRAND_INDUSTRY_CHARS);
+  if (cleanIndustry) data.industry = cleanIndustry;
   for (const item of list(raw.logos)) {
     if (data.logos.length >= BRAND_MAX_LOGOS) break;
     if (!isRecord(item)) continue;

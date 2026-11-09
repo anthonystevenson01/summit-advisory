@@ -81,10 +81,12 @@ async function request(method: "POST" | "PATCH", path: string, payload: unknown)
   return last;
 }
 
-/** The prototype links the submitted copy of the body carries, when a prototype exists. */
+/** The prototype links the submitted copy of the body carries, when a prototype exists, plus the two lists under them. */
 export interface BriefPageExtras {
   prototypeUrl?: string | null;
   prototypeAdminUrl?: string | null;
+  reviewSuggestions?: string[];
+  changeRequests?: Array<{ text: string; at: string; declined?: boolean }>;
 }
 
 function pageArgs(brief: BriefRecord, source: string | null, adminUrl: string, extras: BriefPageExtras = {}): BriefPageArgs {
@@ -99,6 +101,8 @@ function pageArgs(brief: BriefRecord, source: string | null, adminUrl: string, e
     adminUrl,
     prototypeUrl: extras.prototypeUrl ?? null,
     prototypeAdminUrl: extras.prototypeAdminUrl ?? null,
+    reviewSuggestions: extras.reviewSuggestions ?? [],
+    changeRequests: extras.changeRequests ?? [],
   };
 }
 

@@ -80,6 +80,13 @@ describe("parseBrandfetch", () => {
 
   test("missing arrays are empty, a non object gives empty data, caps hold", () => {
     assert.deepEqual(parseBrandfetch({ name: "x" }, "t"), { logos: [], colours: [], fonts: [], fetchedAt: "t" });
+    const described = parseBrandfetch({ name: "x", description: "  A maker of   widgets. " + "d".repeat(700), company: { industries: [{ name: "Automotive " + "i".repeat(200) }, { name: "Other" }] } }, "t");
+    assert.equal(described.description?.length, 600);
+    assert.ok(described.description?.startsWith("A maker of widgets."));
+    assert.equal(described.industry?.length, 120);
+    assert.ok(described.industry?.startsWith("Automotive"));
+    assert.equal(parseBrandfetch({ name: "x", industry: "Retail" }, "t").industry, "Retail");
+    assert.equal(parseBrandfetch({ name: "x", description: "", company: { industries: [] } }, "t").description, undefined);
     assert.deepEqual(parseBrandfetch("nope", "t"), { logos: [], colours: [], fonts: [], fetchedAt: "t" });
     assert.deepEqual(parseBrandfetch(null, "t").logos, []);
     const many = parseBrandfetch({

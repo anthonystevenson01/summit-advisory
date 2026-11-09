@@ -23,14 +23,24 @@ export const PROTOTYPE_VIEW_PARAM = "view";
 export const PROTOTYPE_VIEW_VALUE = "prototype";
 /** The stored document, without the logo, after the safety pass. */
 export const PROTOTYPE_HTML_MAX_CHARS = 90_000;
-/** The screen count the prompt asks for and the validator checks, and the most edits one update may return. */
+/** The screen count the planner is asked for and the validator checks. */
 export const PROTOTYPE_SCREENS_MIN = 3;
 export const PROTOTYPE_SCREENS_MAX = 5;
-export const PROTOTYPE_EDITS_MAX = 40;
-/** This many change lines or more and an update is a rebuild, not an edit. */
+/** This many change lines or more and an update replans from scratch rather than diffing the plan. */
 export const LARGE_CHANGE_LINES = 12;
-/** The routing key every prototype call names; llm.ts resolves the model. */
-export const PROTOTYPE_ROUTING_KEY = "builder-prototype";
+/**
+ * The five routing keys of the staged build, one per stage; llm.ts resolves
+ * each to a model. Round 1 and 2 records carry the legacy key, kept only so
+ * the admin page can say how an old record was made.
+ */
+export const PROTOTYPE_ROUTING_KEYS = {
+  research: "builder-prototype-research",
+  plan: "builder-prototype-plan",
+  review: "builder-prototype-review",
+  build: "builder-prototype-build",
+  audit: "builder-prototype-audit",
+} as const;
+export const LEGACY_PROTOTYPE_ROUTING_KEY = "builder-prototype";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,19 +76,60 @@ export interface PrototypeSnapshot {
   website: string;
 }
 
-/** How the stored prototype was last produced, and the kinds of model call a press can make. */
-export type PrototypeMode = "created" | "edited" | "rebuilt";
-export type PrototypeCallKind = "create" | "edit" | "rebuild" | "fix";
+/**
+ * How the stored prototype was last produced. `edited` only appears on
+ * Round 1 and 2 records; `requested` is a change request from the prospect.
+ */
+export type PrototypeMode = "created" | "edited" | "rebuilt" | "requested";
 
-/** One model call in a press, kept on the stored record to show how it was produced. `model` is empty when the call failed. */
-export interface PrototypeCall {
-  kind: PrototypeCallKind;
+/** The stages of a press, in the order they run. */
+export type PrototypeStageName = "research" | "plan" | "gap" | "review" | "build" | "audit";
+
+/** One stage of a press, kept on the stored record. `model` is empty when the call failed. */
+export interface PrototypeStage {
+  stage: PrototypeStageName;
   model: string;
   ms: number;
   ok: boolean;
 }
 
-/** What `brief-prototype:{id}` holds. `html` carries the `{{LOGO}}` placeholder, never the logo bytes. */
+/** One screen's build in a press: the model, the time, whether the check made it retry and whether a previous build was kept. */
+export interface PrototypeScreenBuild {
+  slug: string;
+  model: string;
+  ms: number;
+  retried: boolean;
+  kept: boolean;
+}
+
+/** The three parts a screen call returns, kept per screen so a later press can rebuild only the screens that changed. */
+export interface ScreenBuild {
+  html: string;
+  css: string;
+  js: string;
+}
+
+/** One requirement the audit found no screen for. */
+export interface AuditMissing {
+  id: string;
+  label: string;
+  pri: string;
+  note: string;
+}
+
+/** The audit's answer, stored on the record and shown on the admin page only. */
+export interface PrototypeAudit {
+  missing: AuditMissing[];
+  checkedAt: string;
+  model: string;
+}
+
+/**
+ * What `brief-prototype:{id}` holds. `html` carries the `{{LOGO}}`
+ * placeholder, never the logo bytes. Records from Rounds 1 and 2 lack the
+ * fields after `styleHost`; `getBriefPrototype` fills them with defaults and
+ * `planVersion: 0` tells the run there is no plan to diff against.
+ */
 export interface PrototypeRecord {
   html: string;
   hash: string;
@@ -89,19 +140,29 @@ export interface PrototypeRecord {
   lastMode: PrototypeMode;
   model: string;
   routingKey: string;
-  calls: PrototypeCall[];
   styleHost: string | null;
+  planVersion: number;
+  screens: PrototypeScreenBuild[];
+  screenBuilds: Record<string, ScreenBuild>;
+  stages: PrototypeStage[];
+  audit: PrototypeAudit | null;
 }
 
 /** found: a logo and a colour or font; partial: some of the look; none: the neutral style. */
 export type StyleStatus = "found" | "partial" | "none";
 
-/** What the browser gets: the served document with the logo in place. */
+/**
+ * What the browser gets: the served document with the logo in place.
+ * `planVersion` is 0 for a record made before the staged build, so the page
+ * knows a change request needs an Update first; it is one number, not
+ * anything from the hidden pipeline.
+ */
 export interface PrototypeView {
   html: string;
   hash: string;
   updatedAt: string;
   version: number;
+  planVersion: number;
   styleStatus: StyleStatus;
   styleNote: string;
 }

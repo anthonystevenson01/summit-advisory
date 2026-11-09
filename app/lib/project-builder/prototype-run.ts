@@ -1,42 +1,84 @@
 /**
- * One "Create prototype" or "Update prototype" press, after the route has
- * authenticated, limited and locked: the house style (read once per website
- * host), then a create, or an edit with a rebuild as the fallback, then the
- * safety pass, the validator and at most one corrective round, then the
- * store. The time budget for every model call lives here so the route stays
- * thin. Nothing is stored until a valid document exists, so a failure never
- * replaces the previous prototype.
+ * One "Create prototype" or "Update prototype" press, or one change request,
+ * after the route has authenticated, limited and locked: the hidden staged
+ * pipeline. The house style (read once per website host), the company
+ * profile (built once per host, reused by every later press), a plan with a
+ * coverage map checked in code (one gap round), a senior review merged into
+ * the plan (full plans only), one build call per screen in parallel with a
+ * per screen check and one retry, the server written shell, assembly through
+ * the Round 1 safety pass and validator unchanged, the store, then the
+ * audit. The time budget for every call lives here so the routes stay thin.
+ * Nothing is stored until a valid document exists, so a failure never
+ * replaces the previous prototype, and the plan is saved only after the
+ * prototype so the stored plan always describes the stored document.
  *
- * Budget rule: no call starts with less than 45 s before the deadline; each
- * call's timeout is the smaller of its cap (210 s for create, rebuild and
- * fix, 60 s for an edit) and the time left less 20 s; the fix round also
- * needs 75 s left. Every call first reserves one of the day's builder calls.
+ * Budget inside the route's 285 s: style 30 s, research 30 s, plan 30 s
+ * (needs 100 s left), gap round 30 s (needs 130 s), review 30 s (needs 130
+ * s), build 90 s per screen in parallel (needs 60 s), one retry 90 s (needs
+ * 60 s), audit 30 s (needs 35 s). Each call's timeout is the smaller of its
+ * cap and the time left less the headroom. One daily builder call is
+ * reserved per press, not per stage call.
  */
-import { LlmNotConfiguredError, callModel } from "../llm.ts";
+import { LlmNotConfiguredError, callModel, resolveRoute } from "../llm.ts";
 import { reserveBuilderDailyCall } from "../ratelimit.ts";
 import { track } from "../events.ts";
-import { getBriefPrototype, getBriefStyle, saveBriefPrototype, saveBriefStyle, type BriefRecord } from "../briefs.ts";
+import {
+  appendBriefRequest,
+  claimResearchLock,
+  getBriefPlan,
+  getBriefPrototype,
+  getBriefResearch,
+  getBriefStyle,
+  isResearchLocked,
+  releaseResearchLock,
+  saveBriefCritique,
+  saveBriefPlan,
+  saveBriefPrototype,
+  saveBriefResearch,
+  saveBriefStyle,
+  type BriefRecord,
+  type StoredPlan,
+} from "../briefs.ts";
 import type { BriefState } from "./brief.ts";
 import { fontStylesheetUrl, type HouseStyle } from "./house-style.ts";
-import { readHouseStyle } from "./house-style-read.ts";
+import { readHouseStyleWithParts } from "./house-style-read.ts";
+import { buildCompanyProfile } from "./research-read.ts";
+import { EMPTY_PROFILE, type CompanyProfile } from "./research.ts";
 import {
-  PROTOTYPE_ROUTING_KEY,
+  PROTOTYPE_ROUTING_KEYS,
   describeChanges,
   isLargeChange,
   prototypeSnapshot,
   resolvePrototypeWebsite,
   snapshotHash,
-  type PrototypeCall,
-  type PrototypeCallKind,
   type PrototypeMode,
   type PrototypeRecord,
+  type PrototypeScreenBuild,
+  type PrototypeStage,
+  type PrototypeStageName,
+  type ScreenBuild,
 } from "./prototype.ts";
-import { EditApplyError, applyEdits, sanitisePrototypeHtml, validatePrototypeHtml } from "./prototype-html.ts";
-import { prototypeCreatePrompt, prototypeEditPrompt, prototypeFixPrompt, type Prompt, type PromptContext } from "./prompts.ts";
-import { parsePrototype, parsePrototypeEdits, prototypeEditsSchema, prototypeSchema } from "./schemas.ts";
+import {
+  applyPlanDiff,
+  checkPlanCoverage,
+  coverageItems,
+  diffOutcome,
+  parsePlanAnswer,
+  parsePlanDiffAnswer,
+  screensToRebuild,
+  type CoverageItem,
+  type PrototypePlan,
+} from "./plan.ts";
+import { mergeReviewIntoPlan, parseReviewAnswer } from "./review.ts";
+import { auditFromAnswer, parseAuditAnswer } from "./audit.ts";
+import { SHELL_IDS, renderShell, shellScreenBudget } from "./shell.ts";
+import { assembleDocument, checkScreen, collectIds, parseScreenBuild } from "./screens.ts";
+import type { ChangeRequest } from "./requests.ts";
+import { auditPrompt, planDiffPrompt, planPrompt, reviewPrompt, screenFixPrompt, screenPrompt, type Prompt, type PromptContext, type ScreenPromptArgs } from "./prompts.ts";
+import { auditSchema, planDiffSchema, planSchema, reviewSchema, screenBuildSchema } from "./schemas.ts";
 import type { NamedSchema } from "../tools/schema.ts";
 
-/** daily: the builder's daily call cap; time: not enough of the route's budget left; invalid: still broken after the fix round; model: the call failed. */
+/** daily: the builder's daily call cap; time: not enough of the route's budget left; invalid: a screen or the document still broken after the retry; model: a call failed. */
 export type PrototypeFailReason = "daily" | "time" | "invalid" | "model";
 
 /** A press that produced nothing to store. The route answers with the previous prototype, which is kept. */
@@ -55,143 +97,416 @@ export interface RunPrototypeInput {
   source: string;
   /** Epoch ms the whole run must finish by. */
   deadlineAt: number;
+  /** A Create or Update press, or a change request from the box under the prototype. */
+  mode: "press" | "request";
+  /** The cleaned request text on the request path. */
+  request?: string;
 }
 
-/** Which way the document was produced: a first create, edits applied to the current one, or a full rebuild. */
-export type PrototypePath = "create" | "edits" | "rebuild";
+/** How the plan was produced this time: a full plan with a review, or a diff of the current plan. */
+export type PrototypePath = "full" | "diff";
 
-export interface RunPrototypeResult {
+export interface RunPrototypeBuilt {
+  declined: false;
   record: PrototypeRecord;
   style: HouseStyle;
-  mode: "created" | "updated";
+  mode: "created" | "updated" | "requested";
   path: PrototypePath;
-  corrected: boolean;
-  calls: PrototypeCall[];
+  /** The screens built this time (the rest were kept from the previous record). */
+  screensBuilt: string[];
+  retries: number;
+  planned: boolean;
+  reviewed: boolean;
+  audited: boolean;
+  gapRound: boolean;
+  requests: ChangeRequest[];
 }
 
+export interface RunPrototypeDeclined {
+  declined: true;
+  /** remit: the planner refused the request; none: it accepted it but no screen changed. */
+  kind: "remit" | "none";
+  reason: string;
+  style: HouseStyle;
+  requests: ChangeRequest[];
+}
+
+export type RunPrototypeResult = RunPrototypeBuilt | RunPrototypeDeclined;
+
 const STYLE_BUDGET_MS = 30_000;
-const MIN_CALL_MS = 45_000;
-const CALL_HEADROOM_MS = 20_000;
-const LONG_CALL_CAP_MS = 210_000;
-const EDIT_CALL_CAP_MS = 60_000;
-const FIX_MIN_MS = 75_000;
-const TEMPERATURE = 0.4;
+const RESEARCH_BUDGET_MS = 30_000;
+// When the save route's background research holds the lock, a press waits
+// this long for it rather than crawling the same site twice; past it the
+// press goes on with an empty profile and the stored one is used next time.
+const RESEARCH_WAIT_MS = 10_000;
+const RESEARCH_POLL_MS = 1_000;
+// The per call caps from AC 20. The screen headroom is larger because the
+// per screen check, the retry and the assembly all follow the build calls.
+const SHORT_CALL_CAP_MS = 30_000;
+const SHORT_CALL_HEADROOM_MS = 5_000;
+const SCREEN_CALL_CAP_MS = 90_000;
+const SCREEN_CALL_HEADROOM_MS = 20_000;
+// The least time each stage needs left on the route budget to start: a
+// stage that cannot also leave room for the build after it is skipped (gap,
+// review, audit) or fails the press with reason `time` (plan, build).
+const PLAN_MIN_MS = 100_000;
+const GAP_MIN_MS = 130_000;
+const REVIEW_MIN_MS = 130_000;
+const BUILD_MIN_MS = 60_000;
+const RETRY_MIN_MS = 60_000;
+const AUDIT_MIN_MS = 35_000;
+// Screens get a little warmth so sample data varies; the audit is a
+// checklist and runs cold.
+const PLAN_TEMPERATURE = 0.3;
+const REVIEW_TEMPERATURE = 0.3;
+const SCREEN_TEMPERATURE = 0.4;
+const AUDIT_TEMPERATURE = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function errorLine(err: unknown): string {
+  return err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200);
+}
+
+function turnedDownIdeas(state: BriefState): string[] {
+  return state.ideas.filter((i) => state.ideaPick[i.id] === "no").map((i) => i.title.trim()).filter(Boolean);
+}
 
 export async function runPrototype(input: RunPrototypeInput): Promise<RunPrototypeResult> {
   const { brief, state, deadlineAt } = input;
   const id = brief.id;
-  const calls: PrototypeCall[] = [];
+  const stages: PrototypeStage[] = [];
   const ctx: PromptContext = { companyName: brief.contact.company, source: input.source };
+  const remaining = () => deadlineAt - Date.now();
 
-  // 1. The house style: reused unless the website it came from has changed.
-  let style = await getBriefStyle(id);
-  const target = resolvePrototypeWebsite(state, brief.contact);
-  const targetHost = target?.host ?? null;
-  if (!style || style.host !== targetHost) {
-    style = await readHouseStyle(target, { deadlineAt: Math.min(deadlineAt, Date.now() + STYLE_BUDGET_MS) });
-    await saveBriefStyle(id, style);
-    void track("builder_prototype_style", { status: style.status, reason: style.reason, source: style.source, brand: style.brandLookup });
-  }
-  const houseStyle = style;
-  const fontHref = fontStylesheetUrl(houseStyle);
+  // One daily builder call per press, whatever the stage count.
+  const reservation = await reserveBuilderDailyCall();
+  if (!reservation.ok) throw new PrototypeFailedError("daily");
 
-  const call = async <T>(kind: PrototypeCallKind, prompt: Prompt, schema: NamedSchema, parse: (raw: unknown) => T, capMs: number) => {
-    const remaining = deadlineAt - Date.now();
-    if (remaining < MIN_CALL_MS) throw new PrototypeFailedError("time");
-    const reservation = await reserveBuilderDailyCall();
-    if (!reservation.ok) throw new PrototypeFailedError("daily");
+  /** One model call on a stage key, with the stage recorded whatever happens. Throws PrototypeFailedError("model") on failure. */
+  const call = async <T>(stage: PrototypeStageName, routingKey: string, prompt: Prompt, schema: NamedSchema, parse: (raw: unknown) => T, opts: { capMs: number; headroomMs: number; temperature: number; tag: string }) => {
     const started = Date.now();
     try {
       const result = await callModel({
-        routingKey: PROTOTYPE_ROUTING_KEY,
+        routingKey,
         runId: id,
         system: prompt.system,
         user: prompt.user,
         schema,
         parse,
-        temperature: TEMPERATURE,
-        timeoutMs: Math.min(capMs, remaining - CALL_HEADROOM_MS),
+        temperature: opts.temperature,
+        timeoutMs: Math.min(opts.capMs, remaining() - opts.headroomMs),
+        tag: opts.tag,
       });
-      calls.push({ kind, model: result.model, ms: result.ms, ok: true });
+      stages.push({ stage, model: result.model, ms: result.ms, ok: true });
+      void track("builder_prototype_stage", { stage, ok: true, ms: result.ms, model: result.model, tag: opts.tag });
       return result;
     } catch (err) {
-      calls.push({ kind, model: "", ms: Date.now() - started, ok: false });
+      stages.push({ stage, model: "", ms: Date.now() - started, ok: false });
+      void track("builder_prototype_stage", { stage, ok: false, ms: Date.now() - started, tag: opts.tag });
       if (err instanceof LlmNotConfiguredError) throw err;
-      throw new PrototypeFailedError("model", err instanceof Error ? err.message.slice(0, 200) : String(err));
+      throw new PrototypeFailedError("model", errorLine(err));
     }
   };
 
-  /** Sanitise and validate a whole document, with one corrective round. */
-  const finish = async (rawHtml: string, model: string): Promise<{ html: string; model: string; corrected: boolean }> => {
-    const html = sanitisePrototypeHtml(rawHtml, fontHref);
-    const issues = validatePrototypeHtml(html);
-    if (issues.length === 0) return { html, model, corrected: false };
-    if (deadlineAt - Date.now() < FIX_MIN_MS) throw new PrototypeFailedError("invalid", issues[0]);
-    const fix = await call("fix", prototypeFixPrompt(state, houseStyle, html, issues, ctx), prototypeSchema(), parsePrototype, LONG_CALL_CAP_MS);
-    const fixed = sanitisePrototypeHtml(fix.data.html, fontHref);
-    const left = validatePrototypeHtml(fixed);
-    if (left.length > 0) throw new PrototypeFailedError("invalid", left[0]);
-    return { html: fixed, model: fix.model, corrected: true };
-  };
+  // 1. The house style: reused unless the website it came from has changed. The pages and brand record it saw feed the research.
+  let style = await getBriefStyle(id);
+  const target = resolvePrototypeWebsite(state, brief.contact);
+  const targetHost = target?.host ?? null;
+  let pageTexts: Parameters<typeof buildCompanyProfile>[1]["pageTexts"];
+  let brandSeen: Parameters<typeof buildCompanyProfile>[1]["brand"];
+  if (!style || style.host !== targetHost) {
+    const read = await readHouseStyleWithParts(target, { deadlineAt: Math.min(deadlineAt, Date.now() + STYLE_BUDGET_MS) });
+    style = read.style;
+    pageTexts = read.pageTexts.length > 0 ? read.pageTexts : undefined;
+    brandSeen = read.brand ?? undefined;
+    await saveBriefStyle(id, style);
+    void track("builder_prototype_style", { status: style.status, reason: style.reason, source: style.source, brand: style.brandLookup });
+  }
+  const houseStyle = style;
+  const fontHref = fontStylesheetUrl(houseStyle);
+  const companyName = brief.contact.company.trim() || houseStyle.siteName.trim();
 
-  const build = async (kind: "create" | "rebuild") => {
-    const created = await call(kind, prototypeCreatePrompt(state, houseStyle, ctx), prototypeSchema(), parsePrototype, LONG_CALL_CAP_MS);
-    return finish(created.data.html, created.model);
-  };
-
-  const snapshot = prototypeSnapshot(state, brief.contact);
-  const hash = snapshotHash(snapshot);
-  const existing = await getBriefPrototype(id);
-
-  let produced: { html: string; model: string; corrected: boolean };
-  let path: PrototypePath;
-  let lastMode: PrototypeMode;
-  if (!existing) {
-    produced = await build("create");
-    path = "create";
-    lastMode = "created";
-  } else if (isLargeChange(existing.snapshot, snapshot) || existing.styleHost !== houseStyle.host) {
-    produced = await build("rebuild");
-    path = "rebuild";
-    lastMode = "rebuilt";
-  } else {
-    let edited: { html: string; model: string } | null = null;
-    try {
-      const changes = describeChanges(existing.snapshot, snapshot);
-      const reply = await call("edit", prototypeEditPrompt(state, houseStyle, existing.html, changes, ctx), prototypeEditsSchema(), parsePrototypeEdits, EDIT_CALL_CAP_MS);
-      if (!reply.data.rewrite && reply.data.edits.length > 0) {
-        const html = sanitisePrototypeHtml(applyEdits(existing.html, reply.data.edits), fontHref);
-        if (validatePrototypeHtml(html).length === 0) edited = { html, model: reply.model };
+  // 2. The company profile: built once per host; a background build from the save route holds the research lock.
+  let profile: CompanyProfile | null = await getBriefResearch(id);
+  if (!profile || profile.host !== targetHost) {
+    profile = null;
+    if (await claimResearchLock(id)) {
+      const started = Date.now();
+      try {
+        profile = await buildCompanyProfile(target, { deadlineAt: Math.min(deadlineAt, Date.now() + RESEARCH_BUDGET_MS), pageTexts, brand: brandSeen, briefId: id });
+        await saveBriefResearch(id, profile);
+        stages.push({ stage: "research", model: profile.model, ms: Date.now() - started, ok: true });
+      } finally {
+        await releaseResearchLock(id);
       }
-    } catch (err) {
-      if (err instanceof PrototypeFailedError && err.reason !== "model") throw err;
-      if (!(err instanceof PrototypeFailedError) && !(err instanceof EditApplyError)) throw err;
-    }
-    if (edited) {
-      produced = { ...edited, corrected: false };
-      path = "edits";
-      lastMode = "edited";
     } else {
-      produced = await build("rebuild");
-      path = "rebuild";
-      lastMode = "rebuilt";
+      const waitUntil = Date.now() + RESEARCH_WAIT_MS;
+      while (Date.now() < waitUntil && (await isResearchLocked(id))) await sleep(RESEARCH_POLL_MS);
+      const stored = await getBriefResearch(id);
+      profile = stored && stored.host === targetHost ? stored : null;
     }
   }
+  const profileForPrompts = profile ?? { ...EMPTY_PROFILE, host: targetHost };
 
+  // 3. The items the plan must cover and the ideas the prospect turned down.
+  const items: CoverageItem[] = coverageItems(state);
+  const turnedDown = turnedDownIdeas(state);
+
+  // 4. What exists.
+  const existing = await getBriefPrototype(id);
+  const storedPlan = await getBriefPlan(id);
+  const currentPlan: StoredPlan | null = existing && existing.planVersion > 0 && storedPlan ? storedPlan : null;
+  const snapshot = prototypeSnapshot(state, brief.contact);
+  const hash = snapshotHash(snapshot);
+  const nextVersion = existing ? existing.version + 1 : 1;
+
+  let plan: PrototypePlan;
+  let path: PrototypePath;
+  let changed: string[] = [];
+  let lastMode: PrototypeMode;
+  let reviewed = false;
+  let gapRound = false;
+  let acceptedRequest: { requestId: string; text: string; at: string } | null = null;
+  // The request id is the second it arrived: the lock allows one request per brief at a time, so it is unique per brief.
+  const requestAt = new Date().toISOString();
+  const requestId = `req_${requestAt.replace(/\D/g, "").slice(0, 14)}`;
+
+  const planMeta = (model: string) => ({ version: currentPlan ? currentPlan.version + 1 : 1, builtFrom: hash, model });
+
+  const fullPlan = async (): Promise<PrototypePlan> => {
+    if (remaining() < PLAN_MIN_MS) throw new PrototypeFailedError("time");
+    const result = await call("plan", PROTOTYPE_ROUTING_KEYS.plan, planPrompt({ state, items, profile: profileForPrompts, style: houseStyle, ctx }), planSchema(), (raw) => parsePlanAnswer(raw, items, planMeta("")), {
+      capMs: SHORT_CALL_CAP_MS,
+      headroomMs: SHORT_CALL_HEADROOM_MS,
+      temperature: PLAN_TEMPERATURE,
+      tag: "plan",
+    });
+    return { ...result.data, model: result.model };
+  };
+
+  /** The code check and one gap round; the second answer is accepted whatever it says. Unplaced items are logged, never shown. */
+  const checkAndFill = async (draft: PrototypePlan): Promise<PrototypePlan> => {
+    let check = checkPlanCoverage(draft, items);
+    if (!check.ok && remaining() >= GAP_MIN_MS) {
+      gapRound = true;
+      try {
+        const result = await call("gap", PROTOTYPE_ROUTING_KEYS.plan, planPrompt({ state, items, profile: profileForPrompts, style: houseStyle, ctx, previous: check.plan, gaps: check.gaps }), planSchema(), (raw) => parsePlanAnswer(raw, items, planMeta("")), {
+          capMs: SHORT_CALL_CAP_MS,
+          headroomMs: SHORT_CALL_HEADROOM_MS,
+          temperature: PLAN_TEMPERATURE,
+          tag: "gap",
+        });
+        const second: PrototypePlan = { ...result.data, model: result.model, accepted: check.plan.accepted, reviewApplied: check.plan.reviewApplied, reviewSuggested: check.plan.reviewSuggested };
+        check = checkPlanCoverage(second, items);
+      } catch (err) {
+        if (err instanceof LlmNotConfiguredError) throw err;
+        console.error(`project-builder prototype ${id}: gap round failed, plan used with gaps: ${errorLine(err)}`);
+      }
+    }
+    if (check.gaps.length > 0) console.info(`project-builder prototype ${id}: unplaced after the plan: ${check.gaps.join("; ")}`);
+    return check.plan;
+  };
+
+  if (input.mode === "request") {
+    const text = (input.request ?? "").trim();
+    if (!existing || !currentPlan || !text) throw new PrototypeFailedError("invalid", "a change request needs a stored prototype and plan");
+    if (remaining() < PLAN_MIN_MS) throw new PrototypeFailedError("time");
+    const result = await call("plan", PROTOTYPE_ROUTING_KEYS.plan, planDiffPrompt({ plan: currentPlan, state, items, profile: profileForPrompts, ctx, requestText: text }), planDiffSchema(), (raw) => parsePlanDiffAnswer(raw, items), {
+      capMs: SHORT_CALL_CAP_MS,
+      headroomMs: SHORT_CALL_HEADROOM_MS,
+      temperature: PLAN_TEMPERATURE,
+      tag: "request",
+    });
+    acceptedRequest = { requestId, text, at: requestAt };
+    const diff = applyPlanDiff(currentPlan, result.data, { builtFrom: hash, model: result.model }, acceptedRequest);
+    const outcome = diffOutcome(diff);
+    if (outcome !== "changed") {
+      // Refused, or accepted with no screen changed: nothing to build, no new version; the request is still recorded and counted.
+      const requests = await appendBriefRequest(id, { id: requestId, text, at: requestAt, screens: [], model: result.model, outcome: "declined" });
+      return { declined: true, kind: outcome === "declined" ? "remit" : "none", reason: diff.outOfRemit.reason, style: houseStyle, requests };
+    }
+    plan = await checkAndFill(diff.plan);
+    changed = diff.changed;
+    path = "diff";
+    lastMode = "requested";
+  } else if (!currentPlan || !existing || isLargeChange(existing.snapshot, snapshot) || existing.styleHost !== houseStyle.host) {
+    plan = await checkAndFill(await fullPlan());
+    path = "full";
+    lastMode = existing ? "rebuilt" : "created";
+    // The senior review, once per full plan; it improves the plan and never blocks.
+    if (remaining() >= REVIEW_MIN_MS) {
+      try {
+        const result = await call("review", PROTOTYPE_ROUTING_KEYS.review, reviewPrompt({ plan, state, items, profile: profileForPrompts, turnedDown, ctx }), reviewSchema(), (raw) => parseReviewAnswer(raw, plan, items, { model: "" }), {
+          capMs: SHORT_CALL_CAP_MS,
+          headroomMs: SHORT_CALL_HEADROOM_MS,
+          temperature: REVIEW_TEMPERATURE,
+          tag: "review",
+        });
+        const merged = mergeReviewIntoPlan(plan, { ...result.data, model: result.model }, turnedDown);
+        plan = merged.plan;
+        await saveBriefCritique(id, merged.review);
+        reviewed = true;
+      } catch (err) {
+        if (err instanceof LlmNotConfiguredError) throw err;
+        console.error(`project-builder prototype ${id}: review failed, plan used as it stands: ${errorLine(err)}`);
+      }
+    }
+  } else {
+    const lines = describeChanges(existing.snapshot, snapshot);
+    if (remaining() < PLAN_MIN_MS) throw new PrototypeFailedError("time");
+    const result = await call("plan", PROTOTYPE_ROUTING_KEYS.plan, planDiffPrompt({ plan: currentPlan, state, items, profile: profileForPrompts, ctx, changeLines: lines }), planDiffSchema(), (raw) => parsePlanDiffAnswer(raw, items), {
+      capMs: SHORT_CALL_CAP_MS,
+      headroomMs: SHORT_CALL_HEADROOM_MS,
+      temperature: PLAN_TEMPERATURE,
+      tag: "diff",
+    });
+    // A brief change is always in remit; a refusal here is treated as "nothing changed" and every screen is rebuilt.
+    const answer = result.data.outOfRemit.refused ? { ...result.data, outOfRemit: { refused: false, reason: "" }, screens: currentPlan.screens, coverage: currentPlan.coverage, unplaced: currentPlan.unplaced, changedScreens: currentPlan.screens.map((s) => s.slug) } : result.data;
+    const diff = applyPlanDiff(currentPlan, answer, { builtFrom: hash, model: result.model });
+    plan = await checkAndFill(diff.plan);
+    changed = diff.changed;
+    path = "diff";
+    lastMode = "rebuilt";
+  }
+
+  // 5. The screens to build: all after a full plan; after a diff, by the rebuild rule.
+  const rebuild = path === "full" ? { slugs: plan.screens.map((s) => s.slug), whole: true } : screensToRebuild(plan, changed, currentPlan);
+  const previousBuilds: Record<string, ScreenBuild> = existing?.screenBuilds ?? {};
+  const builds: Record<string, ScreenBuild> = {};
+  const screenRecords: PrototypeScreenBuild[] = [];
+  const keptSlugs = plan.screens.map((s) => s.slug).filter((slug) => !rebuild.slugs.includes(slug));
+  for (const slug of keptSlugs) {
+    const previous = previousBuilds[slug];
+    if (!previous) {
+      rebuild.slugs.push(slug);
+      continue;
+    }
+    builds[slug] = previous;
+    const was = existing?.screens.find((s) => s.slug === slug);
+    screenRecords.push({ slug, model: was?.model ?? existing?.model ?? "", ms: 0, retried: false, kept: true });
+  }
+
+  // 6. Build in parallel, each with a per screen check and one retry. Ids are prefixed per slug, so the only shared ids are the shell's and the kept screens'.
+  if (remaining() < BUILD_MIN_MS) throw new PrototypeFailedError("time");
+  const shellChars = renderShell(plan, houseStyle, companyName, state.name).length;
+  const budget = shellScreenBudget(shellChars, plan.screens.length);
+  const takenIds = new Set<string>(SHELL_IDS);
+  const plannedSlugs = plan.screens.map((s) => s.slug);
+  for (const slug of keptSlugs) for (const sid of collectIds(builds[slug]?.html ?? "")) takenIds.add(sid);
+  let retries = 0;
+
+  const buildScreen = async (slug: string): Promise<void> => {
+    const screen = plan.screens.find((s) => s.slug === slug);
+    if (!screen) return;
+    const args: ScreenPromptArgs = { screen, plan, items, profile: profileForPrompts, style: houseStyle, budget, companyName };
+    const started = Date.now();
+    let build: ScreenBuild | null = null;
+    let model = "";
+    let issues: string[] = [];
+    try {
+      const result = await call("build", PROTOTYPE_ROUTING_KEYS.build, screenPrompt(args), screenBuildSchema(), parseScreenBuild, { capMs: SCREEN_CALL_CAP_MS, headroomMs: SCREEN_CALL_HEADROOM_MS, temperature: SCREEN_TEMPERATURE, tag: `screen:${slug}` });
+      build = result.data;
+      model = result.model;
+      issues = checkScreen(build, slug, budget, takenIds, plannedSlugs);
+    } catch (err) {
+      if (err instanceof LlmNotConfiguredError) throw err;
+      issues = [errorLine(err)];
+    }
+    let retried = false;
+    if (issues.length > 0 && remaining() >= RETRY_MIN_MS) {
+      retried = true;
+      retries += 1;
+      try {
+        const prompt = build ? screenFixPrompt(args, issues, build) : screenPrompt(args);
+        const result = await call("build", PROTOTYPE_ROUTING_KEYS.build, prompt, screenBuildSchema(), parseScreenBuild, { capMs: SCREEN_CALL_CAP_MS, headroomMs: SCREEN_CALL_HEADROOM_MS, temperature: SCREEN_TEMPERATURE, tag: "retry" });
+        build = result.data;
+        model = result.model;
+        issues = checkScreen(build, slug, budget, takenIds, plannedSlugs);
+      } catch (err) {
+        if (err instanceof LlmNotConfiguredError) throw err;
+        issues = [errorLine(err)];
+      }
+    }
+    if (issues.length === 0 && build) {
+      builds[slug] = build;
+      screenRecords.push({ slug, model, ms: Date.now() - started, retried, kept: false });
+      return;
+    }
+    const previous = previousBuilds[slug];
+    if (previous) {
+      console.error(`project-builder prototype ${id}: screen ${slug} kept from the previous build: ${issues[0]}`);
+      builds[slug] = previous;
+      const was = existing?.screens.find((s) => s.slug === slug);
+      screenRecords.push({ slug, model: was?.model ?? existing?.model ?? "", ms: Date.now() - started, retried, kept: true });
+      return;
+    }
+    throw new PrototypeFailedError("invalid", `${slug}: ${issues[0]}`);
+  };
+
+  await Promise.all(rebuild.slugs.map((slug) => buildScreen(slug)));
+
+  // 7. Assemble: the shell, the placement, then the Round 1 safety pass and validator. Issues here are a failure, never a stored document.
+  const assembled = assembleDocument(plan, houseStyle, fontHref, builds, companyName, state.name);
+  if (assembled.issues.length > 0) throw new PrototypeFailedError("invalid", assembled.issues[0]);
+
+  // 8. Store the prototype, then the plan it describes.
   const now = new Date().toISOString();
+  const buildModels = screenRecords.filter((s) => !s.kept && s.model).map((s) => s.model);
   const record: PrototypeRecord = {
-    html: produced.html,
+    html: assembled.html,
     hash,
     snapshot,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
-    version: existing ? existing.version + 1 : 1,
+    version: nextVersion,
     lastMode,
-    model: produced.model,
-    routingKey: PROTOTYPE_ROUTING_KEY,
-    calls,
+    model: buildModels[0] ?? existing?.model ?? "",
+    routingKey: PROTOTYPE_ROUTING_KEYS.build,
     styleHost: houseStyle.host,
+    planVersion: plan.version,
+    screens: plan.screens.map((s) => screenRecords.find((r) => r.slug === s.slug)).filter((r): r is PrototypeScreenBuild => !!r),
+    screenBuilds: builds,
+    stages,
+    audit: null,
   };
   await saveBriefPrototype(id, record);
-  return { record, style: houseStyle, mode: existing ? "updated" : "created", path, corrected: produced.corrected, calls };
+  await saveBriefPlan(id, { ...plan, producedVersion: record.version });
+  let requests: ChangeRequest[] = [];
+  if (acceptedRequest) {
+    requests = await appendBriefRequest(id, { id: requestId, text: acceptedRequest.text, at: requestAt, screens: rebuild.slugs.slice(), model: plan.model, outcome: "built" });
+  }
+
+  // 9. The audit, admin only: writes onto the stored record and never changes the document or the answer.
+  let audited = false;
+  try {
+    const route = await resolveRoute(PROTOTYPE_ROUTING_KEYS.audit);
+    if (route.enabled !== false && remaining() >= AUDIT_MIN_MS) {
+      const result = await call("audit", PROTOTYPE_ROUTING_KEYS.audit, auditPrompt(items, assembled.html), auditSchema(), parseAuditAnswer, { capMs: SHORT_CALL_CAP_MS, headroomMs: SHORT_CALL_HEADROOM_MS, temperature: AUDIT_TEMPERATURE, tag: "audit" });
+      record.audit = auditFromAnswer(result.data, items, { model: result.model });
+      record.stages = stages;
+      await saveBriefPrototype(id, record);
+      audited = true;
+    }
+  } catch (err) {
+    if (err instanceof LlmNotConfiguredError) throw err;
+    console.error(`project-builder prototype ${id}: audit failed: ${errorLine(err)}`);
+  }
+
+  return {
+    declined: false,
+    record,
+    style: houseStyle,
+    mode: input.mode === "request" ? "requested" : existing ? "updated" : "created",
+    path,
+    screensBuilt: rebuild.slugs.slice(),
+    retries,
+    planned: true,
+    reviewed,
+    audited,
+    gapRound,
+    requests,
+  };
 }

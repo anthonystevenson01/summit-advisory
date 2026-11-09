@@ -7,14 +7,18 @@
  * table, the calibration gate and the ai:calls log.
  *
  * Routing keys are `scoring`, `details`, `synthesis` and `extraction`, each
- * optionally narrowed to `{task}:{tool}`, plus the four Project Builder keys
- * `builder-read`, `builder-suggest`, `builder-ideas` and `builder-prototype` (never narrowed). Resolution order is the specific
- * key (`scoring:moat`), then the task key (`scoring`), then DEFAULT_ROUTES
+ * optionally narrowed to `{task}:{tool}`, plus the Project Builder keys
+ * `builder-read`, `builder-suggest`, `builder-ideas` and the five staged
+ * prototype keys `builder-prototype-research`, `-plan`, `-review`, `-build`
+ * and `-audit` (never narrowed). Resolution order is the specific key
+ * (`scoring:moat`), then the task key (`scoring`), then DEFAULT_ROUTES
  * below. Overrides live in the Redis hash `admin:model-config`, written from
  * /admin/models and cached in memory for 30 seconds, so a model change needs
  * no deploy. Every call is logged to the Redis list `ai:calls` (capped at
  * 2000 entries). Pure resolution lives in tools/routing.ts so tests never
- * import this file.
+ * import this file; `__tests__/llm-models.test.ts` does import it, to hold
+ * the curated list against the catalogue fixture, and relies on this module
+ * constructing nothing at import time.
  */
 import OpenAI from "openai";
 import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
@@ -34,8 +38,102 @@ export { ROUTING_TASKS, isCalibrationGated, parseRoutingKey };
 export type { ResolvedRoute, RouteConfig, RoutingTask };
 
 // ── Model ids: the only place they appear ────────────────────────────────────
-// OpenRouter ids without a dated snapshot. Confirmed against
-// GET https://openrouter.ai/api/v1/models on 23 October 2026.
+// OpenRouter ids without a dated snapshot. Every id below was confirmed
+// against GET https://openrouter.ai/api/v1/models on 8 November 2026
+// (scripts/openrouter-models.ts refreshes the fixture the unit test checks
+// them against). Gemini 3.8 Pro is not served by OpenRouter at that date
+// (only 3.8 Flash and a 3.1 Pro preview), so it is left out rather than
+// replaced with a preview. Meta's Muse Spark 1.3 is served under `meta/`.
+
+/** A model the admin dropdown may choose, with what the pipeline needs to know about it. */
+export interface CuratedModel {
+  id: string;
+  provider: "anthropic" | "openai" | "google" | "moonshot" | "deepseek" | "zai" | "meta";
+  name: string;
+  /** Where the request is processed. For a pinned entry it describes the pin, not the vendor. */
+  location: string;
+  /**
+   * optional: `reasoning: { enabled: false }` is accepted and the admin may
+   * turn reasoning on or off. always: the endpoint refuses to disable it (a
+   * 400 "Reasoning is mandatory"), so off is sent as low. none: the model has
+   * no reasoning and the field is never sent. Probed live per id on 8
+   * November 2026 at off and at low; the runbook records the outcome.
+   */
+  reasoning: "optional" | "always" | "none";
+  /** OpenRouter provider slugs to route through (`provider.order`), for the models whose data must stay in the US or EU; null for first party endpoints. */
+  pin: string[] | null;
+}
+
+/** The provider prefix each entry's id must carry, as the catalogue spells them. */
+export const PROVIDER_PREFIXES: Record<CuratedModel["provider"], string> = {
+  anthropic: "anthropic/",
+  openai: "openai/",
+  google: "google/",
+  moonshot: "moonshotai/",
+  deepseek: "deepseek/",
+  zai: "z-ai/",
+  meta: "meta/",
+};
+
+export const CURATED_MODELS: readonly CuratedModel[] = [
+  { id: "anthropic/claude-fable-5.1", provider: "anthropic", name: "Fable 5.1", location: "US", reasoning: "always", pin: null },
+  { id: "anthropic/claude-opus-5.5", provider: "anthropic", name: "Opus 5.5", location: "US", reasoning: "always", pin: null },
+  { id: "anthropic/claude-sonnet-5.5", provider: "anthropic", name: "Sonnet 5.5", location: "US", reasoning: "always", pin: null },
+  { id: "anthropic/claude-haiku-5.5", provider: "anthropic", name: "Haiku 5.5", location: "US", reasoning: "optional", pin: null },
+  { id: "anthropic/claude-opus-5", provider: "anthropic", name: "Opus 5", location: "US", reasoning: "optional", pin: null },
+  { id: "anthropic/claude-sonnet-5", provider: "anthropic", name: "Sonnet 5", location: "US", reasoning: "optional", pin: null },
+  { id: "anthropic/claude-haiku-4.5", provider: "anthropic", name: "Haiku 4.5", location: "US", reasoning: "optional", pin: null },
+  { id: "openai/gpt-6-astra", provider: "openai", name: "GPT-6 Astra", location: "US", reasoning: "always", pin: null },
+  { id: "openai/gpt-6-luna", provider: "openai", name: "GPT-6 Luna", location: "US", reasoning: "optional", pin: null },
+  { id: "google/gemini-3.8-flash", provider: "google", name: "Gemini 3.8 Flash", location: "US, provider's choice", reasoning: "always", pin: null },
+  // Pinned: Kimi K3 through Amazon Bedrock (us-east-2), Wafer (US) or Inference.net (US); DeepSeek V4 Flash through Azure (US) or DeepInfra (US);
+  // DeepSeek V4 Pro through Azure (US) or Nebius (EU); GLM 5.2 through Mistral (EU), Baseten (US) or Wafer (US). Slugs read from each model's
+  // /endpoints listing on 8 November 2026. With allow_fallbacks false a pinned model runs there or not at all.
+  { id: "moonshotai/kimi-k3", provider: "moonshot", name: "Kimi K3", location: "US", reasoning: "optional", pin: ["amazon-bedrock/us-east-2", "wafer/us", "inference-net/us"] },
+  { id: "deepseek/deepseek-v4-flash", provider: "deepseek", name: "DeepSeek V4 Flash", location: "US", reasoning: "optional", pin: ["azure/us", "deepinfra/fp8"] },
+  { id: "deepseek/deepseek-v4-pro", provider: "deepseek", name: "DeepSeek V4 Pro", location: "US or EU", reasoning: "optional", pin: ["azure/us", "nebius/fp8"] },
+  { id: "z-ai/glm-5.2", provider: "zai", name: "GLM 5.2", location: "EU or US", reasoning: "optional", pin: ["mistral/eu", "baseten/fp8/us", "wafer/us"] },
+  { id: "meta/muse-spark-1.3", provider: "meta", name: "Muse Spark 1.3", location: "US", reasoning: "always", pin: null },
+];
+
+/** The ids alone: the admin route rejects anything outside this list. */
+export const CURATED_MODEL_IDS: readonly string[] = CURATED_MODELS.map((m) => m.id);
+
+export function curatedModel(id: string): CuratedModel | undefined {
+  return CURATED_MODELS.find((m) => m.id === id);
+}
+
+/**
+ * USD per million tokens, one row per curated id, from the OpenRouter
+ * catalogue on the date below. Used when a call's usage carries no cost and
+ * by /admin/stats to estimate a key's spend. Refresh with the script when an
+ * id changes.
+ */
+export const PRICES_CHECKED_AT = "2026-11-08";
+export const MODEL_PRICES: Record<string, { input: number; output: number }> = {
+  "anthropic/claude-fable-5.1": { input: 10, output: 50 },
+  "anthropic/claude-opus-5.5": { input: 4, output: 20 },
+  "anthropic/claude-sonnet-5.5": { input: 2, output: 10 },
+  "anthropic/claude-haiku-5.5": { input: 0.1, output: 0.5 },
+  "anthropic/claude-opus-5": { input: 5, output: 25 },
+  "anthropic/claude-sonnet-5": { input: 2, output: 10 },
+  "anthropic/claude-haiku-4.5": { input: 1, output: 5 },
+  "openai/gpt-6-astra": { input: 10, output: 50 },
+  "openai/gpt-6-luna": { input: 0.1, output: 0.5 },
+  "google/gemini-3.8-flash": { input: 0.75, output: 3.75 },
+  "moonshotai/kimi-k3": { input: 0.192, output: 16 },
+  "deepseek/deepseek-v4-flash": { input: 0.091, output: 0.182 },
+  "deepseek/deepseek-v4-pro": { input: 0.955, output: 1.911 },
+  "z-ai/glm-5.2": { input: 0.006, output: 6.8 },
+  "meta/muse-spark-1.3": { input: 1.25, output: 4.25 },
+};
+
+/** The estimated cost of a call in USD from the price table, or null when the id is unknown. */
+export function estimateCost(model: string, usage: { promptTokens: number; completionTokens: number }): number | null {
+  const price = MODEL_PRICES[model];
+  if (!price) return null;
+  return (usage.promptTokens * price.input + usage.completionTokens * price.output) / 1e6;
+}
 
 export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   scoring: { model: "anthropic/claude-haiku-5.5", maxTokens: 1200 },
@@ -45,18 +143,14 @@ export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   "builder-read": { model: "anthropic/claude-haiku-5.5", maxTokens: 6000, fallback: "anthropic/claude-sonnet-5.5" },
   "builder-suggest": { model: "anthropic/claude-haiku-5.5", maxTokens: 1500 },
   "builder-ideas": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 3000 },
-  "builder-prototype": { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 24000, fallback: "anthropic/claude-haiku-5.5" },
+  // The staged prototype, Anthony's choices of 8 November 2026. Build runs on GPT-6 Astra, which cannot turn reasoning
+  // off, so "no reasoning" here is sent as low effort by the forced path below and logged as reasoningForced.
+  "builder-prototype-research": { model: "deepseek/deepseek-v4-flash", maxTokens: 2000, fallback: "anthropic/claude-haiku-5.5" },
+  "builder-prototype-plan": { model: "anthropic/claude-fable-5.1", reasoning: "low", maxTokens: 4000, fallback: "anthropic/claude-sonnet-5.5" },
+  "builder-prototype-review": { model: "anthropic/claude-opus-5.5", reasoning: "medium", maxTokens: 3000, fallback: "anthropic/claude-fable-5.1" },
+  "builder-prototype-build": { model: "openai/gpt-6-astra", maxTokens: 12000, fallback: "anthropic/claude-sonnet-5.5" },
+  "builder-prototype-audit": { model: "moonshotai/kimi-k3", maxTokens: 1000, fallback: "anthropic/claude-haiku-5.5" },
 };
-
-/** The admin dropdown is limited to this list; the admin route rejects anything else. */
-export const CURATED_MODELS: readonly string[] = [
-  "anthropic/claude-haiku-5.5",
-  "anthropic/claude-haiku-4.5",
-  "anthropic/claude-sonnet-5.5",
-  "anthropic/claude-sonnet-5",
-  "anthropic/claude-opus-5.5",
-  "anthropic/claude-opus-5",
-];
 
 export const TASK_LABELS: Record<RoutingTask, string> = {
   scoring: "Scoring",
@@ -66,7 +160,11 @@ export const TASK_LABELS: Record<RoutingTask, string> = {
   "builder-read": "Project Builder: read a document",
   "builder-suggest": "Project Builder: suggestions",
   "builder-ideas": "Project Builder: ideas",
-  "builder-prototype": "Project Builder: prototype",
+  "builder-prototype-research": "Prototype 1: research",
+  "builder-prototype-plan": "Prototype 2: plan",
+  "builder-prototype-review": "Prototype 3: senior review",
+  "builder-prototype-build": "Prototype 4: build a screen",
+  "builder-prototype-audit": "Prototype 5: audit",
 };
 
 export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
@@ -77,8 +175,16 @@ export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
   "builder-read": "Extracts a requirements baseline from pasted text on the document and partly built routes of the Project Builder. Up to 60,000 characters in, one JSON answer. Has one fallback so a Haiku outage does not stop a read. Not calibration gated.",
   "builder-suggest": "The one tap helpers on the Project Builder steps (goal, features, connections, guardrails, running it) and the lookup of a system not in the catalogue. Short JSON answers that fill blanks and add, never overwrite. Not calibration gated.",
   "builder-ideas": "Make it smarter: three to six AI or automation ideas grounded in the brief. Up to three runs per brief. Not calibration gated.",
-  "builder-prototype":
-    "Prototype so far: draws one self contained HTML prototype of the brief in the prospect's house style, or returns search and replace edits to the current one. Sonnet 5.5 at low reasoning, 24,000 max tokens for a document of up to 70,000 characters plus the reasoning. Up to three calls per press (edit, rebuild, one corrective round), each with a timeout of up to 210 s inside the route's 300 s. Has one fallback. Not calibration gated.",
+  "builder-prototype-research":
+    "Prototype so far, stage 1: a company profile from the prospect's web pages and the Brandfetch description, once per brief and website. Reads page text only, never the brief. Up to 30 s. Has one fallback. Not calibration gated.",
+  "builder-prototype-plan":
+    "Prototype so far, stage 2: plans 3 to 5 screens with a coverage map against every requirement, feature, integration and role; one gap round when a Must is unplaced. Also answers change requests and brief changes as a plan diff. Up to 30 s per call. Has one fallback. Not calibration gated.",
+  "builder-prototype-review":
+    "Prototype so far, stage 3: a senior business analyst reviews the plan and returns gaps and at most five recommendations; apply items are merged before the build. One review per full plan, none on a diff. Up to 30 s. Has one fallback. Not calibration gated.",
+  "builder-prototype-build":
+    "Prototype so far, stage 4: one call per screen, in parallel, returning the screen's html, css and js against the plan, the profile and the house style. Up to 90 s per screen with one retry. The server writes the document shell. Has one fallback. Not calibration gated.",
+  "builder-prototype-audit":
+    "Prototype so far, stage 5: reads the requirements and the assembled document and lists the Must and Should requirements no screen shows. Admin only; never changes the prototype. Can be switched off here. Up to 30 s. Has one fallback. Not calibration gated.",
 };
 
 export const MODEL_CONFIG_KEY = "admin:model-config";
@@ -112,7 +218,14 @@ const CONFIG_TTL_MS = 30_000;
 function parseOverride(raw: unknown): RouteConfig | null {
   try {
     const cfg = typeof raw === "string" ? (JSON.parse(raw) as RouteConfig) : (raw as RouteConfig);
-    if (cfg && typeof cfg.model === "string" && cfg.model.length > 0) return cfg;
+    if (cfg && typeof cfg.model === "string" && cfg.model.length > 0) {
+      const out: RouteConfig = { model: cfg.model };
+      if (cfg.reasoning === "low" || cfg.reasoning === "medium" || cfg.reasoning === "high") out.reasoning = cfg.reasoning;
+      if (typeof cfg.maxTokens === "number" && Number.isFinite(cfg.maxTokens)) out.maxTokens = cfg.maxTokens;
+      if (typeof cfg.fallback === "string" && cfg.fallback.length > 0) out.fallback = cfg.fallback;
+      if (cfg.enabled === false) out.enabled = false;
+      return out;
+    }
   } catch {
     // malformed override: ignore it
   }
@@ -274,8 +387,18 @@ export interface AiCallLog {
   ok: boolean;
   error: string | null;
   calibrated: boolean;
-  /** True when the model refused `reasoning: { enabled: false }` and the call was resent with low effort. */
+  /** True when the model refused `reasoning: { enabled: false }` with a 400 and the call was resent with low effort. */
   reasoningFallback?: boolean;
+  /** True when the entry says reasoning cannot be turned off, so the route's "off" was sent as low effort from the start. */
+  reasoningForced?: boolean;
+  /** OpenRouter's top level `provider` on the completion: which provider actually served the call. */
+  provider?: string | null;
+  /** True when the answering model (any dated suffix stripped) is not the route's primary model. */
+  fallbackUsed?: boolean;
+  /** Where `cost` came from: OpenRouter's usage, or the price table. */
+  costSource?: "reported" | "estimated" | null;
+  /** Free text from the caller for the stats page (`retry`, `gap`, `screen:dashboard`, `diff`); never sent to the model. */
+  tag?: string;
 }
 
 export async function logCall(entry: AiCallLog): Promise<void> {
@@ -309,6 +432,8 @@ export interface CallModelArgs<T> {
   web?: boolean;
   /** Per request timeout in ms, clamped to 15 to 240 s. Absent: the client's 40 s default. */
   timeoutMs?: number;
+  /** Logged on the call for the stats page; never sent to the model. */
+  tag?: string;
 }
 
 export interface CallUsage {
@@ -321,6 +446,8 @@ export interface CallUsage {
 export interface CallResult<T> {
   data: T;
   model: string;
+  /** The provider OpenRouter served the call from, when it said. */
+  provider: string | null;
   routingKey: string;
   /** The key whose config answered: `scoring:moat` for a per-tool override, else the task. */
   resolvedKey: string;
@@ -337,6 +464,19 @@ type LooseUsage = {
   prompt_tokens_details?: { cached_tokens?: number };
 };
 
+/** `anthropic/claude-sonnet-5.5-20260928` and `anthropic/claude-sonnet-5.5` are the same model for the fallback check. */
+function bareModelId(id: string): string {
+  return id.replace(/[-:]\d{8}$/, "").replace(/:(?:batch|free|nitro|floor)$/, "");
+}
+
+// One warning per model per process when an effort is set on an entry that has no reasoning: the setting is ignored, not an error, so a stale override cannot stop calls.
+const warnedNoReasoning = new Set<string>();
+
+/** The OpenRouter provider block for a model: its pin with no provider fallback, or data collection denied alone. */
+function providerBlock(entry: CuratedModel | undefined): Record<string, unknown> {
+  return entry?.pin ? { order: entry.pin, allow_fallbacks: false, data_collection: "deny" } : { data_collection: "deny" };
+}
+
 function readUsage(usage: unknown): CallUsage {
   const u = (usage ?? {}) as LooseUsage;
   return {
@@ -346,6 +486,9 @@ function readUsage(usage: unknown): CallUsage {
     cost: typeof u.cost === "number" ? u.cost : null,
   };
 }
+
+/** The sentences a provider sends with the 400 when `reasoning: { enabled: false }` is refused. */
+const REASONING_REFUSAL_RE = /cannot be disabled|reasoning is mandatory|reasoning\.enabled|thinking cannot be|does not support disabling|unsupported value.*reasoning|invalid.*reasoning/i;
 
 function isRetryable(err: unknown): boolean {
   // A timed-out attempt is never retried: it has already spent the whole
@@ -378,22 +521,29 @@ function errorText(err: unknown): string {
 /**
  * One chat completion through OpenRouter with a strict JSON schema.
  *
- * Reasoning (extended thinking) is sent as `{ enabled: false }` when the
- * resolved route sets no effort, and as `{ effort }` when it does. The
- * Anthropic 5.x models think by default and their thinking tokens count
- * against `max_tokens`, so with thinking on a small cap is spent on
- * reasoning and the answer comes back empty. Off is only possible where the
- * model allows it: Haiku 5.5 accepts `enabled: false` (scoring runs with it
- * off, which also keeps scoring deterministic alongside temperature 0), but
- * Sonnet-class models through OpenRouter refuse to disable reasoning with a
- * 400 "Reasoning is mandatory for this endpoint and cannot be disabled". The
- * details default is therefore `low`, and when any model answers that 400
- * the client resends once with `{ effort: "low" }` and the same max_tokens,
- * recording `reasoningFallback: true` on the call log. An admin who turns
- * reasoning on or up for a key in /admin/models must keep that key's max
- * tokens large enough for the reasoning plus the answer (the scoring answer
- * alone is about 150 tokens; thinking adds hundreds to thousands), or the
- * call fails with "ran out of tokens".
+ * Reasoning (extended thinking) follows the curated entry's policy. An
+ * `optional` entry gets `{ enabled: false }` when the route sets no effort
+ * and `{ effort }` when it does (Haiku 5.5 runs scoring with it off, which
+ * also keeps scoring deterministic alongside temperature 0). An `always`
+ * entry refuses `enabled: false` with a 400 "Reasoning is mandatory for
+ * this endpoint and cannot be disabled" (Sonnet 5.5, Opus 5.5, Fable 5.1,
+ * GPT-6 Astra, Gemini 3.8 Flash and Muse Spark 1.3, probed 8 November
+ * 2026), so off is sent as `{ effort: "low" }` from the start and the log
+ * says `reasoningForced`. A `none` entry is never sent the field; a route
+ * effort on it is ignored with one warning per process. When any model
+ * still answers that 400 the client resends once with low effort and the
+ * same max_tokens, recording `reasoningFallback: true`, so that flag only
+ * ever means "the provider refused". Thinking tokens count against
+ * `max_tokens`, so an admin who turns reasoning on or up for a key in
+ * /admin/models must keep that key's max tokens large enough for the
+ * reasoning plus the answer, or the call fails with "ran out of tokens".
+ *
+ * Provider routing: a pinned entry (DeepSeek, Moonshot, Z.ai) is sent with
+ * `provider.order` and `allow_fallbacks: false`, so it runs on a US or EU
+ * provider or not at all; when that provider is down the `models` array
+ * moves the call to the route's fallback model instead. Every call sends
+ * `data_collection: "deny"` and asks for usage, so the cost and the provider
+ * come back on the completion.
  */
 export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T>> {
   const route = await resolveRoute(args.routingKey);
@@ -403,6 +553,8 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
   const calibration = await getCalibrationState();
   const calibrated = isCalibrated(calibration[resolvedKey], route.model);
   const openai = getClient();
+  const entry = curatedModel(route.model);
+  const policy = entry?.reasoning ?? "optional";
 
   const fixedTemperature = route.task === "scoring" || route.task === "details";
   const temperature = fixedTemperature ? 0 : args.temperature;
@@ -440,11 +592,32 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
     response_format: { type: "json_schema", json_schema: args.schema },
   };
   if (typeof temperature === "number") body.temperature = temperature;
-  // Thinking is off unless the route sets an effort. The 5.x models think by
-  // default and thinking tokens count against max_tokens, so a small cap
+  // Thinking is off unless the route sets an effort, where the entry allows
+  // off at all. Thinking tokens count against max_tokens, so a small cap
   // would be spent on reasoning and the content would come back empty.
-  body.reasoning = route.reasoning ? { effort: route.reasoning } : { enabled: false };
-  if (route.fallback) body.models = [route.model, route.fallback];
+  let reasoningForced = false;
+  if (policy === "none") {
+    if (route.reasoning && !warnedNoReasoning.has(route.model)) {
+      warnedNoReasoning.add(route.model);
+      console.warn(`llm: ${route.model} has no reasoning; the ${args.routingKey} effort setting is ignored`);
+    }
+  } else if (route.reasoning) {
+    body.reasoning = { effort: route.reasoning };
+  } else if (policy === "always") {
+    body.reasoning = { effort: "low" };
+    reasoningForced = true;
+  } else {
+    body.reasoning = { enabled: false };
+  }
+  // The provider block applies to the whole request, so a pin would also bind
+  // the `models` fallback (an Anthropic model has no permitted provider in a
+  // DeepSeek pin and the whole request would fail). A pinned primary therefore
+  // sends no `models` array; its fallback is resent in code below with the
+  // fallback model's own provider block and reasoning policy.
+  const pinnedFallback = entry?.pin && route.fallback ? route.fallback : null;
+  if (route.fallback && !pinnedFallback) body.models = [route.model, route.fallback];
+  body.usage = { include: true };
+  body.provider = providerBlock(entry);
   const plugins: Array<Record<string, unknown>> = [];
   if (args.web) plugins.push({ id: "web" });
   // The native engine lets the model read a deck's pages as images; it is
@@ -459,21 +632,36 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
 
   const started = Date.now();
   let answeredBy = route.model;
+  let provider: string | null = null;
   let usage: CallUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: null };
+  let costSource: AiCallLog["costSource"] = null;
   let reasoningFallback = false;
 
-  // A 400 from a model that refuses to disable reasoning (Sonnet-class through
-  // OpenRouter). Handled once by resending with low effort; never looped.
+  // A 400 from a model that refuses to disable reasoning. Handled once by
+  // resending with low effort; never looped. The match covers the wording
+  // seen from OpenRouter's Anthropic, OpenAI, Google and Meta endpoints plus
+  // the forms the other providers document.
   const refusesDisabledReasoning = (err: unknown): boolean =>
     err instanceof OpenAI.APIError &&
     err.status === 400 &&
-    /cannot be disabled|Reasoning is mandatory/i.test(err.message) &&
+    REASONING_REFUSAL_RE.test(err.message) &&
     (body.reasoning as { enabled?: boolean } | undefined)?.enabled === false;
 
   const attempt = async () => {
     const completion = await openai.chat.completions.create(body as unknown as ChatCompletionCreateParamsNonStreaming, requestOptions);
     answeredBy = completion.model || route.model;
+    const served = (completion as { provider?: unknown }).provider;
+    provider = typeof served === "string" && served ? served : null;
     usage = readUsage(completion.usage);
+    if (usage.cost === null) {
+      const estimated = estimateCost(bareModelId(answeredBy), usage);
+      if (estimated !== null) {
+        usage = { ...usage, cost: estimated };
+        costSource = "estimated";
+      }
+    } else {
+      costSource = "reported";
+    }
     const choice = completion.choices?.[0];
     const content = choice?.message?.content;
     if (typeof content !== "string" || content.trim().length === 0) {
@@ -496,6 +684,19 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
         // separate from the connection-error retry below.
         reasoningFallback = true;
         body.reasoning = { effort: "low" };
+        content = await attempt();
+      } else if (pinnedFallback && !(err instanceof OpenAI.APIConnectionTimeoutError)) {
+        // The pinned provider refused or is down: one resend on the fallback
+        // model without the pin, as the `models` array would have done for an
+        // unpinned primary. A timed out attempt is not resent, as below.
+        const fallbackEntry = curatedModel(pinnedFallback);
+        body.model = pinnedFallback;
+        body.provider = providerBlock(fallbackEntry);
+        if (fallbackEntry?.reasoning === "none") delete body.reasoning;
+        else if (route.reasoning) body.reasoning = { effort: route.reasoning };
+        else if (fallbackEntry?.reasoning === "always") body.reasoning = { effort: "low" };
+        else body.reasoning = { enabled: false };
+        answeredBy = pinnedFallback;
         content = await attempt();
       } else {
         if (!isRetryable(err) || Date.now() - started >= RETRY_WINDOW_MS) throw err;
@@ -522,8 +723,13 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
       error: null,
       calibrated,
       reasoningFallback,
+      reasoningForced,
+      provider,
+      fallbackUsed: bareModelId(answeredBy) !== bareModelId(route.model),
+      costSource,
+      tag: args.tag,
     });
-    return { data, model: answeredBy, routingKey: args.routingKey, resolvedKey, source: route.source, ms, usage, calibrated };
+    return { data, model: answeredBy, provider, routingKey: args.routingKey, resolvedKey, source: route.source, ms, usage, calibrated };
   } catch (err) {
     void logCall({
       ts: new Date().toISOString(),
@@ -537,6 +743,11 @@ export async function callModel<T>(args: CallModelArgs<T>): Promise<CallResult<T
       error: errorText(err),
       calibrated,
       reasoningFallback,
+      reasoningForced,
+      provider,
+      fallbackUsed: bareModelId(answeredBy) !== bareModelId(route.model),
+      costSource,
+      tag: args.tag,
     });
     throw err;
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBuilderSaveLimiter } from "@/app/lib/ratelimit";
-import { getBrief, getBriefSource, saveBriefState, setBriefStatus, updateBrief, type BriefContact } from "@/app/lib/briefs";
+import { getBrief, getBriefCritique, getBriefRequests, getBriefSource, saveBriefState, setBriefStatus, updateBrief, type BriefContact } from "@/app/lib/briefs";
+import { suggestionLines } from "@/app/lib/project-builder/review";
 import { hashEmail } from "@/app/lib/tools/unlock-token";
 import { track } from "@/app/lib/events";
 import { verifyBriefLinkToken } from "@/app/lib/unlock";
@@ -81,7 +82,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     const hashPrefix = record.contact.emailHash.slice(0, 12);
     const links = briefLinks(origin, id, record.contact.emailHash);
     const prototypeUrl = record.prototypeAt && links ? links.prototypeUrl : null;
-    const notionExtras = { prototypeUrl, prototypeAdminUrl: record.prototypeAt ? adminPrototypeUrlFor(origin, id) : null };
+    // The two Notion headings under Prototype: the suggest only review items and the change requests, as plain bullets; never the plan or the HTML.
+    const [critique, requests] = record.prototypeAt ? await Promise.all([getBriefCritique(id), getBriefRequests(id)]) : [null, []];
+    const notionExtras = {
+      prototypeUrl,
+      prototypeAdminUrl: record.prototypeAt ? adminPrototypeUrlFor(origin, id) : null,
+      reviewSuggestions: suggestionLines(critique),
+      changeRequests: requests.map((r) => ({ text: r.text, at: r.at, declined: r.outcome === "declined" })),
+    };
     let notionStatus: "ok" | "failed" | null = record.notionStatus;
     let notionPageId = record.notionPageId;
     if (isNotionBriefsConfigured()) {

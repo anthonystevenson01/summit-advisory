@@ -41,7 +41,15 @@ export interface BriefPageArgs {
   prototypeUrl?: string | null;
   /** The admin full screen view of the prototype. */
   prototypeAdminUrl?: string | null;
+  /** The senior review's suggest only recommendations, as `title: why` lines. */
+  reviewSuggestions?: string[];
+  /** The prospect's change requests: the text and the time, and whether the planner declined it. */
+  changeRequests?: Array<{ text: string; at: string; declined?: boolean }>;
 }
+
+export const REVIEW_SUGGESTIONS_HEADING = "Senior review suggestions";
+export const CHANGE_REQUESTS_HEADING = "Change requests";
+export const DECLINED_REQUEST_SUFFIX = " (outside the prototype's remit, not built)";
 
 export const PROTOTYPE_LINK_LABEL = "View the prototype";
 export const PROTOTYPE_ADMIN_LABEL = "Admin view of the prototype";
@@ -234,6 +242,13 @@ export function briefPageBlocks(args: BriefPageArgs): NotionBlock[] {
     blocks.push(linkParagraph(PROTOTYPE_LINK_LABEL, args.prototypeUrl));
     blocks.push(paragraph(PROTOTYPE_LINK_NOTE));
     if (args.prototypeAdminUrl) blocks.push(linkParagraph(PROTOTYPE_ADMIN_LABEL, args.prototypeAdminUrl));
+    // Two headings from the staged build: plain bullets only, never the plan or the HTML.
+    const suggestions = (args.reviewSuggestions ?? []).filter((s) => s.trim());
+    blocks.push(heading2(REVIEW_SUGGESTIONS_HEADING));
+    blocks.push(...(suggestions.length ? suggestions.map((s) => bullet(s)) : [paragraph("None")]));
+    const requests = (args.changeRequests ?? []).filter((r) => r.text.trim());
+    blocks.push(heading2(CHANGE_REQUESTS_HEADING));
+    blocks.push(...(requests.length ? requests.map((r) => bullet(`${formatDate(r.at)}: ${r.text}${r.declined ? DECLINED_REQUEST_SUFFIX : ""}`)) : [paragraph("None")]));
   }
 
   if (args.source && args.source.trim()) {

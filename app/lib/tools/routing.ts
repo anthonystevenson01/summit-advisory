@@ -3,8 +3,9 @@
  * so tests run with no Redis and no env.
  *
  * Keys are `scoring`, `details`, `synthesis`, `extraction`, each optionally
- * narrowed to `{task}:{tool}` where tool is a registry slug. Resolution is
- * specific first, then task, then the code default.
+ * narrowed to `{task}:{tool}` where tool is a registry slug, plus the
+ * Project Builder keys (never narrowed). Resolution is specific first, then
+ * task, then the code default.
  */
 import { ROUTING_TASKS, isToolSlug, type ToolSlug } from "./registry.ts";
 
@@ -19,6 +20,8 @@ export interface RouteConfig {
   reasoning?: ReasoningEffort;
   maxTokens?: number;
   fallback?: string;
+  /** The audit switch: false turns the key off; absent means on. Only `builder-prototype-audit` reads it. */
+  enabled?: boolean;
 }
 
 export type RouteSource = "override:specific" | "override:task" | "default";

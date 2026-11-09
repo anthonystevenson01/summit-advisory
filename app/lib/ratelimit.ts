@@ -121,9 +121,14 @@ export function getBuilderIdeasLimiter() {
   return builderLimiter(6, "1 h", "rl:builder-ideas");
 }
 
-// 6 prototype presses per IP per hour (each can be up to three long calls)
+// 6 prototype presses per IP per hour (each is a staged build of up to eleven model calls)
 export function getBuilderPrototypeLimiter() {
   return builderLimiter(6, "1 h", "rl:builder-prototype");
+}
+
+// 20 prototype change requests per IP per hour, its own scope beside the presses (each is a plan diff plus the changed screens)
+export function getBuilderRequestLimiter() {
+  return builderLimiter(20, "1 h", "rl:builder-prototype-request");
 }
 
 // 20 saves per IP per hour, shared by create, autosave, submit and change
@@ -151,6 +156,8 @@ export function builderDailyKey(now = new Date()): string {
  * (UTC), EXPIRE 48 h on the first increment, `ok` false over the cap. A
  * reservation is spent even when the model call then fails. Without Redis
  * every call is allowed, so a missing variable never blocks the helpers.
+ * A prototype press or change request reserves once per press, not once
+ * per stage call (the per call counts go to the call log and the stats).
  *
  * The reservation happens before the call, not after, so the cap is a hard
  * ceiling: one atomic INCR cannot let two concurrent requests both pass a

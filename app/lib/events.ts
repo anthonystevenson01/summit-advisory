@@ -45,6 +45,9 @@ export type EventName =
   | "builder_change_requested"
   | "builder_prototype_run"
   | "builder_prototype_style"
+  | "builder_prototype_request"
+  | "builder_prototype_research"
+  | "builder_prototype_stage"
   | "brief_deleted";
 
 export const EVENTS_KEY = "events";

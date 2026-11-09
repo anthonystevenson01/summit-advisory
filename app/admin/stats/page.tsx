@@ -1,5 +1,5 @@
 import { getRedis } from "@/app/lib/redis";
-import { AI_CALLS_KEY, type AiCallLog } from "@/app/lib/llm";
+import { AI_CALLS_KEY, MODEL_PRICES, type AiCallLog } from "@/app/lib/llm";
 import { readEventsSince, type EventRow } from "@/app/lib/events";
 import { briefSummaries } from "@/app/lib/briefs";
 import { aggregateStats, parseWindow, type BriefSummaryRow, type CallRow, type StatsTables } from "@/app/lib/project-builder/stats";
@@ -46,7 +46,21 @@ async function readCalls(): Promise<CallRow[]> {
   for (const item of raw) {
     try {
       const e = typeof item === "string" ? (JSON.parse(item) as AiCallLog) : item;
-      out.push({ ts: e.ts, key: e.key, model: e.model, runId: e.runId, promptTokens: e.promptTokens, completionTokens: e.completionTokens, cost: e.cost, ok: e.ok });
+      out.push({
+        ts: e.ts,
+        key: e.key,
+        model: e.model,
+        runId: e.runId,
+        promptTokens: e.promptTokens,
+        completionTokens: e.completionTokens,
+        cost: e.cost,
+        ok: e.ok,
+        ms: e.ms,
+        reasoningFallback: e.reasoningFallback,
+        fallbackUsed: e.fallbackUsed,
+        costSource: e.costSource,
+        tag: e.tag,
+      });
     } catch {
       // malformed entry
     }
@@ -70,12 +84,14 @@ async function loadStats(days: string | undefined): Promise<{ t: StatsTables; er
   else errors.push("The call log could not be read.");
   if (b.status === "fulfilled") briefs = b.value;
   else errors.push("The brief index could not be read.");
-  return { t: aggregateStats({ events, calls, briefs, window }), errors };
+  return { t: aggregateStats({ events, calls, briefs, window, prices: MODEL_PRICES }), errors };
 }
 
 /**
  * /admin/stats: the builder funnel, saves and submits by source tag, helper
- * use with the rules fallback count, model calls and spend per routing key,
+ * use with the rules fallback count, the prototype pipeline per stage key
+ * (calls, median and p95 ms, tokens, cost, fix retries, fallbacks) with the
+ * change requests row, model calls and spend per routing key,
  * cost per submitted brief, briefs by status and the median time from
  * submit to the first admin status change, for a window of 7, 30 or 90
  * days (`?days=`, default 30). Plain tables, no chart, no client
@@ -119,6 +135,30 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         head={["Helper", "Uses", "Rules fallbacks"]}
         rows={[...t.helpers.map((r) => [r.step, r.uses, r.fallbacks]), ["document reads", t.reads.uses, t.reads.fallbacks], ["ideas runs", t.ideasRuns.uses, t.ideasRuns.fallbacks]]}
       />
+
+      <h2 style={h2}>Prototype pipeline</h2>
+      <Table
+        head={["Stage", "Calls", "Failed", "Median ms", "p95 ms", "Prompt tokens", "Completion tokens", "Cost", "Fix retries", "Fallbacks"]}
+        rows={t.prototypeKeys.map((r) => [
+          `${r.label} (${r.key})`,
+          r.calls,
+          r.failed,
+          r.medianMs === null ? "" : Math.round(r.medianMs),
+          r.p95Ms === null ? "" : Math.round(r.p95Ms),
+          r.promptTokens,
+          r.completionTokens,
+          `${money(r.cost)}${r.costEstimated ? " (part estimated)" : ""}`,
+          r.fixRetries,
+          r.fallbacks,
+        ])}
+      />
+      <Table
+        head={["Change requests", "Declined", "Median screens changed"]}
+        rows={[[t.changeRequests.count, t.changeRequests.declined, t.changeRequests.medianScreens === null ? "" : t.changeRequests.medianScreens]]}
+      />
+      <p style={{ fontSize: 12, color: "#666" }}>
+        Cost is what OpenRouter reported; a call with no reported cost is priced from the table in llm.ts and marked part estimated. Fix retries count the per screen retry and the plan gap round.
+      </p>
 
       <h2 style={h2}>Prototypes</h2>
       <Table
