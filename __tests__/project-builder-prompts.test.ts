@@ -11,6 +11,7 @@ import { blank, type BriefState } from "../app/lib/project-builder/brief.ts";
 import {
   HEAD,
   DATA_GUARD,
+  DESIGN_CHOICE_RULES,
   MATERIAL_GUARD,
   contextBlock,
   houseStyleBlock,
@@ -351,6 +352,22 @@ describe("the staged build prompts", () => {
     assert.ok(fixP.user.includes("PREVIOUS"));
     assert.ok(fixP.system.includes("failed the checks"));
     assert.ok(!screenP.system.includes("failed the checks"));
+  });
+
+  test("the design choice rules are at most seven lines under 900 characters, sit in the screen and fix system turns, and the three new classes reach the user turn", () => {
+    assert.ok(DESIGN_CHOICE_RULES.length <= 7);
+    assert.ok(DESIGN_CHOICE_RULES.join("\n").length < 900, `${DESIGN_CHOICE_RULES.join("\n").length} characters`);
+    for (const line of DESIGN_CHOICE_RULES) {
+      assert.ok(line.startsWith("- "), line);
+      assert.doesNotMatch(line, /[–—]/, line);
+      assert.ok(screenP.system.includes(line), line);
+      assert.ok(fixP.system.includes(line), line);
+    }
+    const joined = DESIGN_CHOICE_RULES.join("\n");
+    for (const part of ["never emoji", "no script running", "class pb-num", "pb-empty box", "pb-field-error under", "Never colour a tr, td", "pb-button--secondary"]) assert.ok(joined.includes(part), part);
+    assert.ok(screenP.system.indexOf("Design quality:") < screenP.system.indexOf(DESIGN_CHOICE_RULES[0]));
+    assert.ok(screenP.system.indexOf(DESIGN_CHOICE_RULES[6]) < screenP.system.indexOf(DATA_GUARD));
+    for (const p of [screenP, fixP]) for (const name of ["pb-num:", "pb-empty:", "pb-field-error:"]) assert.ok(p.user.includes(name), name);
   });
 
   test("the audit prompt lists the Must and Should items and fences the document after the material guard", () => {

@@ -222,7 +222,24 @@ export function ideasPrompt(state: BriefState, ctx: PromptContext = {}): Prompt 
 const PROTOTYPE_HEAD =
   "You are a product designer drawing one screen of a clickable prototype of the software a business owner has described. Base everything on the plan and the company profile given. British spelling. No em or en dashes. Plain language, no jargon. Reply with only JSON.";
 
-/** The Round 2 design quality rules, as the screen call needs them. No prospect text in here. */
+/**
+ * The design rules round: the choices only the model can make (icons,
+ * charts complete at rest, numbers in pb-num, empty states, field errors,
+ * status by text as well as colour, one primary action). At most seven
+ * lines, under 900 characters together; the test holds the cap. The shell
+ * enforces the rest (contrast, hover, focus, cursors, sizes, motion).
+ */
+export const DESIGN_CHOICE_RULES: readonly string[] = [
+  "- Icons are inline SVG with one stroke width (1.5) and no fill; never emoji.",
+  "- Draw every chart complete in the html: bars, lines, axes and labels as SVG elements that show with no script running. Use js only to filter what a chart shows.",
+  "- Every number, amount or date in a table sits in a td or th with the class pb-num. Text you colour yourself uses var(--accent), not var(--brand-1).",
+  "- Where a search or filter can leave a list empty, add a pb-empty box with a short sentence, hidden (the hidden attribute) until js shows it.",
+  "- When a required field is blank, show one sentence in a pb-field-error under that field, filled by js; no other error style.",
+  "- Status is a pb-label whose text names the state. Never colour a tr, td or whole row for status, and never rely on colour alone.",
+  "- One filled pb-button per screen, for its main action; every other button is pb-button--secondary.",
+];
+
+/** The Round 2 design quality rules plus the design choice rules, as the screen call needs them. No prospect text in here. */
 const DESIGN_RULES = [
   "Design quality:",
   "- Wrap the screen's content in one div with the class pb-container. Use the shared classes listed in the message for every table, card, figure, label, button, form and chart, so every screen looks the same.",
@@ -233,6 +250,7 @@ const DESIGN_RULES = [
   "- Every button and tab responds when clicked. A form is pb-field inputs plus a button of type button that shows a short message in a pb-notice element on the same screen. Never submit anything.",
   "- Use the CSS custom properties for every colour, spacing and size: var(--brand-1) for primary actions and the main chart series, var(--brand-2) and var(--brand-3) for secondary accents and further series, var(--space-1) to var(--space-7) for spacing, var(--text-1) to var(--text-6) for type sizes, var(--radius) for corners. Headings use var(--font-heading); everything else uses var(--font-body).",
   "- Invented sample data only, realistic for this business. No real people, emails or phone numbers.",
+  ...DESIGN_CHOICE_RULES,
 ].join("\n");
 
 /** The build rules for a screen: what comes back and what must not be in it. */

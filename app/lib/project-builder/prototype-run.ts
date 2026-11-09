@@ -72,7 +72,7 @@ import {
 import { mergeReviewIntoPlan, parseReviewAnswer } from "./review.ts";
 import { auditFromAnswer, parseAuditAnswer } from "./audit.ts";
 import { SHELL_IDS, renderShell, shellScreenBudget } from "./shell.ts";
-import { assembleDocument, checkScreen, collectIds, parseScreenBuild } from "./screens.ts";
+import { assembleDocument, checkScreen, collectIds, isDesignIssue, parseScreenBuild } from "./screens.ts";
 import type { ChangeRequest } from "./requests.ts";
 import { auditPrompt, planDiffPrompt, planPrompt, reviewPrompt, screenFixPrompt, screenPrompt, type Prompt, type PromptContext, type ScreenPromptArgs } from "./prompts.ts";
 import { auditSchema, planDiffSchema, planSchema, reviewSchema, screenBuildSchema } from "./schemas.ts";
@@ -433,9 +433,19 @@ export async function runPrototype(input: RunPrototypeInput): Promise<RunPrototy
         issues = [errorLine(err)];
       }
     }
+    // The design checks are advisory once the retry is behind us: when every remaining line is a design line, the screen is
+    // accepted, the lines are stored as `notes` on its record and logged. The same applies when there was no time for a retry,
+    // since kept previous and `invalid` are the two outcomes a design line must never cause. Any blocking line (a check line or
+    // an errorLine) leaves the path below exactly as Round 3 built it.
+    let notes: string[] = [];
+    if (build && issues.length > 0 && issues.every(isDesignIssue)) {
+      console.info(`project-builder prototype ${id}: screen ${slug} accepted with design notes: ${issues.join(" | ")}`);
+      notes = issues;
+      issues = [];
+    }
     if (issues.length === 0 && build) {
       builds[slug] = build;
-      screenRecords.push({ slug, model, ms: Date.now() - started, retried, kept: false });
+      screenRecords.push({ slug, model, ms: Date.now() - started, retried, kept: false, ...(notes.length > 0 ? { notes } : {}) });
       return;
     }
     const previous = previousBuilds[slug];

@@ -100,6 +100,8 @@ export interface PrototypeScreenBuild {
   ms: number;
   retried: boolean;
   kept: boolean;
+  /** Design check lines still present after the retry; the screen was accepted with them. Absent on records built before the design rules round and on clean screens. */
+  notes?: string[];
 }
 
 /** The three parts a screen call returns, kept per screen so a later press can rebuild only the screens that changed. */
