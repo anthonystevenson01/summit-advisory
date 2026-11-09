@@ -17,14 +17,18 @@
  * apart also keeps the hash small for the admin list, which reads every
  * brief in pages.
  *
- * The latest prototype (`brief-prototype:{id}`, up to about 100 KB of HTML)
- * and the house style read from the prospect's website (`brief-style:{id}`,
- * the logo as a data URI) live at their own keys for the same reason; the
- * hash carries only `prototypeAt`, `prototypeHash` and `prototypeCount`, so
- * the emails, the link route and the admin list never read the large values.
- * Both keys follow the brief's TTL: refreshed where a draft's TTL is,
- * PERSISTed on a submit, deleted with the brief. A reader treats a missing
- * key as no prototype; the hash fields are hints.
+ * The latest prototype (`brief-prototype:{id}`, up to about 200 KB with the
+ * per screen parts), the house style read from the prospect's website
+ * (`brief-style:{id}`, the logo as a data URI), and since round 3 the
+ * company profile (`brief-research:{id}`), the screen plan
+ * (`brief-plan:{id}`), the senior review (`brief-critique:{id}`) and the
+ * change requests (`brief-requests:{id}`) live at their own keys for the
+ * same reason; the hash carries only `prototypeAt`, `prototypeHash`,
+ * `prototypeCount`, `requestCount` and `researchHost`, so the emails, the
+ * link route and the admin list never read the large values. Every side
+ * key follows the brief's TTL through `briefSideKeys`: refreshed where a
+ * draft's TTL is, PERSISTed on a submit, deleted with the brief. A reader
+ * treats a missing key as no value; the hash fields are hints.
  *
  * Ids are `brief_` plus 16 lowercase hex, so a brief id never matches the
  * run id pattern and the two stores cannot be confused. That matters in
@@ -47,6 +51,10 @@ import {
 } from "./project-builder/brief.ts";
 import type { PrototypeRecord } from "./project-builder/prototype.ts";
 import { normaliseHouseStyle, type HouseStyle } from "./project-builder/house-style.ts";
+import type { CompanyProfile } from "./project-builder/research.ts";
+import type { PrototypePlan } from "./project-builder/plan.ts";
+import type { PlanReview } from "./project-builder/review.ts";
+import { REQUESTS_PER_BRIEF, type ChangeRequest } from "./project-builder/requests.ts";
 
 export interface BriefContact {
   name: string;
@@ -86,6 +94,10 @@ export interface BriefRecord {
   prototypeHash: string | null;
   /** Prototype presses that reached the model. */
   prototypeCount: number;
+  /** Change requests that reached the model, against the per brief cap of 20. */
+  requestCount: number;
+  /** The host the stored company profile was built from, a hint for the admin list and the save route; the research key is the truth. */
+  researchHost: string | null;
 }
 
 export const BRIEF_INDEX_KEY = "briefs:by-updated";
@@ -108,13 +120,45 @@ export function briefStyleKey(id: string): string {
   return `brief-style:${id}`;
 }
 
+/** The company profile the research stage built (JSON). Follows the brief's TTL. */
+export function briefResearchKey(id: string): string {
+  return `brief-research:${id}`;
+}
+
+/** The screen plan the prototype was built from (JSON). Follows the brief's TTL. */
+export function briefPlanKey(id: string): string {
+  return `brief-plan:${id}`;
+}
+
+/** The senior review of the plan (JSON). Follows the brief's TTL. */
+export function briefCritiqueKey(id: string): string {
+  return `brief-critique:${id}`;
+}
+
+/** The change requests, newest last, at most 20 (JSON). Follows the brief's TTL. */
+export function briefRequestsKey(id: string): string {
+  return `brief-requests:${id}`;
+}
+
+/** Every side key of a brief: the TTL refresh, the PERSIST and the deletes loop this list so a key cannot be forgotten. */
+export function briefSideKeys(id: string): string[] {
+  return [briefPrototypeKey(id), briefStyleKey(id), briefResearchKey(id), briefPlanKey(id), briefCritiqueKey(id), briefRequestsKey(id)];
+}
+
 /** Held while a press is running, so two presses on one brief cannot run together. */
 export function briefPrototypeLockKey(id: string): string {
   return `brief-prototype-lock:${id}`;
 }
 
+/** Held while a company profile is being built, by the save route in the background or by a press. */
+export function briefResearchLockKey(id: string): string {
+  return `brief-research-lock:${id}`;
+}
+
 /** A generation left unfinished by a killed function frees the brief after this. */
 export const PROTOTYPE_LOCK_SECONDS = 300;
+/** A research build left unfinished frees the brief after this. */
+export const RESEARCH_LOCK_SECONDS = 60;
 
 export function briefEmailIndexKey(emailHash: string): string {
   return `briefs:by-email:${emailHash}`;
@@ -125,7 +169,7 @@ export function newBriefId(): string {
 }
 
 const JSON_FIELDS = new Set(["state", "contact"]);
-const NUMERIC_FIELDS = new Set(["suggestCount", "ideasCount", "readCount", "prototypeCount"]);
+const NUMERIC_FIELDS = new Set(["suggestCount", "ideasCount", "readCount", "prototypeCount", "requestCount"]);
 
 function serialise(patch: object): Record<string, string | number> {
   const out: Record<string, string | number> = {};
@@ -197,6 +241,8 @@ function deserialise(hash: Record<string, unknown>): BriefRecord {
     prototypeAt: nullableString(r.prototypeAt),
     prototypeHash: nullableString(r.prototypeHash),
     prototypeCount: Number(r.prototypeCount ?? 0) || 0,
+    requestCount: Number(r.requestCount ?? 0) || 0,
+    researchHost: nullableString(r.researchHost),
   };
 }
 
@@ -233,6 +279,8 @@ export async function createBrief(args: CreateBriefArgs): Promise<BriefRecord> {
     prototypeAt: null,
     prototypeHash: null,
     prototypeCount: 0,
+    requestCount: 0,
+    researchHost: null,
   };
   const redis = getRedis();
   const key = briefKey(record.id);
@@ -286,9 +334,8 @@ export async function updateBrief(id: string, patch: Partial<BriefRecord>): Prom
     const status = patch.status ?? (await redis.hget<string>(key, "status")) ?? "draft";
     if (status === "draft") {
       await redis.expire(key, BRIEF_DRAFT_TTL_SECONDS);
-      // The prototype and style keys follow the brief; EXPIRE on an absent key is a no op.
-      await redis.expire(briefPrototypeKey(id), BRIEF_DRAFT_TTL_SECONDS);
-      await redis.expire(briefStyleKey(id), BRIEF_DRAFT_TTL_SECONDS);
+      // The side keys follow the brief; EXPIRE on an absent key is a no op.
+      for (const side of briefSideKeys(id)) await redis.expire(side, BRIEF_DRAFT_TTL_SECONDS);
     }
     await redis.zadd(BRIEF_INDEX_KEY, { score: Date.parse(patch.updatedAt) || Date.now(), member: id });
   }
@@ -350,7 +397,7 @@ export async function setBriefStatus(id: string, status: BriefStatus, by: "prosp
   if (status === "submitted") patch.submittedAt = now;
   if (by === "admin" && current.firstStatusChangeAt === null && current.submittedAt) patch.firstStatusChangeAt = now;
   await redis.hset(key, serialise(patch));
-  for (const k of [key, briefPrototypeKey(id), briefStyleKey(id)]) {
+  for (const k of [key, ...briefSideKeys(id)]) {
     if (status === "draft") await redis.expire(k, BRIEF_DRAFT_TTL_SECONDS);
     else await redis.persist(k);
   }
@@ -358,7 +405,7 @@ export async function setBriefStatus(id: string, status: BriefStatus, by: "prosp
   return { ...current, ...patch } as BriefRecord;
 }
 
-export type BriefCounter = "suggestCount" | "ideasCount" | "readCount" | "prototypeCount";
+export type BriefCounter = "suggestCount" | "ideasCount" | "readCount" | "prototypeCount" | "requestCount";
 
 export async function incrementBriefCounter(id: string, field: BriefCounter): Promise<number> {
   return getRedis().hincrby(briefKey(id), field, 1);
@@ -428,8 +475,7 @@ export async function deleteBrief(id: string): Promise<BriefRecord | null> {
   const pipeline = getRedis().pipeline();
   pipeline.del(briefKey(id));
   pipeline.del(briefSourceKey(id));
-  pipeline.del(briefPrototypeKey(id));
-  pipeline.del(briefStyleKey(id));
+  for (const side of briefSideKeys(id)) pipeline.del(side);
   pipeline.zrem(BRIEF_INDEX_KEY, id);
   if (record.contact.emailHash) pipeline.srem(briefEmailIndexKey(record.contact.emailHash), id);
   await pipeline.exec();
@@ -446,8 +492,7 @@ export async function deleteBriefsByEmail(emailHash: string): Promise<{ count: n
   for (const id of ids) {
     pipeline.del(briefKey(id));
     pipeline.del(briefSourceKey(id));
-    pipeline.del(briefPrototypeKey(id));
-    pipeline.del(briefStyleKey(id));
+    for (const side of briefSideKeys(id)) pipeline.del(side);
   }
   if (ids.length > 0) pipeline.zrem(BRIEF_INDEX_KEY, ...ids);
   pipeline.del(setKey);
@@ -488,11 +533,103 @@ async function sideKeyExpiry(id: string): Promise<{ ex: number } | undefined> {
   return status === "draft" ? { ex: BRIEF_DRAFT_TTL_SECONDS } : undefined;
 }
 
+/** A record from Rounds 1 and 2 lacks the staged build's fields; they are filled so every reader sees one shape. */
+function normalisePrototypeRecord(record: PrototypeRecord): PrototypeRecord {
+  return {
+    ...record,
+    planVersion: typeof record.planVersion === "number" && Number.isFinite(record.planVersion) ? record.planVersion : 0,
+    screens: Array.isArray(record.screens) ? record.screens : [],
+    screenBuilds: record.screenBuilds && typeof record.screenBuilds === "object" ? record.screenBuilds : {},
+    stages: Array.isArray(record.stages) ? record.stages : [],
+    audit: record.audit && typeof record.audit === "object" ? record.audit : null,
+  };
+}
+
 /** The stored prototype, or null when there is none or the value is not usable. */
 export async function getBriefPrototype(id: string): Promise<PrototypeRecord | null> {
   if (!isBriefId(id)) return null;
   const record = parseStored<PrototypeRecord>(await getRedis().get(briefPrototypeKey(id)));
-  return record && typeof record.html === "string" && record.html.length > 0 ? record : null;
+  return record && typeof record.html === "string" && record.html.length > 0 ? normalisePrototypeRecord(record) : null;
+}
+
+/** SET a side key's JSON value with the brief's TTL. */
+async function setSideKey(id: string, key: string, value: unknown): Promise<void> {
+  const expiry = await sideKeyExpiry(id);
+  const text = JSON.stringify(value);
+  if (expiry) await getRedis().set(key, text, expiry);
+  else await getRedis().set(key, text);
+}
+
+/** The stored company profile, or null when research has not run for this brief. */
+export async function getBriefResearch(id: string): Promise<CompanyProfile | null> {
+  if (!isBriefId(id)) return null;
+  const profile = parseStored<CompanyProfile>(await getRedis().get(briefResearchKey(id)));
+  return profile && typeof profile.empty === "boolean" && typeof profile.summary === "string" ? profile : null;
+}
+
+/** SET the profile with the brief's TTL and the `researchHost` hint on the hash (without moving `updatedAt`). */
+export async function saveBriefResearch(id: string, profile: CompanyProfile): Promise<void> {
+  await setSideKey(id, briefResearchKey(id), profile);
+  await updateBrief(id, { researchHost: profile.host });
+}
+
+/** What `brief-plan:{id}` holds: the plan plus the prototype version it produced. */
+export type StoredPlan = PrototypePlan & { producedVersion: number };
+
+export async function getBriefPlan(id: string): Promise<StoredPlan | null> {
+  if (!isBriefId(id)) return null;
+  const plan = parseStored<StoredPlan>(await getRedis().get(briefPlanKey(id)));
+  return plan && Array.isArray(plan.screens) && typeof plan.version === "number" ? plan : null;
+}
+
+export async function saveBriefPlan(id: string, plan: StoredPlan): Promise<void> {
+  await setSideKey(id, briefPlanKey(id), plan);
+}
+
+export async function getBriefCritique(id: string): Promise<PlanReview | null> {
+  if (!isBriefId(id)) return null;
+  const review = parseStored<PlanReview>(await getRedis().get(briefCritiqueKey(id)));
+  return review && Array.isArray(review.recommendations) ? review : null;
+}
+
+export async function saveBriefCritique(id: string, review: PlanReview): Promise<void> {
+  await setSideKey(id, briefCritiqueKey(id), review);
+}
+
+export async function getBriefRequests(id: string): Promise<ChangeRequest[]> {
+  if (!isBriefId(id)) return [];
+  const list = parseStored<ChangeRequest[]>(await getRedis().get(briefRequestsKey(id)));
+  return Array.isArray(list) ? list.filter((r) => r && typeof r.text === "string") : [];
+}
+
+/** Appends one request, newest last, keeping at most the cap. Returns the list as stored. */
+export async function appendBriefRequest(id: string, request: ChangeRequest): Promise<ChangeRequest[]> {
+  const list = [...(await getBriefRequests(id)), request].slice(-REQUESTS_PER_BRIEF);
+  await setSideKey(id, briefRequestsKey(id), list);
+  return list;
+}
+
+/** SET NX EX 60: true when this caller now holds the brief's research lock. */
+export async function claimResearchLock(id: string): Promise<boolean> {
+  const result = await getRedis().set(briefResearchLockKey(id), "1", { nx: true, ex: RESEARCH_LOCK_SECONDS });
+  return result === "OK";
+}
+
+export async function isResearchLocked(id: string): Promise<boolean> {
+  try {
+    return (await getRedis().exists(briefResearchLockKey(id))) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Frees the research lock. Never throws: a failed delete leaves the lock to expire. */
+export async function releaseResearchLock(id: string): Promise<void> {
+  try {
+    await getRedis().del(briefResearchLockKey(id));
+  } catch {
+    // the lock expires on its own
+  }
 }
 
 /** SET the record with the brief's TTL, then the two hint fields on the hash (without moving `updatedAt`). */

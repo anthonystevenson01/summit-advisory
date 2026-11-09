@@ -244,6 +244,7 @@ export function prototypeView(record: PrototypeRecord, style: HouseStyle | null)
     hash: record.hash,
     updatedAt: record.updatedAt,
     version: record.version,
+    planVersion: record.planVersion ?? 0,
     styleStatus: status,
     styleNote: styleNoteFor(style),
   };

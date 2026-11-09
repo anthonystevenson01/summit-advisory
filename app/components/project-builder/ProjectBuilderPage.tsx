@@ -71,6 +71,7 @@ import {
   UNDONE_LINE,
   WORKING_LINE,
 } from "@/app/lib/project-builder/copy";
+import { REQUESTS_PER_BRIEF } from "@/app/lib/project-builder/requests";
 import { buildReplacementRequirements, type Requirement } from "@/app/lib/project-builder/requirements";
 import { devAnswer, type DevAnswer } from "@/app/lib/project-builder/suggestions";
 import {
@@ -122,6 +123,7 @@ interface SavedInfo {
   ideasCount: number;
   readCount: number;
   prototypeCount: number;
+  requestCount: number;
 }
 
 interface Stored {
@@ -168,6 +170,7 @@ function readStored(): { state: BriefState; source: string; contact: ContactDraf
             ideasCount: Number(s.ideasCount) || 0,
             readCount: Number(s.readCount) || 0,
             prototypeCount: Number(s.prototypeCount) || 0,
+            requestCount: Number(s.requestCount) || 0,
           }
         : null;
     return { state, source, contact, saved, srcTag: normaliseSourceTag(parsed.srcTag) };
@@ -252,6 +255,8 @@ export default function ProjectBuilderPage() {
   const [protoStage, setProtoStage] = useState<PrototypeStage | null>(null);
   const [protoNote, setProtoNote] = useState("");
   const [protoError, setProtoError] = useState("");
+  const [requestText, setRequestText] = useState("");
+  const [requestBusy, setRequestBusy] = useState(false);
   const [styleStatus, setStyleStatus] = useState<StyleStatus | null>(null);
   const [scrollToPrototype, setScrollToPrototype] = useState(false);
   const pendingPrototype = useRef(false);
@@ -565,6 +570,7 @@ export default function ProjectBuilderPage() {
         ideasCount: localIdeasRuns,
         readCount: 0,
         prototypeCount: 0,
+        requestCount: 0,
       };
       setSaved(info);
       setContact((c) => ({ ...c, website: validated.contact.website }));
@@ -656,6 +662,60 @@ export default function ProjectBuilderPage() {
     }
   };
 
+  /**
+   * One Send from the box under the prototype. The same staged lines as a
+   * press, the prototype refreshed in place, the text cleared on success or
+   * when the server declined the request (it answered), kept on failure.
+   */
+  const requestChange = async () => {
+    const text = requestText.trim();
+    if (protoBusy || requestBusy || !text || !saved || !saved.token || !prototype) return;
+    setDockTab("prototype");
+    setRequestBusy(true);
+    setProtoError("");
+    setProtoNote("");
+    setProtoStage("drawing");
+    clearProtoTimers();
+    protoTimers.current.push(setTimeout(() => setProtoStage("long"), STAGE_LONG_MS));
+    try {
+      const res = await fetch("/api/project-builder/prototype/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ briefId: saved.id, token: saved.token, request: text, website: "" }),
+      });
+      const data = (await res.json().catch(() => ({ error: OFFLINE_LINE }))) as {
+        ok?: boolean;
+        mode?: string;
+        prototype?: PrototypeView | null;
+        requests?: number;
+        message?: string;
+        error?: string;
+        cap?: boolean;
+        locked?: boolean;
+      };
+      if (res.status === 409 && data.locked) {
+        lock();
+        return;
+      }
+      if (typeof data.requests === "number") setSaved((s) => (s ? { ...s, requestCount: data.requests as number } : s));
+      if (res.ok && data.ok) {
+        if (data.prototype) setPrototype(data.prototype);
+        setProtoNote(data.message ?? "");
+        setRequestText("");
+        return;
+      }
+      if (data.cap) setSaved((s) => (s ? { ...s, requestCount: REQUESTS_PER_BRIEF } : s));
+      setProtoError(data.error ?? OFFLINE_LINE);
+    } catch {
+      setProtoError(OFFLINE_LINE);
+    } finally {
+      clearProtoTimers();
+      setRequestBusy(false);
+      setProtoStage(null);
+      setDockTab("prototype");
+    }
+  };
+
   /** The sheet's Save: a pending prototype press runs once the brief exists. */
   const saveFromSheet = async () => {
     const info = await doSave("save");
@@ -738,6 +798,7 @@ export default function ProjectBuilderPage() {
         ideasCount?: number;
         readCount?: number;
         prototypeCount?: number;
+        requestCount?: number;
         prototype?: PrototypeView | null;
         styleStatus?: StyleStatus | null;
       };
@@ -762,6 +823,7 @@ export default function ProjectBuilderPage() {
         ideasCount: data.ideasCount ?? 0,
         readCount: data.readCount ?? 0,
         prototypeCount: data.prototypeCount ?? 0,
+        requestCount: data.requestCount ?? 0,
       });
       setPrototype(data.prototype ?? null);
       setStyleStatus(data.styleStatus ?? null);
@@ -830,6 +892,7 @@ export default function ProjectBuilderPage() {
     setPrototype(null);
     setProtoNote("");
     setProtoError("");
+    setRequestText("");
     setStyleStatus(null);
     pendingPrototype.current = false;
     setSelectedKey(null);
@@ -1009,6 +1072,11 @@ export default function ProjectBuilderPage() {
           stage={protoStage}
           note={protoNote}
           error={protoError}
+          requestsLeft={REQUESTS_PER_BRIEF - (saved?.requestCount ?? 0)}
+          requestBusy={requestBusy}
+          requestText={requestText}
+          onRequestTextChange={setRequestText}
+          onRequestSend={() => void requestChange()}
         />
       </div>
       {toast && (

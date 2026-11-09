@@ -1,6 +1,6 @@
 /**
- * The strict JSON schemas the four builder calls send to OpenRouter and the
- * one parser per call. Pure: the catalogue and the schema types only.
+ * The strict JSON schemas the builder calls send to OpenRouter and the one
+ * parser per call (the staged build's parsers live beside their types). Pure: the catalogue and the schema types only.
  *
  * Every schema is `strict: true` with `additionalProperties: false` and
  * every property required at every level, because OpenRouter's strict mode
@@ -33,6 +33,7 @@ import {
   type RunKey,
 } from "./catalogue.ts";
 import type { SuggestStep } from "./brief.ts";
+import { PLAN_COMPONENT_KINDS } from "./plan.ts";
 
 // ── Caps ─────────────────────────────────────────────────────────────────────
 
@@ -469,72 +470,146 @@ export function parseIdeas(raw: unknown): IdeasResult {
   return { note: cleanString(raw.note, TEXT), ideas };
 }
 
-// ── Prototype ────────────────────────────────────────────────────────────────
+// ── Prototype: the staged build ──────────────────────────────────────────────
+//
+// Six schemas, one per model call of the staged build. The parsers live next
+// to their types (research.ts, plan.ts, review.ts, screens.ts, audit.ts) so
+// the admin pages can import the pure modules without these builders.
 
-/** Characters kept from a reply's html before validation; the validator reports the real cap. */
+/** Characters kept from a reply's html, css or js before the per screen check; the check reports the real cap. */
 export const PROTOTYPE_REPLY_CHARS = 200_000;
-export const PROTOTYPE_SCREENS_CAP = 5;
-export const PROTOTYPE_EDITS_CAP = 40;
 
-export interface PrototypeResult {
-  screens: string[];
-  html: string;
-  summary: string;
-}
+const COMPONENT_KIND_ENUM = strEnum(PLAN_COMPONENT_KINDS, "The kind of component: table, figures, chart, form, detail or list.");
 
-export function prototypeSchema(): NamedSchema {
+export function researchSchema(): NamedSchema {
   return named(
-    "builder_prototype",
+    "builder_prototype_research",
     obj({
-      screens: list(text("A screen name."), "The screens in the document, in navigation order."),
-      html: text("The whole self contained HTML document."),
-      summary: text("One plain sentence on what the prototype shows."),
+      summary: text("What the business sells and to whom, in two plain sentences, or empty."),
+      products: list(text("A product name as the pages give it."), "Product names, or empty."),
+      services: list(text("A service name as the pages give it."), "Service names, or empty."),
+      plans: list(text("A plan or tier name as the pages give it."), "Plan or tier names, or empty."),
+      vocabulary: list(obj({ term: text("Their word."), meaning: text("What it means in plain words.") }), "The words they use for their customers, records, jobs or sites, or empty."),
+      locations: list(text("A place they operate from or serve."), "Locations, or empty."),
+      currency: text("The currency the pages price in, or empty."),
+      units: text("The units they measure in, or empty."),
+      teamSize: text("A team size hint from the pages, or empty."),
     }),
   );
 }
 
-export function parsePrototype(raw: unknown): PrototypeResult {
-  if (!isRecord(raw)) throw new SchemaError("answer is not an object");
-  if (typeof raw.html !== "string" || !raw.html.trim()) throw new SchemaError("html is missing");
+function componentSchema(description: string): JsonSchema {
+  return obj(
+    {
+      kind: COMPONENT_KIND_ENUM,
+      title: text("The component's heading."),
+      entity: text("The sample entity it shows, in the company's own words."),
+      note: text("What it must show or do, one short sentence, or empty."),
+    },
+    description,
+  );
+}
+
+function screenSchema(description: string): JsonSchema {
+  return obj(
+    {
+      slug: text("A short lowercase slug of letters, digits and hyphens, unique in the plan."),
+      title: text("The screen's title as it appears in the navigation."),
+      purpose: text("What a user does on this screen, one sentence."),
+      role: text("The main user type for this screen."),
+      components: list(componentSchema("One component on the screen."), "The components on the screen, in order, at most 8."),
+      entities: list(text("A sample entity shown on the screen."), "The sample entities the screen shows, at most 8."),
+    },
+    description,
+  );
+}
+
+function planProperties(): Record<string, JsonSchema> {
   return {
-    screens: cleanStrings(raw.screens, PROTOTYPE_SCREENS_CAP, 60),
-    html: raw.html.trim().slice(0, PROTOTYPE_REPLY_CHARS),
-    summary: cleanString(raw.summary, 300),
+    screens: list(screenSchema("One screen of the prototype."), "3 to 5 screens in navigation order; the first is the dashboard or main list."),
+    coverage: list(
+      obj({ id: text("An item id from the list given."), screen: text("The slug of the screen that represents it."), component: text("The title of the component that represents it.") }),
+      "Every item id given, each against the screen and component that represents it.",
+    ),
+    unplaced: list(obj({ id: text("An item id from the list given."), reason: text("Why it could not be placed on a screen.") }), "Items that could not be placed, with a reason, or empty."),
   };
 }
 
-export interface PrototypeEditsResult {
-  rewrite: boolean;
-  edits: Array<{ old_str: string; new_str: string }>;
-  summary: string;
+export function planSchema(): NamedSchema {
+  return named("builder_prototype_plan", obj(planProperties()));
 }
 
-export function prototypeEditsSchema(): NamedSchema {
+export function planDiffSchema(): NamedSchema {
   return named(
-    "builder_prototype_edits",
+    "builder_prototype_plan_diff",
     obj({
-      rewrite: { type: "boolean", description: "True when the changes touch most screens and the document should be rebuilt instead." },
-      edits: list(
-        obj({
-          old_str: text("Text copied exactly from the current document, found exactly once in it."),
-          new_str: text("The replacement text."),
-        }),
-        "Search and replace edits, applied in order. At most 40.",
-      ),
-      summary: text("One plain sentence on what changed."),
+      ...planProperties(),
+      changedScreens: list(text("A screen slug."), "The slugs of the screens that changed, including any added; empty when nothing changed."),
+      outOfRemit: obj({
+        refused: { type: "boolean", description: "True when the request asks for something a sample prototype cannot do." },
+        reason: text("One plain sentence saying why, or empty."),
+      }),
     }),
   );
 }
 
-/** Edits are kept as written (no trimming: old_str must match exactly); items without a string old_str are dropped. */
-export function parsePrototypeEdits(raw: unknown): PrototypeEditsResult {
-  if (!isRecord(raw)) throw new SchemaError("answer is not an object");
-  const editsRaw = requireArray(raw, "edits");
-  const edits: Array<{ old_str: string; new_str: string }> = [];
-  for (const item of editsRaw) {
-    if (!isRecord(item) || typeof item.old_str !== "string") continue;
-    edits.push({ old_str: item.old_str, new_str: typeof item.new_str === "string" ? item.new_str : "" });
-    if (edits.length >= PROTOTYPE_EDITS_CAP) break;
-  }
-  return { rewrite: raw.rewrite === true, edits, summary: cleanString(raw.summary, 300) };
+/** A component or a screen that is not used is an object of empty strings: strict mode has no optionals. */
+export function reviewSchema(): NamedSchema {
+  return named(
+    "builder_prototype_review",
+    obj({
+      gaps: list(
+        obj({
+          text: text("What the plan misses or handles badly, one plain sentence."),
+          itemId: text("The item id it concerns, or empty."),
+          screen: text("The slug of the screen it concerns, or empty."),
+        }),
+        "Requirements, roles, workflows or end states the plan misses or handles badly. At most 8.",
+      ),
+      recommendations: list(
+        obj({
+          title: text("A short title."),
+          why: text("Why it matters, one sentence."),
+          basedOn: text("The brief line or profile fact it rests on. Required."),
+          mode: strEnum(["apply", "suggest"], "apply for an ordinary screen or component for this product; suggest for anything bigger."),
+          screen: text("The slug of the planned screen it changes, or empty."),
+          component: obj({
+            kind: strEnum([...PLAN_COMPONENT_KINDS, ""], "The component kind, or empty when no component is added."),
+            title: text("The component's heading, or empty."),
+            entity: text("The sample entity, or empty."),
+            note: text("What it shows or does, or empty."),
+          }),
+          newScreen: obj({
+            slug: text("A new screen's slug, or empty when no screen is added."),
+            title: text("The new screen's title, or empty."),
+            purpose: text("What a user does on it, or empty."),
+            role: text("Its main user type, or empty."),
+            components: list(componentSchema("One component on the new screen."), "The new screen's components, or empty."),
+            entities: list(text("A sample entity."), "The new screen's sample entities, or empty."),
+          }),
+        }),
+        "At most five improvements ranked by impact.",
+      ),
+    }),
+  );
+}
+
+export function screenBuildSchema(): NamedSchema {
+  return named(
+    "builder_prototype_screen",
+    obj({
+      html: text("The inner HTML of the screen's section only."),
+      css: text("Styles for this screen only, scoped by class, or empty."),
+      js: text("Plain script for this screen only, using root.querySelector, or empty."),
+    }),
+  );
+}
+
+export function auditSchema(): NamedSchema {
+  return named(
+    "builder_prototype_audit",
+    obj({
+      missing: list(obj({ id: text("The id of a requirement that is not visibly represented."), note: text("Where it should have been, one short phrase, or empty.") }), "Only the ids that are not represented on any screen; empty when all are."),
+    }),
+  );
 }

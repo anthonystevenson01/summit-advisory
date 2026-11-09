@@ -32,6 +32,7 @@ const RUN_BUDGET_MS = 285_000;
  * HTML, style, model or mode. Create or update is decided here from whether
  * a stored prototype exists. A press whose brief has not changed since the
  * last prototype answers "unchanged" without a model call or a run spent.
+ * Change requests have their own route beside this one (`./request`).
  */
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (brief.prototypeCount >= PROTOTYPE_RUNS_PER_BRIEF) {
-      return NextResponse.json({ error: PROTOTYPE.cap, cap: true, prototype: previousView }, { status: 429 });
+      return NextResponse.json({ error: PROTOTYPE.capPresses, cap: true, prototype: previousView }, { status: 429 });
     }
 
     if (!(await claimPrototypeLock(brief.id))) {
@@ -90,12 +91,19 @@ export async function POST(req: NextRequest) {
         state,
         source: (await getBriefSource(brief.id)) ?? "",
         deadlineAt: startedAt + RUN_BUDGET_MS,
+        mode: "press",
       });
+      if (result.declined) throw new PrototypeFailedError("invalid", "a press cannot be declined");
       void track("builder_prototype_run", {
         mode: result.mode,
         path: result.path,
         ok: true,
-        corrected: result.corrected,
+        corrected: result.retries > 0,
+        planned: result.planned,
+        reviewed: result.reviewed,
+        screens: result.screensBuilt.length,
+        retries: result.retries,
+        audited: result.audited,
         style: result.style.status,
         ms: Date.now() - startedAt,
       });

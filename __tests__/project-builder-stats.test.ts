@@ -49,8 +49,8 @@ function events(): EventRow[] {
   return out;
 }
 
-function call(key: string, cost: number | null, daysAgo = 2, ok = true): CallRow {
-  return { ts: at(daysAgo), key, model: "m", runId: null, promptTokens: 100, completionTokens: 10, cost, ok };
+function call(key: string, cost: number | null, daysAgo = 2, ok = true, extra: Partial<CallRow> = {}): CallRow {
+  return { ts: at(daysAgo), key, model: "m", runId: null, promptTokens: 100, completionTokens: 10, cost, ok, ...extra };
 }
 
 function calls(): CallRow[] {
@@ -177,5 +177,61 @@ describe("aggregateStats", () => {
       sourceNeutral: 5,
     });
     assert.ok(Object.values(t.prototypes).every((n) => n === 0));
+  });
+
+  test("the prototype pipeline rows: one per key with median and p95 ms, fix retries from tags, fallbacks, cost reported or from the price table", () => {
+    const rows: CallRow[] = [
+      call("builder-prototype-plan", 0.02, 2, true, { ms: 100, tag: "plan", model: "anthropic/x" }),
+      call("builder-prototype-plan", 0.03, 2, true, { ms: 300, tag: "gap", model: "anthropic/x" }),
+      call("builder-prototype-plan", null, 2, false, { ms: 1_000, tag: "diff", model: "anthropic/x", fallbackUsed: true }),
+      call("builder-prototype-build", 0.1, 2, true, { ms: 20_000, tag: "screen:dashboard", model: "openai/y" }),
+      call("builder-prototype-build", 0.1, 2, true, { ms: 25_000, tag: "screen:jobs", model: "openai/y" }),
+      call("builder-prototype-build", null, 2, true, { ms: 30_000, tag: "retry", model: "openai/y", fallbackUsed: true }),
+      call("builder-prototype-build", 0.1, 2, true, { ms: 40_000, tag: "screen:settings", model: "openai/y", costSource: "reported" }),
+      call("builder-prototype-audit", 0.001, 40, true, { ms: 5_000, tag: "audit" }),
+    ];
+    const prices = { "openai/y": { input: 10, output: 50 } };
+    const t2 = aggregateStats({ events: [], calls: rows, briefs: [], window, prices });
+    assert.deepEqual(t2.prototypeKeys.map((r) => r.key), ["builder-prototype-research", "builder-prototype-plan", "builder-prototype-review", "builder-prototype-build", "builder-prototype-audit"]);
+    const planRow = t2.prototypeKeys.find((r) => r.key === "builder-prototype-plan")!;
+    assert.equal(planRow.calls, 3);
+    assert.equal(planRow.failed, 1);
+    assert.equal(planRow.medianMs, 300);
+    assert.equal(planRow.p95Ms, 1_000);
+    assert.equal(planRow.fixRetries, 1);
+    assert.equal(planRow.fallbacks, 1);
+    assert.ok(Math.abs(planRow.cost - 0.05) < 1e-9);
+    assert.equal(planRow.costEstimated, false);
+    assert.equal(planRow.promptTokens, 300);
+    const buildRow = t2.prototypeKeys.find((r) => r.key === "builder-prototype-build")!;
+    assert.equal(buildRow.calls, 4);
+    assert.equal(buildRow.medianMs, 27_500);
+    assert.equal(buildRow.p95Ms, 40_000);
+    assert.equal(buildRow.fixRetries, 1);
+    assert.equal(buildRow.fallbacks, 1);
+    // Three reported at 0.1 plus one estimated: 100 prompt tokens at $10 per M and 10 completion tokens at $50 per M.
+    assert.ok(Math.abs(buildRow.cost - (0.3 + (100 * 10 + 10 * 50) / 1e6)) < 1e-9);
+    assert.equal(buildRow.costEstimated, true);
+    const research = t2.prototypeKeys.find((r) => r.key === "builder-prototype-research")!;
+    assert.deepEqual(research, { key: "builder-prototype-research", label: "Research", calls: 0, failed: 0, medianMs: null, p95Ms: null, promptTokens: 0, completionTokens: 0, cost: 0, costEstimated: false, fixRetries: 0, fallbacks: 0 });
+    assert.equal(t2.prototypeKeys.find((r) => r.key === "builder-prototype-audit")!.calls, 0);
+    // The price table also fills the per key model rows, so the unpriced build call is no longer incomplete.
+    const build = t2.models.find((m) => m.key === "builder-prototype-build")!;
+    assert.ok(Math.abs(build.cost - buildRow.cost) < 1e-9);
+    assert.equal(t2.costIncomplete, true);
+  });
+
+  test("the change requests row counts requests, declined ones and the median screens changed", () => {
+    const reqEvents: EventRow[] = [
+      ev("builder_prototype_request", { ok: true, declined: false, screens: 1 }),
+      ev("builder_prototype_request", { ok: true, declined: false, screens: 3 }),
+      ev("builder_prototype_request", { ok: true, declined: false, screens: 2 }),
+      ev("builder_prototype_request", { ok: true, declined: true, screens: 0 }),
+      ev("builder_prototype_request", { ok: false, reason: "time" }),
+      ev("builder_prototype_request", { ok: true, declined: false, screens: 5 }, 45),
+    ];
+    const t3 = aggregateStats({ events: reqEvents, calls: [], briefs: [], window });
+    assert.deepEqual(t3.changeRequests, { count: 5, declined: 1, medianScreens: 2 });
+    assert.deepEqual(t.changeRequests, { count: 0, declined: 0, medianScreens: null });
   });
 });

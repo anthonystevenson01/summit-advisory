@@ -103,7 +103,20 @@ export interface ToolEntry {
   buttonLabel: string;
 }
 
-export const ROUTING_TASKS = ["scoring", "details", "synthesis", "extraction", "builder-read", "builder-suggest", "builder-ideas", "builder-prototype"] as const;
+export const ROUTING_TASKS = [
+  "scoring",
+  "details",
+  "synthesis",
+  "extraction",
+  "builder-read",
+  "builder-suggest",
+  "builder-ideas",
+  "builder-prototype-research",
+  "builder-prototype-plan",
+  "builder-prototype-review",
+  "builder-prototype-build",
+  "builder-prototype-audit",
+] as const;
 
 const ICP: ToolEntry = {
   slug: "icp",

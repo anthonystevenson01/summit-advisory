@@ -12,15 +12,42 @@ type RouteConfig = {
   reasoning?: Reasoning;
   maxTokens?: number;
   fallback?: string;
+  enabled?: boolean;
 };
+
+type Provider = "anthropic" | "openai" | "google" | "moonshot" | "deepseek" | "zai" | "meta";
 
 type CatalogModel = {
   id: string;
+  provider: Provider;
+  name: string;
+  location: string;
+  reasoning: "optional" | "always" | "none";
+  pin: string[] | null;
   promptPrice: number;
   completionPrice: number;
   context: number;
   available: boolean;
 };
+
+const PROVIDER_LABELS: Record<Provider, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  google: "Google",
+  moonshot: "Moonshot",
+  deepseek: "DeepSeek",
+  zai: "Z.ai",
+  meta: "Meta",
+};
+const PROVIDER_ORDER: Provider[] = ["anthropic", "openai", "google", "moonshot", "deepseek", "zai", "meta"];
+
+/** The keys that may carry a fallback model (mirrors the route). */
+const FALLBACK_TASKS: string[] = ["synthesis", "builder-read", "builder-prototype-research", "builder-prototype-plan", "builder-prototype-review", "builder-prototype-build", "builder-prototype-audit"];
+const SWITCHABLE_TASK = "builder-prototype-audit";
+
+function maxTokensCeiling(task: string): number {
+  return task === "builder-prototype-build" ? 24000 : 16000;
+}
 
 type CalibrationEntry = {
   model: string;
@@ -164,13 +191,32 @@ export default function ModelsClient() {
 
   function save(key: string, cfg: RouteConfig, changes: Omit<Partial<RouteConfig>, "reasoning"> & { reasoning?: Reasoning | "" }) {
     const merged = { ...cfg, ...changes };
+    const entry = data?.catalog.find((c) => c.id === merged.model);
+    // A model with no reasoning takes no effort; the route would refuse one.
+    const reasoning = entry?.reasoning === "none" ? "" : (merged.reasoning ?? "");
     void patch({
       key,
       model: merged.model,
-      reasoning: merged.reasoning ?? "",
+      reasoning,
       maxTokens: merged.maxTokens ?? "",
       fallback: merged.fallback ?? "",
+      enabled: key === SWITCHABLE_TASK ? merged.enabled !== false : "",
     });
+  }
+
+  /** The model dropdown's options, grouped by provider with the data location beside each name. */
+  function modelOptions(catalog: CatalogModel[]) {
+    return PROVIDER_ORDER.filter((p) => catalog.some((c) => c.provider === p)).map((p) => (
+      <optgroup key={p} label={PROVIDER_LABELS[p]}>
+        {catalog
+          .filter((c) => c.provider === p)
+          .map((c) => (
+            <option key={c.id} value={c.id} disabled={!c.available}>
+              {c.name} ({c.location}){c.available ? "" : " (retired)"}
+            </option>
+          ))}
+      </optgroup>
+    ));
   }
 
   async function saveThreshold() {
@@ -249,35 +295,52 @@ export default function ModelsClient() {
             {!data.catalog.some((c) => c.id === cfg.model) && (
               <option value={cfg.model} disabled>{cfg.model} (retired)</option>
             )}
-            {data.catalog.map((c) => (
-              <option key={c.id} value={c.id} disabled={!c.available}>
-                {c.id}{c.available ? "" : " (retired)"}
-              </option>
-            ))}
+            {modelOptions(data.catalog)}
           </select>
           <div style={{ fontSize: 11, color: BRAND.mid, marginTop: 4 }}>
+            {cat?.id ?? cfg.model}
+            {cat?.pin ? ` (pinned to ${cat.pin.join(", ")})` : ""}
+          </div>
+          <div style={{ fontSize: 11, color: BRAND.mid, marginTop: 2 }}>
             {cat && (cat.promptPrice > 0 || cat.completionPrice > 0)
               ? `$${cat.promptPrice.toFixed(2)} in / $${cat.completionPrice.toFixed(2)} out per M`
               : "Price unavailable"}
           </div>
+          {task === SWITCHABLE_TASK && (
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, marginTop: 6, color: BRAND.dark }}>
+              <input
+                type="checkbox"
+                checked={cfg.enabled !== false}
+                disabled={busy}
+                onChange={(e) => save(key, cfg, { enabled: e.target.checked })}
+              />
+              Audit on
+            </label>
+          )}
         </td>
         <td style={td}>
-          <select
-            value={cfg.reasoning ?? ""}
-            disabled={busy}
-            onChange={(e) => save(key, cfg, { reasoning: e.target.value as Reasoning | "" })}
-            style={controlStyle}
-          >
-            {REASONING_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          {cat?.reasoning === "none" ? (
+            <span style={{ fontSize: 12, color: BRAND.mid }}>Not available</span>
+          ) : (
+            <select
+              value={cfg.reasoning ?? ""}
+              disabled={busy}
+              onChange={(e) => save(key, cfg, { reasoning: e.target.value as Reasoning | "" })}
+              style={controlStyle}
+            >
+              {REASONING_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "" && cat?.reasoning === "always" ? "Low (this model cannot turn reasoning off)" : o.label}
+                </option>
+              ))}
+            </select>
+          )}
         </td>
         <td style={td}>
           <input
             type="number"
             min={100}
-            max={task === "builder-prototype" ? 24000 : 16000}
+            max={maxTokensCeiling(task)}
             step={100}
             value={tokensValue}
             disabled={busy}
@@ -288,9 +351,12 @@ export default function ModelsClient() {
             }}
             style={{ ...controlStyle, width: 90 }}
           />
+          <div style={{ fontSize: 11, color: BRAND.mid, marginTop: 4, maxWidth: 160 }}>
+            Up to {maxTokensCeiling(task).toLocaleString()}. With reasoning on, the cap covers the reasoning plus the answer.
+          </div>
         </td>
         <td style={td}>
-          {task === "synthesis" || task === "builder-read" || task === "builder-prototype" ? (
+          {FALLBACK_TASKS.includes(task) ? (
             <select
               value={cfg.fallback ?? ""}
               disabled={busy}
@@ -298,9 +364,7 @@ export default function ModelsClient() {
               style={controlStyle}
             >
               <option value="">None</option>
-              {data.catalog.map((c) => (
-                <option key={c.id} value={c.id} disabled={!c.available}>{c.id}</option>
-              ))}
+              {modelOptions(data.catalog)}
             </select>
           ) : (
             <span style={{ fontSize: 12, color: BRAND.mid }}>Never</span>

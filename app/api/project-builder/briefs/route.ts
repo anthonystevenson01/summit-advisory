@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getBuilderSaveLimiter } from "@/app/lib/ratelimit";
-import { createBrief, updateBrief } from "@/app/lib/briefs";
+import { NextRequest, NextResponse, after } from "next/server";
+import { getBuilderSaveLimiter, reserveBuilderDailyCall } from "@/app/lib/ratelimit";
+import { claimResearchLock, createBrief, getBriefResearch, releaseResearchLock, saveBriefResearch, updateBrief } from "@/app/lib/briefs";
+import { resolvePrototypeWebsite } from "@/app/lib/project-builder/prototype";
+import { buildCompanyProfile } from "@/app/lib/project-builder/research-read";
 import { track } from "@/app/lib/events";
 import { hashEmail } from "@/app/lib/tools/unlock-token";
 import { createBriefPage, isNotionBriefsConfigured } from "@/app/lib/project-builder-notion";
@@ -11,7 +13,35 @@ import { adminUrlFor, briefLinks, emailContactOf, honeypotResponse, isHoneypotFi
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// 90 rather than 60 so the background company profile (up to 40 s) fits after the save's own work.
+export const maxDuration = 90;
+
+/** The background research after the first save runs under this much time. */
+const RESEARCH_BUDGET_MS = 40_000;
+
+/**
+ * Builds and stores the company profile once the response is sent, so the
+ * first Create finds it. Holds the research lock so a quick first press
+ * does not build it twice. Failure is logged only.
+ */
+async function buildAndSaveResearch(id: string, target: NonNullable<ReturnType<typeof resolvePrototypeWebsite>>): Promise<void> {
+  if (!(await claimResearchLock(id))) return;
+  try {
+    const existing = await getBriefResearch(id);
+    if (existing && existing.host === target.host) return;
+    // One daily builder call per brief for the background build, so it sits inside the cap like a press does.
+    if (!(await reserveBuilderDailyCall()).ok) {
+      console.error(`project-builder save: background research skipped for ${id}, daily cap reached`);
+      return;
+    }
+    const profile = await buildCompanyProfile(target, { deadlineAt: Date.now() + RESEARCH_BUDGET_MS, briefId: id });
+    await saveBriefResearch(id, profile);
+  } catch (err) {
+    console.error(`project-builder save: background research failed for ${id}`, err instanceof Error ? err.message.slice(0, 200) : err);
+  } finally {
+    await releaseResearchLock(id);
+  }
+}
 
 /**
  * The first save. Order: parse, honeypot, state, contact, limiter, the
@@ -19,7 +49,9 @@ export const maxDuration = 60;
  * value, never a throw, before the mail so its worst case cannot starve the
  * mail budget), then the save link email under the 1b budget rule. The
  * response carries the token the page uses for every later call; without
- * `UNLOCK_SECRET` the brief is still recorded and `token` is null.
+ * `UNLOCK_SECRET` the brief is still recorded and `token` is null. When a
+ * website is known, the company profile is built in the background after
+ * the response (`after`), so the first Create is faster.
  */
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
@@ -75,6 +107,9 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("project-builder save: email status write failed", err instanceof Error ? err.message : err);
     }
+
+    const target = resolvePrototypeWebsite(state, record.contact);
+    if (target) after(() => buildAndSaveResearch(record.id, target));
 
     return NextResponse.json({ ok: true, id: record.id, token: links?.token ?? null, savedAt: record.savedAt, emailed, notion });
   } catch (err) {

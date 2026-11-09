@@ -24,15 +24,25 @@ const DEFAULTS: Record<RoutingTask, RouteConfig> = {
   "builder-read": { model: "vendor/small", maxTokens: 6000, fallback: "vendor/medium" },
   "builder-suggest": { model: "vendor/small", maxTokens: 1500 },
   "builder-ideas": { model: "vendor/medium", reasoning: "low", maxTokens: 3000 },
-  "builder-prototype": { model: "vendor/small", maxTokens: 16000, fallback: "vendor/medium" },
+  "builder-prototype-research": { model: "vendor/small", maxTokens: 2000, fallback: "vendor/medium" },
+  "builder-prototype-plan": { model: "vendor/large", reasoning: "low", maxTokens: 4000, fallback: "vendor/medium" },
+  "builder-prototype-review": { model: "vendor/large", reasoning: "medium", maxTokens: 3000, fallback: "vendor/medium" },
+  "builder-prototype-build": { model: "vendor/other", maxTokens: 12000, fallback: "vendor/medium" },
+  "builder-prototype-audit": { model: "vendor/small", maxTokens: 1000, fallback: "vendor/small" },
 };
+
+const PROTOTYPE_KEYS = ["builder-prototype-research", "builder-prototype-plan", "builder-prototype-review", "builder-prototype-build", "builder-prototype-audit"];
 
 describe("parseRoutingKey", () => {
   test("accepts a task and a task:tool", () => {
     assert.deepEqual(parseRoutingKey("scoring"), { task: "scoring" });
     assert.deepEqual(parseRoutingKey("scoring:icp"), { task: "scoring", tool: "icp" });
     assert.deepEqual(parseRoutingKey("builder-read"), { task: "builder-read" });
-    assert.deepEqual(parseRoutingKey("builder-prototype"), { task: "builder-prototype" });
+    for (const key of PROTOTYPE_KEYS) assert.deepEqual(parseRoutingKey(key), { task: key });
+  });
+
+  test("the old builder-prototype key no longer parses, so a stale override under it is ignored", () => {
+    assert.equal(parseRoutingKey("builder-prototype"), null);
   });
 
   test("rejects an unknown tool and an unknown task", () => {
@@ -79,6 +89,12 @@ describe("resolveRoute", () => {
     assert.equal(r.source, "default");
   });
 
+  test("an override keeps the audit switch; the default has none", () => {
+    const off = resolveRoute("builder-prototype-audit", { "builder-prototype-audit": { model: "vendor/small", enabled: false } }, DEFAULTS);
+    assert.equal(off.enabled, false);
+    assert.equal(resolveRoute("builder-prototype-audit", {}, DEFAULTS).enabled, undefined);
+  });
+
   test("throws on an unknown key", () => {
     assert.throws(() => resolveRoute("banana", {}, DEFAULTS));
   });
@@ -105,8 +121,8 @@ describe("isCalibrationGated", () => {
     assert.equal(isCalibrationGated("banana"), false);
   });
 
-  test("the four builder keys are not gated", () => {
-    assert.equal(isCalibrationGated("builder-prototype"), false);
+  test("the builder keys, including the five prototype stages, are not gated", () => {
+    for (const key of PROTOTYPE_KEYS) assert.equal(isCalibrationGated(key), false, key);
     assert.equal(isCalibrationGated("builder-read"), false);
     assert.equal(isCalibrationGated("builder-suggest"), false);
     assert.equal(isCalibrationGated("builder-ideas"), false);

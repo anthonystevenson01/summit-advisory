@@ -40,6 +40,7 @@ import {
   type LogoTheme,
 } from "./house-style.ts";
 import type { PrototypeWebsite } from "./prototype.ts";
+import type { ResearchPage } from "./research.ts";
 
 const CRAWL_BUDGET_MS = 14_000;
 const ASSET_BUDGET_MS = 6_000;
@@ -96,6 +97,8 @@ export interface SiteRead {
   /** The raw parts, or null when no page could be read. */
   parts: HouseStyleParts | null;
   reason: "unreadable" | "nothing-usable";
+  /** The visible text of every page the crawl read, so the research stage reads the same pages without a second crawl. */
+  pageTexts: ResearchPage[];
 }
 
 /** The site read alone: today's crawl, returning the raw parts or why there are none. A blocked site is simply unreadable. */
@@ -108,7 +111,8 @@ export async function readSiteParts(target: PrototypeWebsite, opts: { deadlineAt
     const robots = await fetchRobots(origin, userAgent);
     const store = await crawlSite(target.url, { deadlineAt: crawlDeadline, userAgent, maxPages: PAGE_CAP, keepHtml: true, robots });
     const pages = store.pages.filter((p) => typeof p.html === "string" && p.html.length > 0);
-    if (pages.length === 0) return { parts: null, reason: "unreadable" };
+    const pageTexts: ResearchPage[] = store.pages.map((p) => ({ url: p.url, title: p.title, text: p.text }));
+    if (pages.length === 0) return { parts: null, reason: "unreadable", pageTexts };
     const start = pages[0];
     const html = start.html as string;
 
@@ -139,10 +143,11 @@ export async function readSiteParts(target: PrototypeWebsite, opts: { deadlineAt
         logo,
       },
       reason: "nothing-usable",
+      pageTexts,
     };
   } catch (err) {
     console.error("project-builder house style: read failed", err instanceof Error ? err.message.slice(0, 200) : err);
-    return { parts: null, reason: "unreadable" };
+    return { parts: null, reason: "unreadable", pageTexts: [] };
   }
 }
 
@@ -168,19 +173,29 @@ async function readBrandLogo(data: BrandData, deadlineAt: number): Promise<{ log
   return null;
 }
 
+/** The style plus what the read saw on the way, so the research stage can reuse the crawl and the brand record. */
+export interface HouseStyleRead {
+  style: HouseStyle;
+  pageTexts: ResearchPage[];
+  /** The Brandfetch record when a lookup ran and found one; null otherwise (the research stage looks it up from the cache itself). */
+  brand: BrandData | null;
+}
+
 /**
  * The house style for the target: the site first, then Brandfetch to fill a
  * missing logo or missing colours (fonts fill an empty role when a lookup
- * runs anyway), then neutral. Never throws.
+ * runs anyway), then neutral. Never throws. Returns the page texts and the
+ * brand record alongside so a first press crawls once.
  */
-export async function readHouseStyle(target: PrototypeWebsite | null, opts: { deadlineAt: number }): Promise<HouseStyle> {
-  if (!target) return neutralStyle("no-website");
+export async function readHouseStyleWithParts(target: PrototypeWebsite | null, opts: { deadlineAt: number }): Promise<HouseStyleRead> {
+  if (!target) return { style: neutralStyle("no-website"), pageTexts: [], brand: null };
   const site = await readSiteParts(target, opts);
+  const pageTexts = site.pageTexts;
   const meta = { host: target.host, reason: site.reason };
-  if (!needsBrandLookup(site.parts)) return mergeHouseStyle(site.parts, null, { ...meta, brandLookup: "not-needed" });
+  if (!needsBrandLookup(site.parts)) return { style: mergeHouseStyle(site.parts, null, { ...meta, brandLookup: "not-needed" }), pageTexts, brand: null };
   try {
     const lookup = await lookupBrand(target.host, { deadlineAt: Math.min(opts.deadlineAt, Date.now() + BRAND_API_BUDGET_MS) });
-    if (!lookup.data) return mergeHouseStyle(site.parts, null, { ...meta, brandLookup: lookup.outcome });
+    if (!lookup.data) return { style: mergeHouseStyle(site.parts, null, { ...meta, brandLookup: lookup.outcome }), pageTexts, brand: null };
     const fonts = brandFonts(lookup.data);
     const logo = site.parts?.logo ? null : await readBrandLogo(lookup.data, Math.min(opts.deadlineAt, Date.now() + BRAND_LOGO_BUDGET_MS));
     const brand: BrandParts = {
@@ -191,9 +206,14 @@ export async function readHouseStyle(target: PrototypeWebsite | null, opts: { de
       bodyFamily: fonts.bodyFamily,
       darkSurface: darkSurface(lookup.data),
     };
-    return mergeHouseStyle(site.parts, brand, { ...meta, brandLookup: lookup.outcome });
+    return { style: mergeHouseStyle(site.parts, brand, { ...meta, brandLookup: lookup.outcome }), pageTexts, brand: lookup.data };
   } catch (err) {
     console.error("project-builder house style: brand top up failed", err instanceof Error ? err.message.slice(0, 200) : err);
-    return mergeHouseStyle(site.parts, null, { ...meta, brandLookup: "error" });
+    return { style: mergeHouseStyle(site.parts, null, { ...meta, brandLookup: "error" }), pageTexts, brand: null };
   }
+}
+
+/** The style alone, for callers that do not need the pages. */
+export async function readHouseStyle(target: PrototypeWebsite | null, opts: { deadlineAt: number }): Promise<HouseStyle> {
+  return (await readHouseStyleWithParts(target, opts)).style;
 }

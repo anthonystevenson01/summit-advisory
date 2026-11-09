@@ -17,7 +17,7 @@ export interface EventRow {
   props: Record<string, unknown>;
 }
 
-/** The `AiCallLog` shape as a structural type, so this module never imports llm.ts. */
+/** The `AiCallLog` shape as a structural type, so this module never imports llm.ts. The last five fields are absent on older rows. */
 export interface CallRow {
   ts: string;
   key: string;
@@ -27,6 +27,48 @@ export interface CallRow {
   completionTokens: number;
   cost: number | null;
   ok: boolean;
+  ms?: number;
+  reasoningFallback?: boolean;
+  fallbackUsed?: boolean;
+  costSource?: "reported" | "estimated" | null;
+  tag?: string;
+}
+
+/** USD per million tokens by model id, the price table from llm.ts passed in so this module stays pure. */
+export type PriceTable = Record<string, { input: number; output: number }>;
+
+/** The five staged prototype keys, in stage order. */
+export const PROTOTYPE_KEYS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: "builder-prototype-research", label: "Research" },
+  { key: "builder-prototype-plan", label: "Plan" },
+  { key: "builder-prototype-review", label: "Senior review" },
+  { key: "builder-prototype-build", label: "Build a screen" },
+  { key: "builder-prototype-audit", label: "Audit" },
+];
+
+/** One row of the Prototype pipeline table: a routing key over the window. */
+export interface PrototypeKeyRow {
+  key: string;
+  label: string;
+  calls: number;
+  failed: number;
+  medianMs: number | null;
+  p95Ms: number | null;
+  promptTokens: number;
+  completionTokens: number;
+  cost: number;
+  /** True when any row's cost came from the price table rather than OpenRouter. */
+  costEstimated: boolean;
+  /** Rows tagged retry or gap: the corrective rounds. */
+  fixRetries: number;
+  /** Rows answered by the fallback model. */
+  fallbacks: number;
+}
+
+export interface ChangeRequestStats {
+  count: number;
+  declined: number;
+  medianScreens: number | null;
 }
 
 export interface BriefSummaryRow {
@@ -109,6 +151,8 @@ export interface StatsTables {
   reads: { uses: number; fallbacks: number };
   ideasRuns: { uses: number; fallbacks: number };
   prototypes: PrototypeStats;
+  prototypeKeys: PrototypeKeyRow[];
+  changeRequests: ChangeRequestStats;
   models: ModelRow[];
   modelsTotal: ModelRow;
   costIncomplete: boolean;
@@ -122,6 +166,8 @@ export interface StatsInput {
   calls: CallRow[];
   briefs: BriefSummaryRow[];
   window: StatsWindow;
+  /** Fills the cost of a call OpenRouter did not price; absent means such calls count as zero. */
+  prices?: PriceTable;
 }
 
 function inWindow(ts: string, w: StatsWindow): boolean {
@@ -139,6 +185,49 @@ function median(values: number[]): number | null {
   const sorted = values.slice().sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/** The nearest rank 95th percentile: the value at ceil(0.95 n). */
+function p95(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = values.slice().sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(0.95 * sorted.length) - 1))];
+}
+
+/** A call's cost: what OpenRouter reported, else the price table applied to the tokens, else null. */
+function callCost(c: CallRow, prices: PriceTable | undefined): { cost: number | null; estimated: boolean } {
+  if (typeof c.cost === "number" && Number.isFinite(c.cost)) return { cost: c.cost, estimated: c.costSource === "estimated" };
+  const price = prices?.[c.model];
+  if (!price) return { cost: null, estimated: false };
+  return { cost: ((Number(c.promptTokens) || 0) * price.input + (Number(c.completionTokens) || 0) * price.output) / 1e6, estimated: true };
+}
+
+function prototypeKeyRows(calls: CallRow[], prices: PriceTable | undefined): PrototypeKeyRow[] {
+  return PROTOTYPE_KEYS.map(({ key, label }) => {
+    const rows = calls.filter((c) => c.key === key);
+    const times = rows.map((c) => Number(c.ms)).filter((n) => Number.isFinite(n) && n >= 0);
+    let cost = 0;
+    let costEstimated = false;
+    for (const c of rows) {
+      const priced = callCost(c, prices);
+      if (priced.cost !== null) cost += priced.cost;
+      if (priced.estimated) costEstimated = true;
+    }
+    return {
+      key,
+      label,
+      calls: rows.length,
+      failed: rows.filter((c) => !c.ok).length,
+      medianMs: median(times),
+      p95Ms: p95(times),
+      promptTokens: rows.reduce((t, c) => t + (Number(c.promptTokens) || 0), 0),
+      completionTokens: rows.reduce((t, c) => t + (Number(c.completionTokens) || 0), 0),
+      cost,
+      costEstimated,
+      fixRetries: rows.filter((c) => c.tag === "retry" || c.tag === "gap").length,
+      fallbacks: rows.filter((c) => c.fallbackUsed === true).length,
+    };
+  });
 }
 
 export function aggregateStats(input: StatsInput): StatsTables {
@@ -210,10 +299,20 @@ export function aggregateStats(input: StatsInput): StatsTables {
     if (!c.ok) row.failed += 1;
     row.promptTokens += Number(c.promptTokens) || 0;
     row.completionTokens += Number(c.completionTokens) || 0;
-    if (typeof c.cost === "number" && Number.isFinite(c.cost)) row.cost += c.cost;
+    const priced = callCost(c, input.prices);
+    if (priced.cost !== null) row.cost += priced.cost;
     else costIncomplete = true;
     byKey.set(c.key, row);
   }
+  const prototypeKeys = prototypeKeyRows(calls, input.prices);
+
+  const requestEvents = events.filter((e) => e.name === "builder_prototype_request");
+  const screenCounts = requestEvents.filter((e) => e.props.ok === true && e.props.declined !== true).map((e) => Number(e.props.screens)).filter((n) => Number.isFinite(n));
+  const changeRequests: ChangeRequestStats = {
+    count: requestEvents.length,
+    declined: requestEvents.filter((e) => e.props.declined === true).length,
+    medianScreens: median(screenCounts),
+  };
   const models = [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key));
   const modelsTotal: ModelRow = models.reduce(
     (t, r) => ({ key: "total", calls: t.calls + r.calls, failed: t.failed + r.failed, promptTokens: t.promptTokens + r.promptTokens, completionTokens: t.completionTokens + r.completionTokens, cost: t.cost + r.cost }),
@@ -241,6 +340,8 @@ export function aggregateStats(input: StatsInput): StatsTables {
     reads,
     ideasRuns,
     prototypes,
+    prototypeKeys,
+    changeRequests,
     models,
     modelsTotal,
     costIncomplete,

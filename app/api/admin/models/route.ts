@@ -6,6 +6,7 @@ import {
   AI_CALLS_KEY,
   CALIBRATION_KEY,
   CURATED_MODELS,
+  CURATED_MODEL_IDS,
   DEFAULT_ROUTES,
   MODEL_CONFIG_KEY,
   TASK_DESCRIPTIONS,
@@ -18,6 +19,7 @@ import {
   markUncalibrated,
   parseRoutingKey,
   type AiCallLog,
+  type CuratedModel,
   type RouteConfig,
 } from "@/app/lib/llm";
 
@@ -30,6 +32,11 @@ const USAGE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type CatalogModel = {
   id: string;
+  provider: CuratedModel["provider"];
+  name: string;
+  location: string;
+  reasoning: CuratedModel["reasoning"];
+  pin: string[] | null;
   promptPrice: number;
   completionPrice: number;
   context: number;
@@ -37,23 +44,40 @@ export type CatalogModel = {
   available: boolean;
 };
 
+/** The max tokens ceiling per key: a screen build may need the most. (Not exported: a route file may only export handlers.) */
+function maxTokensCeiling(task: string): number {
+  return task === "builder-prototype-build" ? 24000 : 16000;
+}
+
+/** The keys that may carry a fallback model. */
+const FALLBACK_TASKS: readonly string[] = ["synthesis", "builder-read", "builder-prototype-research", "builder-prototype-plan", "builder-prototype-review", "builder-prototype-build", "builder-prototype-audit"];
+
+/** The one key with an on or off switch. */
+const SWITCHABLE_TASK = "builder-prototype-audit";
+
 /** The curated list enriched from OpenRouter, cached in Redis for 10 minutes. */
 async function getCatalog(): Promise<CatalogModel[]> {
   const redis = getRedis();
   try {
     const cached = await redis.get<CatalogModel[] | string>(CATALOG_KEY);
     const parsed = typeof cached === "string" ? (JSON.parse(cached) as CatalogModel[]) : cached;
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    // A cache written before the curated metadata existed, or for a different list, is rebuilt.
+    if (Array.isArray(parsed) && parsed.length === CURATED_MODELS.length && parsed.every((c) => typeof c.provider === "string" && CURATED_MODEL_IDS.includes(c.id))) return parsed;
   } catch {
     // fall through to a live fetch
   }
 
   const byId = await fetchOpenRouterCatalog();
 
-  const catalog: CatalogModel[] = CURATED_MODELS.map((id) => {
-    const m = byId.get(id);
+  const catalog: CatalogModel[] = CURATED_MODELS.map((entry) => {
+    const m = byId.get(entry.id);
     return {
-      id,
+      id: entry.id,
+      provider: entry.provider,
+      name: entry.name,
+      location: entry.location,
+      reasoning: entry.reasoning,
+      pin: entry.pin,
       promptPrice: Number(m?.pricing?.prompt ?? 0) * 1e6,
       completionPrice: Number(m?.pricing?.completion ?? 0) * 1e6,
       context: m?.context_length ?? 0,
@@ -147,6 +171,7 @@ type PatchBody = {
   reasoning?: unknown;
   maxTokens?: unknown;
   fallback?: unknown;
+  enabled?: unknown;
   reset?: unknown;
 };
 
@@ -179,22 +204,26 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ config, calibration });
     }
 
-    if (typeof body.model !== "string" || !CURATED_MODELS.includes(body.model)) {
+    if (typeof body.model !== "string" || !CURATED_MODEL_IDS.includes(body.model)) {
       return NextResponse.json({ error: "Model is not in the curated list." }, { status: 400 });
     }
     const override: RouteConfig = { model: body.model };
+    const entry = CURATED_MODELS.find((m) => m.id === body.model);
 
     if (body.reasoning !== undefined && body.reasoning !== null && body.reasoning !== "") {
       if (body.reasoning !== "low" && body.reasoning !== "medium" && body.reasoning !== "high") {
         return NextResponse.json({ error: "Reasoning must be low, medium or high." }, { status: 400 });
+      }
+      if (entry?.reasoning === "none") {
+        return NextResponse.json({ error: "That model has no reasoning to set." }, { status: 400 });
       }
       override.reasoning = body.reasoning;
     }
 
     if (body.maxTokens !== undefined && body.maxTokens !== null && body.maxTokens !== "") {
       const n = Number(body.maxTokens);
-      // The prototype's default is 24,000 (a 70,000 character document plus reasoning); every other key keeps 16,000.
-      const ceiling = parsed.task === "builder-prototype" ? 24000 : 16000;
+      // A screen build may return 12,000 tokens of html plus reasoning; every other key keeps 16,000.
+      const ceiling = maxTokensCeiling(parsed.task);
       if (!Number.isInteger(n) || n < 100 || n > ceiling) {
         return NextResponse.json({ error: `Max tokens must be an integer from 100 to ${ceiling}.` }, { status: 400 });
       }
@@ -202,13 +231,23 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (body.fallback !== undefined && body.fallback !== null && body.fallback !== "") {
-      if (parsed.task !== "synthesis" && parsed.task !== "builder-read" && parsed.task !== "builder-prototype") {
-        return NextResponse.json({ error: "Only synthesis, builder-read and builder-prototype may have a fallback." }, { status: 400 });
+      if (!FALLBACK_TASKS.includes(parsed.task)) {
+        return NextResponse.json({ error: "Only synthesis, builder-read and the five prototype keys may have a fallback." }, { status: 400 });
       }
-      if (typeof body.fallback !== "string" || !CURATED_MODELS.includes(body.fallback)) {
+      if (typeof body.fallback !== "string" || !CURATED_MODEL_IDS.includes(body.fallback)) {
         return NextResponse.json({ error: "Fallback is not in the curated list." }, { status: 400 });
       }
       override.fallback = body.fallback;
+    }
+
+    if (body.enabled !== undefined && body.enabled !== null && body.enabled !== "") {
+      if (parsed.task !== SWITCHABLE_TASK) {
+        return NextResponse.json({ error: "Only the audit key can be switched off." }, { status: 400 });
+      }
+      if (body.enabled !== true && body.enabled !== false) {
+        return NextResponse.json({ error: "Enabled must be true or false." }, { status: 400 });
+      }
+      if (body.enabled === false) override.enabled = false;
     }
 
     await redis.hset(MODEL_CONFIG_KEY, { [key]: JSON.stringify(override) });

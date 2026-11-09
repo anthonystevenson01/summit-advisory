@@ -42,6 +42,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         ideasCount: brief.ideasCount,
         readCount: brief.readCount,
         prototypeCount: brief.prototypeCount,
+        requestCount: brief.requestCount,
         prototype: prototype ? prototypeView(prototype, style) : null,
         styleStatus: style?.status ?? null,
         freeMail: isFreeMailAddress(email),
