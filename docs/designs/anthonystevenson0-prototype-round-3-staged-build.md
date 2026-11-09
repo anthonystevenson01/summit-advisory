@@ -281,7 +281,7 @@ Time budget, route deadline 285 s (unchanged `maxDuration = 300`):
 | Research | 30 s | profile missing or host changed | empty profile |
 | Plan (full or diff) | 30 s | always | fail `time` if under 100 s remain before it starts |
 | Gap round | 30 s | gaps and at least 130 s remain | accept the plan with gaps, log them |
-| Review | 30 s | full plan and at least 130 s remain | plan used as it stands |
+| Review | 60 s (30 s at design time; raised after the smoke test) | full plan and at least 160 s remain | plan used as it stands |
 | Build (parallel) | 90 s | always; needs at least 60 s remain | fail `time` |
 | Screen retry | 90 s | a failed screen and at least 60 s remain | previous screen or fail `invalid` |
 | Audit | 30 s | enabled and at least 35 s remain | `audit: null` |

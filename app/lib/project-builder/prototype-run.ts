@@ -13,7 +13,7 @@
  * prototype so the stored plan always describes the stored document.
  *
  * Budget inside the route's 285 s: style 30 s, research 30 s, plan 30 s
- * (needs 100 s left), gap round 30 s (needs 130 s), review 30 s (needs 130
+ * (needs 100 s left), gap round 30 s (needs 130 s), review 60 s (needs 160
  * s), build 90 s per screen in parallel (needs 60 s), one retry 90 s (needs
  * 60 s), audit 30 s (needs 35 s). Each call's timeout is the smaller of its
  * cap and the time left less the headroom. One daily builder call is
@@ -144,6 +144,9 @@ const RESEARCH_POLL_MS = 1_000;
 // per screen check, the retry and the assembly all follow the build calls.
 const SHORT_CALL_CAP_MS = 30_000;
 const SHORT_CALL_HEADROOM_MS = 5_000;
+// The review runs a larger model with reasoning on; Opus 5.5 at medium
+// timed out at 30 s on the 9 November 2026 smoke test, so it gets 60 s.
+const REVIEW_CALL_CAP_MS = 60_000;
 const SCREEN_CALL_CAP_MS = 90_000;
 const SCREEN_CALL_HEADROOM_MS = 20_000;
 // The least time each stage needs left on the route budget to start: a
@@ -151,7 +154,7 @@ const SCREEN_CALL_HEADROOM_MS = 20_000;
 // review, audit) or fails the press with reason `time` (plan, build).
 const PLAN_MIN_MS = 100_000;
 const GAP_MIN_MS = 130_000;
-const REVIEW_MIN_MS = 130_000;
+const REVIEW_MIN_MS = 160_000;
 const BUILD_MIN_MS = 60_000;
 const RETRY_MIN_MS = 60_000;
 const AUDIT_MIN_MS = 35_000;
@@ -340,7 +343,7 @@ export async function runPrototype(input: RunPrototypeInput): Promise<RunPrototy
     if (remaining() >= REVIEW_MIN_MS) {
       try {
         const result = await call("review", PROTOTYPE_ROUTING_KEYS.review, reviewPrompt({ plan, state, items, profile: profileForPrompts, turnedDown, ctx }), reviewSchema(), (raw) => parseReviewAnswer(raw, plan, items, { model: "" }), {
-          capMs: SHORT_CALL_CAP_MS,
+          capMs: REVIEW_CALL_CAP_MS,
           headroomMs: SHORT_CALL_HEADROOM_MS,
           temperature: REVIEW_TEMPERATURE,
           tag: "review",
