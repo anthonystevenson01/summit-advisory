@@ -4,7 +4,9 @@ import { useState } from "react";
 import { BRAND } from "@/app/lib/brand";
 import { HANDOVER, PATHS, PRIORITIES, PRIORITY_LABELS, RUN_OPTIONS, SOURCE_LABELS, STEPS } from "@/app/lib/project-builder/catalogue";
 import { statusLabel, type BriefState, type BriefStatus } from "@/app/lib/project-builder/brief";
-import { DONE, SAVE } from "@/app/lib/project-builder/copy";
+import { DONE, PROTOTYPE, SAVE } from "@/app/lib/project-builder/copy";
+import type { PrototypeView } from "@/app/lib/project-builder/prototype";
+import PrototypeViewer from "./PrototypeViewer";
 import { buildRequirements, countByPriority, otherIntegrations, projectName } from "@/app/lib/project-builder/requirements";
 import { CONDENSED, SANS, btn, btnDisabled, ghost, h3, label, status, textarea } from "./builder-styles";
 
@@ -15,6 +17,8 @@ export interface ReadOnlyViewProps {
   onChangeRequest: (message: string) => Promise<void>;
   changeNote: string;
   onReset: () => void;
+  /** The saved prototype, shown full width above the change request form. */
+  prototype?: PrototypeView | null;
 }
 
 function formatDate(iso: string | null): string {
@@ -35,10 +39,11 @@ function Row({ k, v }: { k: string; v: string }) {
 
 /**
  * The submitted view: the status, every answer by step, the requirements by
- * priority with their source, the ideas added and passed on, the change
- * request form and "Start a new brief". The answers, never a report.
+ * priority with their source, the ideas added and passed on, the saved
+ * prototype when there is one, the change request form and "Start a new
+ * brief". The answers, never a report.
  */
-export default function ReadOnlyView({ state, status: briefStatus, submittedAt, onChangeRequest, changeNote, onReset }: ReadOnlyViewProps) {
+export default function ReadOnlyView({ state, status: briefStatus, submittedAt, onChangeRequest, changeNote, onReset, prototype = null }: ReadOnlyViewProps) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -126,6 +131,13 @@ export default function ReadOnlyView({ state, status: briefStatus, submittedAt, 
         <Row k="Added" v={added.map((i) => `${i.title} (${PRIORITY_LABELS[state.ideaPick[i.id] as keyof typeof PRIORITY_LABELS]})`).join("; ") || "None"} />
         <Row k="Passed on" v={passed.map((i) => i.title).join("; ") || "None"} />
       </dl>
+
+      {prototype && (
+        <section id="pb-prototype" aria-label={PROTOTYPE.readOnlyTitle}>
+          <h3 style={h3}>{PROTOTYPE.readOnlyTitle}</h3>
+          <PrototypeViewer html={prototype.html} height="min(80vh, 760px)" />
+        </section>
+      )}
 
       <h3 style={h3}>{DONE.changeTitle}</h3>
       <p style={{ margin: "0 0 12px", color: BRAND.teal, fontSize: 15 }}>{DONE.changeLede}</p>

@@ -120,6 +120,25 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         rows={[...t.helpers.map((r) => [r.step, r.uses, r.fallbacks]), ["document reads", t.reads.uses, t.reads.fallbacks], ["ideas runs", t.ideasRuns.uses, t.ideasRuns.fallbacks]]}
       />
 
+      <h2 style={h2}>Prototypes</h2>
+      <Table
+        head={["Created", "Updated", "Failed", "Corrected", "Style found", "Style partial", "Style none"]}
+        rows={[[t.prototypes.created, t.prototypes.updated, t.prototypes.failed, t.prototypes.corrected, t.prototypes.styleFound, t.prototypes.stylePartial, t.prototypes.styleNone]]}
+      />
+      <Table
+        head={["Style from", "Count"]}
+        rows={[
+          ["Website", t.prototypes.sourceSite],
+          ["Brandfetch", t.prototypes.sourceBrand],
+          ["Website and Brandfetch", t.prototypes.sourceSiteBrand],
+          ["Plain style", t.prototypes.sourceNeutral],
+        ]}
+      />
+      <Table
+        head={["Brandfetch", "Live lookups", "Brand found", "From cache", "Not found", "Errors", "Daily cap reached"]}
+        rows={[["Lookups", t.prototypes.brandLookups, t.prototypes.brandHits, t.prototypes.brandCached, t.prototypes.brandMisses, t.prototypes.brandErrors, t.prototypes.brandCapped]]}
+      />
+
       <h2 style={h2}>Model calls per routing key</h2>
       <Table
         head={["Key", "Calls", "Failed", "Prompt tokens", "Completion tokens", "Spend"]}

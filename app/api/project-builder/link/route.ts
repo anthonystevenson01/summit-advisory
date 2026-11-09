@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         resumeUrl: links.resumeUrl,
         deleteUrl: links.deleteUrl,
         locked: brief.status !== "draft",
+        prototype: brief.prototypeAt ? { updatedAt: brief.prototypeAt, url: links.prototypeUrl } : null,
       });
       await sendBudgeted({ to: brief.contact.email || email, email: rendered, startedAt, context: "project-builder link", hashPrefix });
     }

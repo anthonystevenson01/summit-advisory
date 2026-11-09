@@ -121,6 +121,11 @@ export function getBuilderIdeasLimiter() {
   return builderLimiter(6, "1 h", "rl:builder-ideas");
 }
 
+// 6 prototype presses per IP per hour (each can be up to three long calls)
+export function getBuilderPrototypeLimiter() {
+  return builderLimiter(6, "1 h", "rl:builder-prototype");
+}
+
 // 20 saves per IP per hour, shared by create, autosave, submit and change
 export function getBuilderSaveLimiter() {
   return builderLimiter(20, "1 h", "rl:builder-save");
@@ -160,6 +165,39 @@ export async function reserveBuilderDailyCall(): Promise<{ ok: boolean; count: n
   const count = await redis.incr(key);
   if (count === 1) await redis.expire(key, 172_800);
   return { ok: count <= BUILDER_DAILY_CAP, count };
+}
+
+// ── Brandfetch ──────────────────────────────────────────────────────────────
+
+export const BRANDFETCH_DAILY_CAP_DEFAULT = 200;
+
+/** BRANDFETCH_DAILY_CAP as a whole number; unset or not a number is 200; 0 turns live lookups off. */
+export function brandfetchDailyCap(raw = process.env.BRANDFETCH_DAILY_CAP): number {
+  const text = (raw ?? "").trim();
+  if (!/^\d+$/.test(text)) return BRANDFETCH_DAILY_CAP_DEFAULT;
+  return Number.parseInt(text, 10);
+}
+
+/** The site wide day key for live Brandfetch lookups. */
+export function brandfetchDailyKey(now = new Date()): string {
+  return `brandfetch:calls:${now.toISOString().slice(0, 10)}`;
+}
+
+/**
+ * Reserves one of the day's live Brandfetch lookups, the same rule as the
+ * builder cap: INCR the UTC day key, EXPIRE 48 h on the first increment,
+ * spent even when the call then fails. A cap of 0 refuses every lookup;
+ * without Redis every lookup is allowed. Cached domains never get here.
+ */
+export async function reserveBrandfetchDailyCall(): Promise<{ ok: boolean; count: number }> {
+  const cap = brandfetchDailyCap();
+  if (cap === 0) return { ok: false, count: 0 };
+  const redis = getRedisForRateLimit();
+  if (!redis) return { ok: true, count: 0 };
+  const key = brandfetchDailyKey();
+  const count = await redis.incr(key);
+  if (count === 1) await redis.expire(key, 172_800);
+  return { ok: count <= cap, count };
 }
 
 export function getClientIp(req: Request): string {

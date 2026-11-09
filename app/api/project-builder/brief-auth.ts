@@ -18,6 +18,7 @@ import { getUnlockSecret, issueBriefDeleteToken, issueBriefLinkToken, verifyBrie
 import { BRIEF_ID_PATTERN, isLocked } from "@/app/lib/project-builder/brief";
 import type { BriefEmail, EmailContact } from "@/app/lib/project-builder/emails";
 import { PROJECT_BUILDER_PATH } from "@/app/lib/project-builder/copy";
+import { PROTOTYPE_VIEW_PARAM, PROTOTYPE_VIEW_VALUE } from "@/app/lib/project-builder/prototype";
 import { BRIEF_LOCKED_MESSAGE, RATE_LIMIT_MESSAGE } from "./errors";
 
 export type Body = Record<string, unknown>;
@@ -80,10 +81,17 @@ export function adminUrlFor(origin: string, id: string): string {
   return `${origin}/admin/briefs/${encodeURIComponent(id)}`;
 }
 
+/** The admin full screen view of a brief's prototype. */
+export function adminPrototypeUrlFor(origin: string, id: string): string {
+  return `${adminUrlFor(origin, id)}/prototype`;
+}
+
 export interface BriefLinks {
   token: string;
   resumeUrl: string;
   deleteUrl: string;
+  /** The resume link with the prototype tab named in it. */
+  prototypeUrl: string;
 }
 
 /** A fresh link token and the delete token, or null when the secret is unset. */
@@ -91,9 +99,11 @@ export function briefLinks(origin: string, id: string, emailHash: string): Brief
   const token = issueBriefLinkToken(id);
   const deleteToken = issueBriefDeleteToken(emailHash);
   if (!token || !deleteToken) return null;
+  const resumeUrl = `${origin}${PROJECT_BUILDER_PATH}?b=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`;
   return {
     token,
-    resumeUrl: `${origin}${PROJECT_BUILDER_PATH}?b=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`,
+    resumeUrl,
+    prototypeUrl: `${resumeUrl}&${PROTOTYPE_VIEW_PARAM}=${PROTOTYPE_VIEW_VALUE}`,
     deleteUrl: `${origin}/api/project-builder/delete?e=${encodeURIComponent(emailHash)}&t=${encodeURIComponent(deleteToken)}`,
   };
 }

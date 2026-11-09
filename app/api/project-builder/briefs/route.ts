@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const state = parseBriefState(body.state);
-    const validated = validateContact(body.contact);
+    const validated = validateContact(body.contact, "save");
     if (!validated.ok) return NextResponse.json({ error: validated.error }, { status: 400 });
     const source = typeof body.source === "string" ? body.source.slice(0, SOURCE_MAX_CHARS) : "";
     const sourceTag = normaliseSourceTag(body.src);
@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
     const links = briefLinks(origin, record.id, emailHash);
     let emailed = false;
     if (links) {
-      const email = renderSaveLinkEmail({ state, contact: emailContactOf(record), resumeUrl: links.resumeUrl, deleteUrl: links.deleteUrl });
+      // A brand new brief has no prototype yet; the email says so and reports progress.
+      const email = renderSaveLinkEmail({ state, contact: emailContactOf(record), resumeUrl: links.resumeUrl, deleteUrl: links.deleteUrl, prototype: null });
       emailed = await sendBudgeted({ to: validated.contact.email, email, startedAt, context: "project-builder save", hashPrefix: emailHash.slice(0, 12) });
     } else {
       console.error(`project-builder save: no link for ${emailHash.slice(0, 12)}: UNLOCK_SECRET is not set`);

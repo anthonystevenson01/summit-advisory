@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBuilderSaveLimiter } from "@/app/lib/ratelimit";
-import { getBrief, getBriefSource, saveBriefState, type BriefContact } from "@/app/lib/briefs";
+import { getBrief, getBriefPrototype, getBriefSource, getBriefStyle, saveBriefState, type BriefContact } from "@/app/lib/briefs";
+import { prototypeView } from "@/app/lib/project-builder/prototype-html";
 import { track } from "@/app/lib/events";
 import { hashEmail } from "@/app/lib/tools/unlock-token";
 import { verifyBriefLinkToken } from "@/app/lib/unlock";
@@ -14,7 +15,7 @@ export const maxDuration = 60;
 
 type Params = { params: Promise<{ id: string }> };
 
-/** Resume: `?t=` must verify for the id; the load shape carries the state, the source and the contact. */
+/** Resume: `?t=` must verify for the id; the load shape carries the state, the source, the contact and the latest prototype. */
 export async function GET(req: NextRequest, { params }: Params) {
   const { id } = await params;
   if (!BRIEF_ID_PATTERN.test(id)) return NextResponse.json({ error: "That brief id is not valid." }, { status: 400 });
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const brief = await getBrief(id);
     if (!brief) return NextResponse.json({ error: BRIEF_GONE }, { status: 404 });
-    const source = await getBriefSource(id);
+    const [source, prototype, style] = await Promise.all([getBriefSource(id), getBriefPrototype(id), getBriefStyle(id)]);
     void track("builder_resumed", { status: brief.status });
     const { name, email, company, website, marketing } = brief.contact;
     return NextResponse.json(
@@ -40,6 +41,9 @@ export async function GET(req: NextRequest, { params }: Params) {
         suggestCount: brief.suggestCount,
         ideasCount: brief.ideasCount,
         readCount: brief.readCount,
+        prototypeCount: brief.prototypeCount,
+        prototype: prototype ? prototypeView(prototype, style) : null,
+        styleStatus: style?.status ?? null,
         freeMail: isFreeMailAddress(email),
       },
       { headers: { "Cache-Control": "no-store" } },
@@ -70,7 +74,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const source = typeof body.source === "string" ? body.source.slice(0, SOURCE_MAX_CHARS) : undefined;
     let contact: BriefContact | undefined;
     if (body.contact !== undefined) {
-      const validated = validateContact(body.contact);
+      const validated = validateContact(body.contact, "save");
       if (!validated.ok) return NextResponse.json({ error: validated.error }, { status: 400 });
       contact = { ...validated.contact, emailHash: hashEmail(validated.contact.email) };
     }

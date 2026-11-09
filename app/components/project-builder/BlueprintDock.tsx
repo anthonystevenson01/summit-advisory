@@ -40,7 +40,8 @@ function shorten(t: string): string {
 const ghostLight: CSSProperties = { background: "none", border: 0, color: BRAND.white, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer", padding: "6px 0", fontSize: 14, fontFamily: SANS };
 
 /**
- * The docked strip at the bottom (count, Must count, percent, the dots,
+ * The first tab of the dock (the page holds the fixed `.pb-dock` wrapper,
+ * with "Prototype so far" underneath). The docked strip at the bottom (count, Must count, percent, the dots,
  * Open and Close) and the open panel: the name, the meter, the tally, the
  * legend, the business note, the selected requirement with its priority
  * buttons, Remove and "Change on {step}", the gap line, and the full list
@@ -58,7 +59,7 @@ export default function BlueprintDock({ state, open, onToggle, selectedKey, onSe
   const stepOf = selected && selected.ref.kind === "step" ? selected.ref.step : null;
 
   return (
-    <section className="pb-dock" aria-label="Your project blueprint" style={{ ...dockPanel, borderTop: `2px solid ${BRAND.brandGreen}` }}>
+    <section className="pb-dock-tab" aria-label="Your project blueprint" style={{ ...dockPanel, borderTop: `2px solid ${BRAND.brandGreen}` }}>
       <button type="button" className="pb-dock-bar" onClick={onToggle} aria-expanded={open} aria-controls="pb-bp">
         <span className="pb-dock-k" style={dockLabel}>{DOCK.label}</span>
         <span className="pb-mdots" aria-hidden="true">
