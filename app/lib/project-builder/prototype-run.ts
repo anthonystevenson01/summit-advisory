@@ -72,7 +72,7 @@ import {
 import { mergeReviewIntoPlan, parseReviewAnswer } from "./review.ts";
 import { auditFromAnswer, parseAuditAnswer } from "./audit.ts";
 import { SHELL_IDS, renderShell, shellScreenBudget } from "./shell.ts";
-import { assembleDocument, checkScreen, collectIds, isDesignIssue, parseScreenBuild } from "./screens.ts";
+import { assembleDocument, checkScreen, collectIds, isDesignIssue, isSoftSizeIssue, parseScreenBuild } from "./screens.ts";
 import type { ChangeRequest } from "./requests.ts";
 import { auditPrompt, planDiffPrompt, planPrompt, reviewPrompt, screenFixPrompt, screenPrompt, type Prompt, type PromptContext, type ScreenPromptArgs } from "./prompts.ts";
 import { auditSchema, planDiffSchema, planSchema, reviewSchema, screenBuildSchema } from "./schemas.ts";
@@ -433,13 +433,15 @@ export async function runPrototype(input: RunPrototypeInput): Promise<RunPrototy
         issues = [errorLine(err)];
       }
     }
-    // The design checks are advisory once the retry is behind us: when every remaining line is a design line, the screen is
-    // accepted, the lines are stored as `notes` on its record and logged. The same applies when there was no time for a retry,
-    // since kept previous and `invalid` are the two outcomes a design line must never cause. Any blocking line (a check line or
-    // an errorLine) leaves the path below exactly as Round 3 built it.
+    // The design checks, and a size overrun of at most 10 per cent of the screen's share, are advisory once the retry is
+    // behind us: when every remaining line is a design line or a soft size line, the screen is accepted, the lines are stored
+    // as `notes` on its record and logged. The same applies when there was no time for a retry, since kept previous and
+    // `invalid` are the two outcomes such a line must never cause. The share is a division of the document cap; the assembled
+    // document is still held to PROTOTYPE_HTML_MAX_CHARS by the validator in step 7. Any blocking line (a check line, a size
+    // line above the tolerance or an errorLine) leaves the path below exactly as Round 3 built it.
     let notes: string[] = [];
-    if (build && issues.length > 0 && issues.every(isDesignIssue)) {
-      console.info(`project-builder prototype ${id}: screen ${slug} accepted with design notes: ${issues.join(" | ")}`);
+    if (build && issues.length > 0 && issues.every((line) => isDesignIssue(line) || isSoftSizeIssue(line, budget))) {
+      console.info(`project-builder prototype ${id}: screen ${slug} accepted with notes: ${issues.join(" | ")}`);
       notes = issues;
       issues = [];
     }

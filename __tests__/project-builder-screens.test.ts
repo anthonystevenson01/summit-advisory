@@ -11,8 +11,8 @@ import { NEUTRAL_HOUSE_STYLE, type HouseStyle } from "../app/lib/project-builder
 import { PROTOTYPE_CSP, validatePrototypeHtml } from "../app/lib/project-builder/prototype-html.ts";
 import { coverageItems, parsePlanAnswer } from "../app/lib/project-builder/plan.ts";
 import { blank } from "../app/lib/project-builder/brief.ts";
-import { DESIGN_ISSUE_LINES, assembleDocument, checkScreen, collectIds, isDesignIssue, parseScreenBuild, placeScreens, scopeCss, wrapScreenScript, type ScreenBuild } from "../app/lib/project-builder/screens.ts";
-import { SHELL_IDS, renderShell } from "../app/lib/project-builder/shell.ts";
+import { DESIGN_ISSUE_LINES, SIZE_OVERRUN_TOLERANCE, SIZE_SOFT_MAX, assembleDocument, checkScreen, collectIds, isDesignIssue, isSoftSizeIssue, parseScreenBuild, placeScreens, scopeCss, wrapScreenScript, type ScreenBuild } from "../app/lib/project-builder/screens.ts";
+import { SCREEN_BUDGET_MAX, SHELL_IDS, renderShell } from "../app/lib/project-builder/shell.ts";
 import { SchemaError } from "../app/lib/tools/schema.ts";
 
 const style: HouseStyle = { ...NEUTRAL_HOUSE_STYLE, siteName: "Acme" };
@@ -118,6 +118,53 @@ describe("checkScreen", () => {
 
   test("collectIds lists every id in order, duplicates included", () => {
     assert.deepEqual(collectIds('<p id="a"></p><p id="b"></p><p id="a"></p>'), ["a", "b", "a"]);
+  });
+});
+
+describe("isSoftSizeIssue", () => {
+  const line = (size: number, budget: number) => `The screen is ${size} characters; it must be at most ${budget}. Shorten the sample data, not the components.`;
+  const budget = 15_872;
+  const limit = Math.floor(budget * (1 + SIZE_OVERRUN_TOLERANCE));
+
+  test("the 9 November 2026 preview line (16,037 against 15,872) is soft", () => {
+    assert.equal(SIZE_OVERRUN_TOLERANCE, 0.1);
+    assert.ok(isSoftSizeIssue(line(16_037, budget), budget));
+  });
+
+  test("just under, exactly at and over the tolerance", () => {
+    assert.ok(isSoftSizeIssue(line(limit - 1, budget), budget));
+    assert.ok(isSoftSizeIssue(line(limit, budget), budget));
+    assert.ok(!isSoftSizeIssue(line(limit + 1, budget), budget));
+    assert.ok(!isSoftSizeIssue(line(budget * 2, budget), budget));
+  });
+
+  test("never past SCREEN_BUDGET_MAX plus the tolerance, whatever share is passed", () => {
+    assert.equal(SIZE_SOFT_MAX, 17_600);
+    assert.ok(isSoftSizeIssue(line(SIZE_SOFT_MAX, SCREEN_BUDGET_MAX), SCREEN_BUDGET_MAX));
+    assert.ok(!isSoftSizeIssue(line(SIZE_SOFT_MAX + 1, SCREEN_BUDGET_MAX), SCREEN_BUDGET_MAX));
+    // A share above the clamp cannot come from shellScreenBudget; the ceiling still holds if one is passed.
+    assert.ok(!isSoftSizeIssue(line(SIZE_SOFT_MAX + 1, 20_000), 20_000));
+  });
+
+  test("a line that is not the size line, or names another budget, is not soft", () => {
+    assert.ok(!isSoftSizeIssue("", budget));
+    for (const design of Object.values(DESIGN_ISSUE_LINES)) assert.ok(!isSoftSizeIssue(design, budget));
+    const b = clean("jobs");
+    for (const blocking of checkScreen({ ...b, html: `${b.html}<form></form><p id="title"></p>` }, "jobs", 16_000, taken)) assert.ok(!isSoftSizeIssue(blocking, 16_000), blocking);
+    assert.ok(!isSoftSizeIssue(line(16_037, budget), budget + 1));
+    assert.ok(!isSoftSizeIssue(line(budget, budget), budget), "at the budget there is no overrun to call soft");
+  });
+
+  test("the line checkScreen writes for a small overrun is the line isSoftSizeIssue reads", () => {
+    const b = clean("jobs");
+    const size = b.html.length + b.css.length + b.js.length;
+    const small = checkScreen(b, "jobs", size - 1, taken);
+    assert.equal(small.length, 1);
+    assert.ok(isSoftSizeIssue(small[0], size - 1), small[0]);
+    assert.ok(!isDesignIssue(small[0]));
+    const large = checkScreen(b, "jobs", Math.floor(size / 2), taken);
+    assert.equal(large.length, 1);
+    assert.ok(!isSoftSizeIssue(large[0], Math.floor(size / 2)), large[0]);
   });
 });
 

@@ -14,7 +14,7 @@ import { sanitisePrototypeHtml, validatePrototypeHtml } from "./prototype-html.t
 import type { PlanScreen, PrototypePlan } from "./plan.ts";
 import type { ScreenBuild } from "./prototype.ts";
 import { PROTOTYPE_REPLY_CHARS } from "./schemas.ts";
-import { SHELL_IDS, renderShell, screenSectionOpen } from "./shell.ts";
+import { SCREEN_BUDGET_MAX, SHELL_IDS, renderShell, screenSectionOpen } from "./shell.ts";
 
 export type { ScreenBuild };
 
@@ -104,6 +104,46 @@ const DESIGN_ISSUE_SET: ReadonlySet<string> = new Set(Object.values(DESIGN_ISSUE
 /** True for a line one of the two design checks wrote; every other check line is blocking. Exact string match, so a blocking line can never be read as advisory. */
 export function isDesignIssue(line: string): boolean {
   return DESIGN_ISSUE_SET.has(line);
+}
+
+// ── Soft size overrun ────────────────────────────────────────────────────────
+// Seen on the 9 November 2026 preview of the design rules round: a screen at
+// 16,037 characters against a share of 15,872 (165 over, about 1 per cent)
+// failed a Create after its retry. The per screen share is a way of dividing
+// the document cap, not the cap itself; the assembled document is still
+// checked against PROTOTYPE_HTML_MAX_CHARS by the Round 1 validator, which
+// stays the hard gate. So after the retry a small overrun is advisory.
+
+/** How far over its share a screen may be, after the retry, and still be accepted with a note. */
+export const SIZE_OVERRUN_TOLERANCE = 0.1;
+
+/** The size issue line, as `checkScreen` writes it; the retry prompt still carries it unchanged. */
+function sizeIssueLine(size: number, budget: number): string {
+  return `The screen is ${size} characters; it must be at most ${budget}. Shorten the sample data, not the components.`;
+}
+
+const SIZE_ISSUE_RE = /^The screen is (\d+) characters; it must be at most (\d+)\. Shorten the sample data, not the components\.$/;
+
+/** The most a soft overrun may reach whatever the share: `SCREEN_BUDGET_MAX` plus the tolerance (17,600). */
+export const SIZE_SOFT_MAX = Math.floor(SCREEN_BUDGET_MAX * (1 + SIZE_OVERRUN_TOLERANCE));
+
+/**
+ * True for a size issue line whose overrun is soft: over `budget` by at most
+ * `SIZE_OVERRUN_TOLERANCE`, and never past `SIZE_SOFT_MAX`. `shellScreenBudget`
+ * already clamps every share to `SCREEN_BUDGET_MAX`, so the tolerance sits on
+ * top of that clamp; a ceiling at `SCREEN_BUDGET_MAX` itself would refuse the
+ * 9 November case (16,037 against 15,872). Any other line, including a size
+ * line above the tolerance, returns false and stays blocking. The size is read
+ * from the line itself, so the run needs only the line and the budget it
+ * checked the screen against.
+ */
+export function isSoftSizeIssue(line: string, budget: number): boolean {
+  const m = SIZE_ISSUE_RE.exec(line);
+  if (!m) return false;
+  const size = Number(m[1]);
+  if (Number(m[2]) !== budget || size <= budget) return false;
+  const limit = Math.min(Math.floor(budget * (1 + SIZE_OVERRUN_TOLERANCE)), SIZE_SOFT_MAX);
+  return size <= limit;
 }
 
 const CHART_OPEN_RE = /<([a-z][a-z0-9-]*)\b[^>]*\bclass\s*=\s*["'][^"']*\bpb-chart\b[^"']*["'][^>]*>/gi;
@@ -233,7 +273,7 @@ export function checkScreen(build: ScreenBuild, slug: string, budget: number, ta
   if (ROW_STYLE_RE.test(build.html)) issues.push(DESIGN_ISSUE_LINES.colouredRowHtml);
 
   const size = build.html.length + build.css.length + build.js.length;
-  if (size > budget) issues.push(`The screen is ${size} characters; it must be at most ${budget}. Shorten the sample data, not the components.`);
+  if (size > budget) issues.push(sizeIssueLine(size, budget));
 
   return issues;
 }
