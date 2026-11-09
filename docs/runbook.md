@@ -952,22 +952,31 @@ node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.lo
 11. Pre-Round 3 record: open a brief made before this release (or set `planVersion` to 0 on a test record). The box shows "Press Update prototype first" and Send is disabled; an Update rebuilds through the full pipeline and the box comes alive.
 12. Notion: submit the brief; the page carries "Senior review suggestions" and "Change requests" with bullets, no HTML and no JSON.
 
-| Measure | Target or expectation | Result |
+| Measure | Target or expectation | Result (preview of PR #24, 9 November 2026, ocado.com, 8 Musts) |
 |---|---|---|
-| First Create, press to prototype (s) | 45 s target, measure | |
-| Stage ms: research, plan, gap, review, build (slowest screen), audit | caps 30, 30, 30, 30, 90, 30 s | |
-| Provider served, DeepSeek V4 Flash (research) | `azure/us` or `deepinfra/fp8` | |
-| Provider served, Kimi K3 (audit) | `amazon-bedrock/us-east-2`, `wafer/us` or `inference-net/us` | |
-| Provider served, DeepSeek V4 Pro (audit, trial) | `azure/us` or `nebius/fp8` | |
-| Provider served, GLM 5.2 (audit, trial) | `mistral/eu`, `baseten/fp8/us` or `wafer/us` | |
-| `reasoningForced` true on Fable, Opus, Astra rows; false on DeepSeek, Kimi | as stated | |
-| `reasoningFallback` true on any row (name the provider) | none | |
-| Every Must on a screen (count found of total) | all | |
-| Audit misses that were real (count) | matches step 3 | |
-| Request changing only the named screen (slugs rebuilt) | one | |
-| Declined request sentence shown, no new version | yes | |
-| Stats: five keys with cost; change requests row | yes | |
-| Background research filled before the first press | yes | |
+| First Create, press to prototype (s) | 45 s target, measure | About 117 s (pressed 16:13:41, stored 16:15). Five screens, dashboard first, Brandfetch style (site blocked the crawler). About $1.24 in model calls. |
+| Stage ms: research, plan, gap, review, build (slowest screen), audit | caps 30, 30, 30, 30, 90, 30 s | 2,149; 25,646; no gap round; **review timed out at 30,004 (Opus 5.5 at medium, no review stored, pipeline continued)**; 55,879 (admin-settings; the five screens ran 28.9 s to 55.9 s); 3,236 |
+| Provider served, DeepSeek V4 Flash (research) | `azure/us` or `deepinfra/fp8` | DeepInfra, 2.1 s |
+| Provider served, Kimi K3 (audit) | `amazon-bedrock/us-east-2`, `wafer/us` or `inference-net/us` | Wafer, 2.5 to 3.2 s, $0.006 |
+| Provider served, DeepSeek V4 Pro (audit, trial) | `azure/us` or `nebius/fp8` | Nebius, 12.8 s, $0.037 |
+| Provider served, GLM 5.2 (audit, trial) | `mistral/eu`, `baseten/fp8/us` or `wafer/us` | Mistral, 2.4 s, $0.031 |
+| `reasoningForced` true on Fable, Opus, Astra rows; false on DeepSeek, Kimi | as stated | Astra rows show "reasoning forced low"; Fable rows run at low already so nothing to force; Opus row failed; DeepSeek, Kimi, GLM clean |
+| `reasoningFallback` true on any row (name the provider) | none | none |
+| Every Must on a screen (count found of total) | all | 8 of 8, each on the screen and component the coverage map named |
+| Audit misses that were real (count) | matches step 3 | 3 (REQ-010 to 012, all Should "Running it" items that are not screens); no Must missed |
+| Request changing only the named screen (slugs rebuilt) | one | one (`purchase-orders`), four kept; plan diff 19.6 s, screen 40.6 s, audit 2.5 s, about 65 s, $0.35 |
+| Declined request sentence shown, no new version | yes | both sentences shown, version stayed at 2, both recorded as declined ($0.15 and 20 s each for the plan call) |
+| Stats: five keys with cost; change requests row | yes | all five keys with calls, median, p95, tokens and cost; change requests 3, declined 2, median screens 1 |
+| Background research filled before the first press | yes | monzo.com profile built 5 s after save from 3 pages and Brandfetch (DeepInfra, $0.0002); later presses on the first brief showed no research row |
+| Pre-Round 3 record | "Press Update prototype first" | admin page shows "Plan version none (made before the staged build)" on a 6 November record; the box itself was not opened (no resume link to hand) |
+| Notion | two headings, bullets | "Senior review suggestions" (None, the review had timed out) and "Change requests" with three bullets, no HTML or JSON |
+
+**Found on the smoke test (9 November 2026):**
+- The senior review on Opus 5.5 at medium reasoning timed out at the 30 s cap on the first Create, so no review was stored and no suggestions reached Notion. Either switch `builder-prototype-review` to Fable 5.1 at low on `/admin/models` (no deploy) or raise the review cap in `prototype-run.ts`. Decide before merging.
+- A full rebuild with five parallel Astra calls hit OpenRouter `402 This request would exceed your available credits given your current in-flight requests` on two screens (and their retries). The press still succeeded: the previous build of those two screens was kept, the prospect saw "updated with your latest changes", and the stale screens are only visible on the admin page (`kept`). Keep the OpenRouter balance well above the cost of one press (about $1.25 on Astra) times the number of presses that can run at once.
+- An Update after a brief text change ran a plan diff, not a full replan, and on the first such Update rebuilt nothing (all screens kept, 24 s); on the second it rebuilt three screens. Expected from the design, noted so nobody reads a 24 s Update as a failure.
+- The Notion page body opens with an older "Submitted on not submitted" section written at the first save, followed by the submitted copy. Cosmetic and from Release 1; a tidy up would drop the heading on a draft save.
+- "Start a new brief" on the submitted view wants its second tap within about a second; a slower second tap looks like nothing happened.
 
 **If a first Create is slow** (well over the target, or `time` failures): in this order, each on `/admin/models` with no deploy. (1) Switch `builder-prototype-build` to Sonnet 5.5 (the fallback today); it writes a screen in a fraction of Astra's time at a fifth of the price. (2) Lower the per screen budget: with a deploy, reduce `SCREEN_BUDGET_MAX` in `shell.ts` (16,000 today) or the screen prompt's size guidance, so each screen has less to write. (3) Switch `builder-prototype-review` to Fable 5.1 at low reasoning (the review runs before the build, so its time is on the critical path). Kimi K3 on build and Haiku 5.5 on research and audit are the other trial alternatives Anthony named. Watch `/admin/stats` after each change: median and p95 ms per key, cost per key, and the fix retries column (a model that fails the per screen check often doubles its own time).
 
