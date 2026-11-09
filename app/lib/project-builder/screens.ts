@@ -14,7 +14,7 @@ import { sanitisePrototypeHtml, validatePrototypeHtml } from "./prototype-html.t
 import type { PlanScreen, PrototypePlan } from "./plan.ts";
 import type { ScreenBuild } from "./prototype.ts";
 import { PROTOTYPE_REPLY_CHARS } from "./schemas.ts";
-import { SHELL_IDS, renderShell, screenSectionOpen } from "./shell.ts";
+import { SCREEN_BUDGET_MAX, SHELL_IDS, renderShell, screenSectionOpen } from "./shell.ts";
 
 export type { ScreenBuild };
 
@@ -86,6 +86,120 @@ const ID_RE = /\sid\s*=\s*["']([^"']*)["']/gi;
 // Document wide lookups by id: a screen's script must stay inside its own section, so a lookup of another screen's id is refused.
 const SELECTOR_RE = /document\s*\.\s*(?:getElementById\s*\(\s*["']([^"']+)["']|querySelector(?:All)?\s*\(\s*["']#([a-zA-Z0-9_-]+))/g;
 
+// ── Design checks ────────────────────────────────────────────────────────────
+// The two failures seen on the 9 November 2026 live build: a chart whose marks
+// were left to script that did not run, and a coloured table row for status.
+// Both go through the one retry like every other check; after the retry the
+// run treats them as advisory (`isDesignIssue`), so they never fail a press.
+
+/** The exact lines the design checks produce, so the run can tell them from a blocking line. */
+export const DESIGN_ISSUE_LINES = {
+  emptyChart: "html: a chart in a pb-chart box has an svg with no marks drawn (no rect, path, polyline, circle or polygon, and at most two line elements). Draw every bar, line and point as svg elements in the html; js may only filter them.",
+  colouredRowCss: "css: a rule on tr or td sets a background. Coloured rows and cells are not allowed; show the state with a pb-label in a cell and remove the background.",
+  colouredRowHtml: "html: a tr or td carries an inline background style. Coloured rows and cells are not allowed; show the state with a pb-label in a cell and remove the style.",
+} as const;
+
+const DESIGN_ISSUE_SET: ReadonlySet<string> = new Set(Object.values(DESIGN_ISSUE_LINES));
+
+/** True for a line one of the two design checks wrote; every other check line is blocking. Exact string match, so a blocking line can never be read as advisory. */
+export function isDesignIssue(line: string): boolean {
+  return DESIGN_ISSUE_SET.has(line);
+}
+
+// ── Soft size overrun ────────────────────────────────────────────────────────
+// Seen on the 9 November 2026 preview of the design rules round: a screen at
+// 16,037 characters against a share of 15,872 (165 over, about 1 per cent)
+// failed a Create after its retry. The per screen share is a way of dividing
+// the document cap, not the cap itself; the assembled document is still
+// checked against PROTOTYPE_HTML_MAX_CHARS by the Round 1 validator, which
+// stays the hard gate. So after the retry a small overrun is advisory.
+
+/** How far over its share a screen may be, after the retry, and still be accepted with a note. */
+export const SIZE_OVERRUN_TOLERANCE = 0.1;
+
+/** The size issue line, as `checkScreen` writes it; the retry prompt still carries it unchanged. */
+function sizeIssueLine(size: number, budget: number): string {
+  return `The screen is ${size} characters; it must be at most ${budget}. Shorten the sample data, not the components.`;
+}
+
+const SIZE_ISSUE_RE = /^The screen is (\d+) characters; it must be at most (\d+)\. Shorten the sample data, not the components\.$/;
+
+/** The most a soft overrun may reach whatever the share: `SCREEN_BUDGET_MAX` plus the tolerance (17,600). */
+export const SIZE_SOFT_MAX = Math.floor(SCREEN_BUDGET_MAX * (1 + SIZE_OVERRUN_TOLERANCE));
+
+/**
+ * True for a size issue line whose overrun is soft: over `budget` by at most
+ * `SIZE_OVERRUN_TOLERANCE`, and never past `SIZE_SOFT_MAX`. `shellScreenBudget`
+ * already clamps every share to `SCREEN_BUDGET_MAX`, so the tolerance sits on
+ * top of that clamp; a ceiling at `SCREEN_BUDGET_MAX` itself would refuse the
+ * 9 November case (16,037 against 15,872). Any other line, including a size
+ * line above the tolerance, returns false and stays blocking. The size is read
+ * from the line itself, so the run needs only the line and the budget it
+ * checked the screen against.
+ */
+export function isSoftSizeIssue(line: string, budget: number): boolean {
+  const m = SIZE_ISSUE_RE.exec(line);
+  if (!m) return false;
+  const size = Number(m[1]);
+  if (Number(m[2]) !== budget || size <= budget) return false;
+  const limit = Math.min(Math.floor(budget * (1 + SIZE_OVERRUN_TOLERANCE)), SIZE_SOFT_MAX);
+  return size <= limit;
+}
+
+const CHART_OPEN_RE = /<([a-z][a-z0-9-]*)\b[^>]*\bclass\s*=\s*["'][^"']*\bpb-chart\b[^"']*["'][^>]*>/gi;
+const SVG_RE = /<svg\b[^>]*>[\s\S]*?<\/svg\s*>/gi;
+const MARK_RE = /<(?:rect|path|polyline|circle|polygon)\b/i;
+const LINE_RE = /<line\b/gi;
+
+/** The html inside a `pb-chart` element: from the end of its opening tag to the matching close, counting tags of the same name, or to the end. */
+function chartInner(html: string, from: number, tag: string): string {
+  const tagRe = new RegExp(`<(\\/?)${tag}\\b`, "gi");
+  let depth = 1;
+  for (const m of html.slice(from).matchAll(tagRe)) {
+    depth += m[1] ? -1 : 1;
+    if (depth === 0) return html.slice(from, from + m.index);
+  }
+  return html.slice(from);
+}
+
+/**
+ * True when a `pb-chart` box holds an svg with nothing drawn: no rect, path,
+ * polyline, circle or polygon, and at most two line elements. Two lines are
+ * the axes, so a chart that drew axes and a legend with no bars (the 9
+ * November case) is caught; three or more lines count as a drawn line chart.
+ */
+function hasEmptyChart(html: string): boolean {
+  for (const open of html.matchAll(CHART_OPEN_RE)) {
+    const inner = chartInner(html, open.index + open[0].length, open[1]);
+    for (const svg of inner.match(SVG_RE) ?? []) {
+      if (MARK_RE.test(svg)) continue;
+      if ((svg.match(LINE_RE) ?? []).length >= 3) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+const CSS_RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
+const ROW_SELECTOR_RE = /(^|[\s>+~])(tr|td)(?![\w-])/i;
+const BACKGROUND_SET_RE = /(^|[;\s])background(-color)?\s*:\s*(?!(none|transparent|inherit|unset|initial)\b)/i;
+const ROW_STYLE_RE = /<(tr|td)\b[^>]*\sstyle\s*=\s*["'][^"']*\bbackground(-color)?\s*:/i;
+
+/**
+ * True when a css rule whose selector reaches a tr or td sets a background to
+ * something; rules inside at-rules are reached too. A value of none,
+ * transparent, inherit, unset or initial is a reset, not a colour, and passes;
+ * anything else (a hover, a selected row, a zebra cancel to white) is flagged,
+ * because the shell's own row styles are the only row backgrounds allowed.
+ */
+function colouredRowCss(css: string): boolean {
+  for (const m of css.matchAll(CSS_RULE_RE)) {
+    const selectors = m[1].split(",").map((part) => part.trim());
+    if (selectors.some((part) => ROW_SELECTOR_RE.test(part)) && BACKGROUND_SET_RE.test(m[2])) return true;
+  }
+  return false;
+}
+
 /** Every `id="..."` value in a fragment, in order, duplicates included. */
 export function collectIds(html: string): string[] {
   return [...html.matchAll(ID_RE)].map((m) => m[1].trim()).filter(Boolean);
@@ -154,8 +268,12 @@ export function checkScreen(build: ScreenBuild, slug: string, budget: number, ta
   const collisions = [...seen].filter((id) => takenIds.has(id));
   if (collisions.length > 0) issues.push(`html: these ids are already used elsewhere in the document: ${collisions.slice(0, 8).join(", ")}.`);
 
+  if (hasEmptyChart(build.html)) issues.push(DESIGN_ISSUE_LINES.emptyChart);
+  if (colouredRowCss(build.css)) issues.push(DESIGN_ISSUE_LINES.colouredRowCss);
+  if (ROW_STYLE_RE.test(build.html)) issues.push(DESIGN_ISSUE_LINES.colouredRowHtml);
+
   const size = build.html.length + build.css.length + build.js.length;
-  if (size > budget) issues.push(`The screen is ${size} characters; it must be at most ${budget}. Shorten the sample data, not the components.`);
+  if (size > budget) issues.push(sizeIssueLine(size, budget));
 
   return issues;
 }

@@ -11,8 +11,8 @@ import { NEUTRAL_HOUSE_STYLE, type HouseStyle } from "../app/lib/project-builder
 import { PROTOTYPE_CSP, validatePrototypeHtml } from "../app/lib/project-builder/prototype-html.ts";
 import { coverageItems, parsePlanAnswer } from "../app/lib/project-builder/plan.ts";
 import { blank } from "../app/lib/project-builder/brief.ts";
-import { assembleDocument, checkScreen, collectIds, parseScreenBuild, placeScreens, scopeCss, wrapScreenScript, type ScreenBuild } from "../app/lib/project-builder/screens.ts";
-import { SHELL_IDS, renderShell } from "../app/lib/project-builder/shell.ts";
+import { DESIGN_ISSUE_LINES, SIZE_OVERRUN_TOLERANCE, SIZE_SOFT_MAX, assembleDocument, checkScreen, collectIds, isDesignIssue, isSoftSizeIssue, parseScreenBuild, placeScreens, scopeCss, wrapScreenScript, type ScreenBuild } from "../app/lib/project-builder/screens.ts";
+import { SCREEN_BUDGET_MAX, SHELL_IDS, renderShell } from "../app/lib/project-builder/shell.ts";
 import { SchemaError } from "../app/lib/tools/schema.ts";
 
 const style: HouseStyle = { ...NEUTRAL_HOUSE_STYLE, siteName: "Acme" };
@@ -111,13 +111,134 @@ describe("checkScreen", () => {
 
   test("no issue line carries an en or em dash", () => {
     const b = clean("jobs");
-    const issues = checkScreen({ html: `${b.html}<form><img><script><link>`, css: "@import x; .a{background:url(x)}", js: "fetch(); alert(); top.location" }, "jobs", 10, taken);
-    assert.ok(issues.length >= 6, issues.join(" | "));
+    const issues = checkScreen({ html: `${b.html}<form><img><script><link><div class="pb-chart"><svg><text>x</text></svg></div><tr style="background:red">`, css: "@import x; .a{background:url(x)} tr{background:red}", js: "fetch(); alert(); top.location" }, "jobs", 10, taken);
+    assert.ok(issues.length >= 9, issues.join(" | "));
     for (const i of issues) assert.doesNotMatch(i, /[–—]/, i);
   });
 
   test("collectIds lists every id in order, duplicates included", () => {
     assert.deepEqual(collectIds('<p id="a"></p><p id="b"></p><p id="a"></p>'), ["a", "b", "a"]);
+  });
+});
+
+describe("isSoftSizeIssue", () => {
+  const line = (size: number, budget: number) => `The screen is ${size} characters; it must be at most ${budget}. Shorten the sample data, not the components.`;
+  const budget = 15_872;
+  const limit = Math.floor(budget * (1 + SIZE_OVERRUN_TOLERANCE));
+
+  test("the 9 November 2026 preview line (16,037 against 15,872) is soft", () => {
+    assert.equal(SIZE_OVERRUN_TOLERANCE, 0.1);
+    assert.ok(isSoftSizeIssue(line(16_037, budget), budget));
+  });
+
+  test("just under, exactly at and over the tolerance", () => {
+    assert.ok(isSoftSizeIssue(line(limit - 1, budget), budget));
+    assert.ok(isSoftSizeIssue(line(limit, budget), budget));
+    assert.ok(!isSoftSizeIssue(line(limit + 1, budget), budget));
+    assert.ok(!isSoftSizeIssue(line(budget * 2, budget), budget));
+  });
+
+  test("never past SCREEN_BUDGET_MAX plus the tolerance, whatever share is passed", () => {
+    assert.equal(SIZE_SOFT_MAX, 17_600);
+    assert.ok(isSoftSizeIssue(line(SIZE_SOFT_MAX, SCREEN_BUDGET_MAX), SCREEN_BUDGET_MAX));
+    assert.ok(!isSoftSizeIssue(line(SIZE_SOFT_MAX + 1, SCREEN_BUDGET_MAX), SCREEN_BUDGET_MAX));
+    // A share above the clamp cannot come from shellScreenBudget; the ceiling still holds if one is passed.
+    assert.ok(!isSoftSizeIssue(line(SIZE_SOFT_MAX + 1, 20_000), 20_000));
+  });
+
+  test("a line that is not the size line, or names another budget, is not soft", () => {
+    assert.ok(!isSoftSizeIssue("", budget));
+    for (const design of Object.values(DESIGN_ISSUE_LINES)) assert.ok(!isSoftSizeIssue(design, budget));
+    const b = clean("jobs");
+    for (const blocking of checkScreen({ ...b, html: `${b.html}<form></form><p id="title"></p>` }, "jobs", 16_000, taken)) assert.ok(!isSoftSizeIssue(blocking, 16_000), blocking);
+    assert.ok(!isSoftSizeIssue(line(16_037, budget), budget + 1));
+    assert.ok(!isSoftSizeIssue(line(budget, budget), budget), "at the budget there is no overrun to call soft");
+  });
+
+  test("the line checkScreen writes for a small overrun is the line isSoftSizeIssue reads", () => {
+    const b = clean("jobs");
+    const size = b.html.length + b.css.length + b.js.length;
+    const small = checkScreen(b, "jobs", size - 1, taken);
+    assert.equal(small.length, 1);
+    assert.ok(isSoftSizeIssue(small[0], size - 1), small[0]);
+    assert.ok(!isDesignIssue(small[0]));
+    const large = checkScreen(b, "jobs", Math.floor(size / 2), taken);
+    assert.equal(large.length, 1);
+    assert.ok(!isSoftSizeIssue(large[0], Math.floor(size / 2)), large[0]);
+  });
+});
+
+describe("checkScreen design checks", () => {
+  const chart = (svgInner: string, attrs = "") => `<div class="pb-chart" id="jobs-chart"><svg viewBox="0 0 100 50"${attrs}>${svgInner}</svg></div>`;
+  const withHtml = (html: string) => checkScreen({ ...clean("jobs"), html: `${clean("jobs").html}${html}` }, "jobs", 16_000, taken);
+  const withCss = (css: string) => checkScreen({ ...clean("jobs"), css: `${clean("jobs").css} ${css}` }, "jobs", 16_000, taken);
+  const axes = '<line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="0" x2="0" y2="50"/>';
+
+  test("an svg in a pb-chart box with nothing drawn is flagged: axes and text, text only, empty groups", () => {
+    for (const inner of [`${axes}<text x="1" y="1">Jan</text><text x="2" y="2">Feb</text>`, '<text x="1" y="1">Jobs by day</text>', "<g></g><g><g></g></g>"]) {
+      const issues = withHtml(chart(inner));
+      assert.deepEqual(issues, [DESIGN_ISSUE_LINES.emptyChart], inner);
+      assert.ok(issues[0].includes("pb-chart") && issues[0].includes("no marks drawn"));
+    }
+  });
+
+  test("an svg with a mark drawn passes: rect, path, polyline, circle, polygon, four lines, a legend before the svg, nested boxes", () => {
+    for (const inner of [`${axes}<rect x="1" y="1" width="5" height="40"/>`, '<path d="M0 50 L10 20"/>', '<polyline points="0,50 10,20"/>', '<circle cx="5" cy="5" r="2"/>', '<polygon points="0,50 10,20 20,50"/>', `${axes}<line x1="0" y1="40" x2="10" y2="20"/><line x1="10" y1="20" x2="20" y2="30"/>`]) {
+      assert.deepEqual(withHtml(chart(inner)), [], inner);
+    }
+    const nested = `<div class="pb-card"><div class="pb-chart"><div class="jobs-legend"><span>Done</span></div>${`<svg viewBox="0 0 100 50"><rect x="1" y="1" width="5" height="40"/></svg>`}</div><p class="pb-muted">Note</p></div>`;
+    assert.deepEqual(withHtml(nested), []);
+  });
+
+  test("an svg outside a pb-chart box, a pb-chart with no svg, and a second drawn chart beside an empty one", () => {
+    assert.deepEqual(withHtml('<span class="jobs-icon"><svg viewBox="0 0 10 10"><text>i</text></svg></span>'), []);
+    assert.deepEqual(withHtml('<div class="pb-chart"><div class="jobs-bar"></div></div>'), []);
+    const two = `${chart('<rect x="1" y="1" width="5" height="40"/>')}<div class="pb-chart"><svg><text>x</text></svg></div>`;
+    assert.deepEqual(withHtml(two), [DESIGN_ISSUE_LINES.emptyChart]);
+    // Svgs after the chart box closes are not examined: the depth walk stops at the matching close.
+    assert.deepEqual(withHtml(`${chart('<rect x="1" y="1" width="5" height="40"/>')}<svg><text>x</text></svg>`), []);
+  });
+
+  test("a css rule on tr or td that sets a background is flagged, including inside a media query", () => {
+    for (const css of [".jobs-table tr.amended{background:#EEE}", ".jobs-table td{background-color:#fff}", "@media (max-width:600px){.jobs-table tr.amended{background:#EEE}}", "tbody tr:nth-child(3){background:red}", ".jobs-a, .jobs-table > td{ background : var(--brand-2) }"]) {
+      assert.deepEqual(withCss(css), [DESIGN_ISSUE_LINES.colouredRowCss], css);
+    }
+    assert.ok(DESIGN_ISSUE_LINES.colouredRowCss.startsWith("css:"));
+  });
+
+  test("an inline background style on a tr or td is flagged", () => {
+    for (const html of ['<table class="pb-table"><tr style="background:#f3e8ff"><td>x</td></tr></table>', '<table class="pb-table"><tr><td style="color:red;background-color:red">x</td></tr></table>']) {
+      assert.deepEqual(withHtml(html), [DESIGN_ISSUE_LINES.colouredRowHtml], html);
+    }
+    assert.ok(DESIGN_ISSUE_LINES.colouredRowHtml.startsWith("html:"));
+  });
+
+  test("backgrounds that are not on a row or cell, or set to nothing, pass", () => {
+    for (const css of [".jobs-row{background:#fff}", ".tr-strip{background:red}", "#td{background:red}", ".jobs-table th{background:#eee}", ".jobs-table tr{background:transparent}", ".jobs-table tr{background:none}", ".jobs-table td{border-color:red}", ".jobs-table tr-x{background:red}"]) {
+      assert.deepEqual(withCss(css), [], css);
+    }
+    for (const html of ['<table class="pb-table"><tr class="x" data-go="dashboard"><td>x</td></tr></table>', '<table class="pb-table"><tr><td style="text-align:right">1</td></tr></table>', '<p style="background:red">x</p>']) {
+      assert.deepEqual(withHtml(html), [], html);
+    }
+    assert.deepEqual(checkScreen(clean("jobs"), "jobs", 16_000, taken), []);
+  });
+
+  test("isDesignIssue knows the three design lines and no other check line", () => {
+    for (const line of Object.values(DESIGN_ISSUE_LINES)) assert.ok(isDesignIssue(line), line);
+    const b = clean("jobs");
+    const blocking = checkScreen({ ...b, html: `${b.html}<form></form><p id="title"></p>` }, "jobs", 10, taken);
+    assert.ok(blocking.length >= 3);
+    for (const line of blocking) assert.ok(!isDesignIssue(line), line);
+    assert.ok(!isDesignIssue(""));
+  });
+
+  test("a screen flagged by a design check still assembles: the checks are per screen, not in the validator", () => {
+    const builds = Object.fromEntries(plan.screens.map((sc) => [sc.slug, clean(sc.slug)]));
+    builds.dashboard = { ...builds.dashboard, html: `${builds.dashboard.html}${chart("<text>x</text>").replace("jobs-chart", "dashboard-chart")}`, css: `${builds.dashboard.css} .dashboard-table tr{background:red}` };
+    assert.ok(checkScreen(builds.dashboard, "dashboard", 16_000, taken).length === 2);
+    const { html, issues } = assembleDocument(plan, style, null, builds, "Acme");
+    assert.deepEqual(issues, []);
+    assert.ok(html.includes('id="dashboard-chart"'));
   });
 });
 
