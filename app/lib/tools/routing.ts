@@ -4,8 +4,9 @@
  *
  * Keys are `scoring`, `details`, `synthesis`, `extraction`, each optionally
  * narrowed to `{task}:{tool}` where tool is a registry slug, plus the
- * Project Builder keys (never narrowed). Resolution is specific first, then
- * task, then the code default.
+ * Project Builder keys and `catalogue`, the key of the requirement catalogue
+ * scripts (never narrowed). Resolution is specific first, then task, then
+ * the code default.
  */
 import { ROUTING_TASKS, isToolSlug, type ToolSlug } from "./registry.ts";
 
@@ -84,7 +85,8 @@ export function resolveRoute(
  * the Built to Scale? headline (synthesis). Changing their model in /admin
  * marks the key uncalibrated until `npm run calibrate` passes with that
  * model. `details` and `extraction` produce prose, not grades, so they are
- * not gated.
+ * not gated. Nor are the Project Builder keys or `catalogue`, which never
+ * score anything.
  */
 export function isCalibrationGated(key: string): boolean {
   const parsed = parseRoutingKey(key);

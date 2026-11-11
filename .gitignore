@@ -46,3 +46,6 @@ next-env.d.ts
 # agentic-rig
 task-spec.md
 .claude/settings.local.json
+
+# requirement catalogue scripts: spec listings and raw model answers
+/.catalogue-cache/

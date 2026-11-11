@@ -1028,3 +1028,119 @@ node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.lo
 **To disable:** no switch; the shell rules and the checks ship with the deploy, so revert the PR to remove them. A screen that trips a design check is never failed by it, so no running press needs intervention.
 
 **Preview comparison (9 November 2026, PR #25, brief_ff75035ce09045be, GPT-6 Astra on the build key):** the second press succeeded in 177 s at $2.07 with five screens, 8 of 8 Musts, the review stored and four items applied, and two screen retries (buyer dashboard and admin, both size). Against the live build of the same brief on main: button text now dark on the Ocado yellow fill, figure values and secondary buttons in Ocado purple (the first brand colour at 4.5:1), the dashboard chart drawn with bars and a target line at rest, numbers right aligned in every table, a row hover and a focus ring on the search box, a dashed empty state after a search that matches nothing, a field error under the comment box on Confirm decision, one filled button per screen. The comparison page with the captures is a Claude artifact (Design Rules Before and After). The first press on the preview failed invalid on a 16,037 against 15,872 size line, which led to the ten per cent tolerance above.
+
+## Project Builder requirement catalogue: loader and scripts, added November 2026
+
+**Trigger:** A developer running one of four npm scripts on their own machine. Never a visitor request and never on Vercel. Nothing a prospect sees changes in this round: no page, route, prompt or builder state reads the catalogue yet. The one visible change is one more row, "Requirement catalogue scripts", at the bottom of `/admin/models`.
+
+**Service/Function:**
+- `app/lib/project-builder/tool-catalogue.ts`: the format module, pure. The types, the size scale (`SIZE_SCALE`, `buildDays`, `computeTotals`), `parseCategory`, `validateCategory`, `serialiseCategory`, `canonicalDifference` and `applyBaselineRule`.
+- `app/lib/project-builder/tool-catalogue.generated.ts`: every category as typed data, written by the build and committed. Never edited by hand.
+- `app/lib/project-builder/tool-catalogue-read.ts`: the read API over the generated data, pure and synchronous, so no request reads `docs/`.
+- `scripts/catalogue-build.ts`, `catalogue-spec-check.ts`, `catalogue-draft.ts` and `catalogue-mark.ts`: the entry points. Their pure, tested halves are in `scripts/catalogue/` (`build.ts`, `spec.ts`, `draft.ts`, `mark.ts`, `io.ts`).
+- `app/lib/llm.ts`: the `catalogue` routing key.
+
+**The files:** `docs/catalogue` holds one markdown file per tool category, named `{type}.md`, and nothing else. The build reads every `.md` file in the folder as a category, so a readme or a notes file there fails it. Two exist: `sales.md` (CRM and sales, 83 requirements in 12 groups, five products marked) and `ordering.md` (Ordering and inventory, 66 requirements in 10 groups, no product marked, six named as still to mark). Both are `published: false`. The files are documents of the product: no date, draft number, review note or name of a person goes into one.
+
+**The canonical form:** every file has exactly one form, byte for byte, and `serialiseCategory(parseCategory(text))` gives the file back unchanged. Blocks are separated by one blank line. In order:
+
+1. The title line, `# {title}: requirement catalogue`.
+2. The header, a fenced block of four lines: `type` (the file name without `.md`), `title`, `keys` (the capability keys the file uses, from `CAPABILITIES` in `catalogue.ts`) and `published`.
+3. The intro sentence, with the requirement count, the group count and the scope phrase.
+4. The legend: Baseline, Size, Key, and Marks once a coverage table exists.
+5. `## Groups and requirements`: a `### {group}` heading and a table `Id | Requirement | Baseline | Size | Key` per group, then `### Totals` and its one paragraph.
+6. `## Screen patterns`, when there are any: `Screen | Serves`.
+7. `## Product coverage`, once a product is marked: `Id` plus one column per marked product, one row per requirement, each cell F, P or N. Then `### Comments on marks` when there are comments: `Id | Product | Comment`, where Product is a product's exact name or `all`.
+8. `## Products`: the table `Product | Tier assumed | Public API specification | Usual reasons for leaving`, or the sentence that no product is marked; then `Still to mark:` and a list of names when products are named but not yet marked; then any notes, each a `### {title}` heading and its paragraphs.
+9. `## Evidence`, when there are evidence rows or a sources line: `Id | Product | Evidence`, then `Sources: ...`.
+
+- Regenerated, never stored: the title line, the counts and the second sentence of the intro, the whole legend (the Size bullet comes from `SIZE_SCALE`), the Totals paragraph, the fixed paragraph under Screen patterns, Comments on marks, Products and Evidence, and every table header. The serialiser writes them and the parser does not keep them.
+- Kept character for character: the header fields, the scope phrase, the group names, every table row, the still to mark names, the notes and the sources line. Comment and evidence rows keep the order the file holds; nothing is sorted.
+- A file that is sound but not canonical is refused by the build, with `{file}: [not-canonical] line N: expected ..., found ...` naming the first line that differs. That is deliberate: the fixed wording is regenerated, so without the check a hand edit to it would be dropped without a word.
+- When editing by hand, the intro counts and the Totals figures must equal the computed ones. `intro-count-mismatch` and `totals-mismatch` name the figure and give the stated and the computed value, so the right number can be copied in.
+- What the validator holds, in short: an id is one capital letter and one digit, unique, with one letter per group and one group per letter; a size is S, M or L; a key is `none` or a capability key that is also listed in the header; every requirement and comment is one sentence ending in a full stop with no other full stop, question mark or exclamation mark (so "v2.0" or "e.g." fails); no en or em dash anywhere; no pipe in a cell; a product has one name, the same in the coverage header, the products table, the comments and the evidence.
+
+**The baseline rule:** a requirement is baseline when every product in the category covers it fully, which in the file means F in every coverage column. It is never a count, a share or a threshold.
+- While any product is still to mark, or none is marked, the flags the file states stand. The validator raises nothing about them and `catalogue:mark` changes none. The dry run still prints what the flags would become if the remaining products agreed.
+- When the last pending product is marked, `catalogue:mark` recomputes every flag from the marks. From then on the validator holds both directions (`baseline-not-all-full`, `all-full-not-baseline`), so a mark changed by hand on a fully marked category needs its flag and the Totals figures changed with it.
+- A product too narrow to share the category's common core is left out of the category, not marked: one narrow product would strip the baseline for all.
+- Taking the last name off the still to mark list by hand (a product dropped from the category) switches the rule on without recomputing anything. The build then lists each flag that disagrees with the marks; set those flags, and the Totals figures it names next, by hand.
+- When the still to mark list is empty and the product just marked is the only one, every flag has been set from that one product. The differences end with a warning that says so. Avoid it by naming the category's other products in the still to mark list before the first mark.
+
+**The size scale:** `SIZE_SCALE` in `tool-catalogue.ts` is the one place the day figures live: S 1 to 2 days, M 3 to 5, L 6 to 10. `buildDays` returns the low and high build days for any list of requirements, and the legend, the Totals paragraph and the draft prompt are built from the constant. A test scans the new source files for the three range phrases, so a figure typed anywhere else fails `npm test`. If the scale changes, the Size bullet and the Totals line of every category file change with it; the build says what is out of step in each file.
+
+**The `published` flag:** `published: true` in the header, set by hand. No script sets or clears it. A published file must have at least one product marked (`published-no-products`), no product still to mark (`published-pending-products`) and an evidence row for every F and every N mark (`published-missing-evidence`, one problem per missing row). The read API has two doors: `publishedCategories()` and `getCategory(type)` return published categories only, and `allCategoriesIncludingUnpublished()` is the one named way to reach the rest, for tests, admin and scripts. Both files are unpublished, so the first door is empty and `getCategory("sales")` is null. That is intended. To publish today, `sales.md` needs 277 more evidence rows and `ordering.md` needs its six products marked.
+
+**To add a category:**
+
+```
+npm run catalogue:draft -- <type> "<title>" <url> <url> <url> [<url>] [--products "<name>,<name>"] [--allow <word>,<word>] [--force]
+```
+
+- `type` is lower case letters, digits and hyphens, starting with a letter; it becomes the file name. The title is one line. Give three or four documentation URLs (http or https), one per leading product. Each is fetched as text: 20 s and 2 MB a page, 30,000 characters a page, 120,000 together. A page that fails, comes back empty or is not text stops the run.
+- `--products` names the products the category will be marked against. They are written as the still to mark list, which is what keeps the baseline from being judged before every one of them is marked. Pass it; without it the script says, before the call, that the first product marked would set every flag alone. A name that holds a comma cannot be given this way: add it to the list in the file by hand.
+- Forbidden words: the script takes the registrable label of each documentation host (`developers.pipedrive.com` gives `pipedrive`), four letters or more, and rejects any requirement that holds one, since a requirement names no product. It prints the words before it fetches anything. When one is an ordinary word (a host called `close` would forbid "Close a deal as won or lost."), run again with `--allow close`. The notice says to stop now, but the script does not wait: it goes straight on to the fetch and the call. Interrupt it, or let it run and accept that the answer is rejected, and the call paid for, if a requirement uses the word.
+- One model call on the `catalogue` key, no retry. The answer is held to the requirement standard in `docs/specs/project-builder-catalogue-production.md`: one sentence, no dash, no "The system shall", no forbidden word, sound ids, sizes and keys, four to eight requirements per group. A rejected answer lists every violation and writes nothing to `docs/catalogue`. The raw answer is kept in `.catalogue-cache/answers/draft-{type}.json` either way.
+- The script refuses to overwrite an existing file. `--force` writes a fresh draft over the whole file, marks included.
+- What it writes: `docs/catalogue/{type}.md` with `published: false`, baseline flags as a first guess, no screen patterns and no notes. It prints a note when the list has fewer than 8 or more than 12 groups, or fewer than 50 or more than 100 requirements.
+
+Then review the requirements by hand: the level (one below the module), gaps, wording, one behaviour each. Move, split and merge rows, keeping the id rules and the counts, and add the `## Screen patterns` section. Then run `npm run catalogue:build`, fix what it names, and commit the file and the generated module together.
+
+**To add or re-mark a product:**
+
+1. When the product publishes a specification, list it first:
+   ```
+   npm run catalogue:spec-check -- "<product name>" <url or path> [<url or path> ...] [--hub sales]
+   ```
+   It reads an OpenAPI document in JSON, an OpenAPI document in block style YAML, or the HubSpot public API index, recognised from the content, and takes up to ten sources (60 s and 10 MB each). The plain text listing of resources and operations goes to `.catalogue-cache/spec/{product-name}.txt`, where `{product-name}` here and below is the name in lower case with hyphens (`hubspot-sales-hub`). `--hub` names the HubSpot hub whose tier is shown. A URL whose server sends a binary type is refused (see Failure mode): save the file and pass its local path.
+2. Dry run:
+   ```
+   npm run catalogue:mark -- <type> "<product name>" <url> [<url> ...] [--spec <path>] [--tier "<tier>"] --dry-run
+   ```
+   The file must already parse, validate and be canonical. One to six documentation URLs are fetched (same page limits, 150,000 characters together; a page that fails is named and skipped, and the run stops only when none could be read). `--spec` is the path of the spec check listing. `--tier` fixes the tier the marks assume; without it a re-mark assumes the tier stored in the products table and a new product has the model choose and state one. One model call returns a mark, evidence and an optional comment for every requirement, plus the product's tier, specification and reasons for leaving. The dry run prints the differences from the stored marks, writes nothing to the file and saves the answer to `.catalogue-cache/answers/mark-{type}-{product-name}.json`.
+3. Read the differences and the saved answer, then apply exactly what was reviewed, with no fetch, no call and no env:
+   ```
+   npm run catalogue:mark -- <type> "<product name>" --answer .catalogue-cache/answers/mark-{type}-{product-name}.json
+   ```
+4. By hand after a mark: update the Sources line when the sources are new; check that every comment for `all` still holds for the new product, since such a comment is read as applying to it; add or correct any note (a tiers note, for example); spot check the P marks. The script writes none of these.
+5. `npm run catalogue:build`, then commit the file and the generated module together.
+
+- The product name is the one typed on the command line, never one from the model. It joins the coverage column, the product row, the comments and the evidence, so use the exact name every time. To clear a name from the still to mark list, pass it exactly as it is written there (`"Shopify (orders and stock)"`); when the name was not on the list the script prints the list and says so.
+- A mark writes that product's column, product row, comments and evidence. It never changes a requirement's id, text, size or key, another product's column, the published flag, the header keys, the screen patterns, the notes or the sources line.
+- Re-marking a product keeps its place in the products table and its column, but moves its comment and evidence rows to the end of their tables, in requirement order. Other rows keep their order. A re-mark with the same marks therefore still reorders rows in the file.
+
+**The rebuild step:** `npm run catalogue:build` after every change to a file in `docs/catalogue`. It parses, validates and holds every file to the canonical form. On any failure it prints one line per item (`sales.md: [totals-mismatch] ...`), writes nothing and exits 1. Otherwise it writes the generated module only when its contents would change and prints one line per category. The test that enforces it is "every category file builds, and the committed module is exactly what the build writes" in `__tests__/project-builder-tool-catalogue-generated.test.ts`: it runs the build in memory and fails `npm test` with "docs/catalogue changed without a rebuild: run npm run catalogue:build" when the committed module is out of step, and it fails too when a file has a problem. Other sessions share `main`: a catalogue file merged in without a rebuild fails the same test, and the fix is the build on the merged tree.
+
+**Template/Config:**
+- Routing key `catalogue`, used by draft and mark only. Default: Sonnet 5.5 (`anthropic/claude-sonnet-5.5`, the model `extraction` uses), reasoning low, max tokens 16,000, no fallback, temperature 0, up to 240 s per call. Change it on `/admin/models`, last row; the override is stored in the Redis hash `admin:model-config` like every other key. It is never narrowed to a tool.
+- Its calls are logged to `ai:calls` with cost, with `runId` `catalogue_draft_{type}` or `catalogue_mark_{type}` and tag `draft` or `mark:{product-name}`. Calls and cost show in the usage column of its row on `/admin/models`. They are not in the Project Builder tables on `/admin/stats`, which count the `builder-` keys only.
+- Not calibration gated: changing its model needs no `npm run calibrate`.
+- Environment, read from `.env.local`: draft and mark need `OPENROUTER_API_KEY` and a Redis pair (`UPSTASH_REDIS_REST_URL` with `UPSTASH_REDIS_REST_TOKEN`, or `KV_REST_API_URL` with `KV_REST_API_TOKEN`). Redis is required because the call log and its cost live there. Mark with `--answer`, spec check and build need nothing. No script prints a value.
+- Cache: `.catalogue-cache/` (git ignored) holds the spec listings and the raw answers. Scripts write nowhere else but `docs/catalogue/{type}.md` and the generated module.
+- Exit codes, all four scripts: 0 done, or a dry run printed; 1 the work failed (a file with errors or problems, a source that could not be read or recognised, a failed call, a rejected answer, a file that exists without `--force`); 2 bad arguments or a missing variable, named, and nothing ran.
+
+**Failure mode:**
+- A file with a problem: the build, and mark before it does anything, print every parse error, validator problem and the first line that is not canonical, and exit 1. Nothing is written.
+- A fetched body that is not text: `{url} is {type}, not text, JSON, XML or YAML, so it was not read`. Any `text/` type, JSON, XML and YAML are read, and so is a response with no Content-Type. A PDF, an image, `application/octet-stream` and `application/yml` are refused. Draft and spec check stop; mark skips the page. For a specification, save the file and pass the local path, which is not held to this rule. Draft and mark take URLs only, so for a documentation page choose another page.
+- A rejected answer (draft or mark): one message listing every violation, exit 1, the raw answer saved, nothing written, no second call.
+- A missing variable: `Cannot draft: missing ...` or `Cannot mark: missing ...`, exit 2, before any fetch. The message names the Upstash pair even where the `KV_` pair would also do.
+- Spec check: `... is not an OpenAPI document or a HubSpot index`, or `no operations found; the line scanner reads block style YAML only`. Convert such a YAML file to JSON and pass that.
+- The parser and the validator never throw. Something neither foresaw comes back as one error or problem with the code `internal`; that is a fault in the format module, not in the file.
+- The read API hands out deeply frozen copies. Code that writes to a category it got from the reader throws at run time, where it would otherwise have changed the catalogue for every later request in that process.
+
+**To disable:** nothing here runs in production, so there is nothing to switch off. The scripts run only when someone runs them, and they are the only callers of the `catalogue` key. To keep a category from round 1C, leave it `published: false`. To remove one, delete its file and rebuild; the tests name `sales.md` and `ordering.md`, so removing either is a deliberate test change.
+
+**Known limits (from the review, non-blocking):**
+- The YAML reader is a line scanner, not a YAML parser. It reads block style YAML indented with spaces and learns its three indent levels once per file; a file whose paths indent their children differently loses operations with no warning. Compare the operation count with the vendor's own. It does not read tabs, flow style, anchors, `$ref` path items or more than one document in a file.
+- A YAML operation with no summary falls back to its operation id only. The JSON reader also falls back to the first line of the description.
+- The content type message does not yet say that the remedy is a local path, and the forbidden words notice says to stop when the script does not wait (both described above).
+- `TOOL_CATEGORIES` can be imported straight from the generated module, which goes round both the published door and the freeze. Nothing does so today.
+- The frozen categories are typed as mutable, so a write compiles and throws at run time. A deep readonly type would catch it at compile time.
+- No test in the suite runs the four entry scripts. Their exit codes, the `--force` refusal and `--dry-run` were checked by hand; the logic they call is tested.
+- The test that stops catalogue code reading `docs/` at request time covers the three catalogue modules, not all of `app/`.
+- Three type errors in the catalogue test files are seen by no gate, because `tsconfig.json` excludes `__tests__`. The tests run correctly.
+- The one sentence rule allows no inner full stop, so an abbreviation or a version number has to be reworded.
+- A large category with long evidence can reach the 16,000 token cap, which is also the most `/admin/models` will save for this key. The call then fails and nothing is written.
+- The HubSpot index is not a documented contract. It is recognised by shape, and an index that yields no entries exits 1.
+
+**For round 1C:** import `tool-catalogue-read.ts` only (`publishedCategories`, `getCategory`, `requirementsOf`, `baselineRequirementsOf`, `groupsOf`, `screenPatternsOf`, `productsOf`, `productMark`), never `tool-catalogue.generated.ts`, and add a test that holds the builder's code to that. Until a category is published the first door returns nothing, so round 1C shows an empty catalogue; `allCategoriesIncludingUnpublished()` is for development and admin only.

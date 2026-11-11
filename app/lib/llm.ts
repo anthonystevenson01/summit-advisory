@@ -10,7 +10,8 @@
  * optionally narrowed to `{task}:{tool}`, plus the Project Builder keys
  * `builder-read`, `builder-suggest`, `builder-ideas` and the five staged
  * prototype keys `builder-prototype-research`, `-plan`, `-review`, `-build`
- * and `-audit` (never narrowed). Resolution order is the specific key
+ * and `-audit`, plus `catalogue` for the requirement catalogue scripts
+ * (none of them narrowed). Resolution order is the specific key
  * (`scoring:moat`), then the task key (`scoring`), then DEFAULT_ROUTES
  * below. Overrides live in the Redis hash `admin:model-config`, written from
  * /admin/models and cached in memory for 30 seconds, so a model change needs
@@ -150,6 +151,9 @@ export const DEFAULT_ROUTES: Record<RoutingTask, RouteConfig> = {
   "builder-prototype-review": { model: "anthropic/claude-opus-5.5", reasoning: "medium", maxTokens: 3000, fallback: "anthropic/claude-fable-5.1" },
   "builder-prototype-build": { model: "openai/gpt-6-astra", maxTokens: 12000, fallback: "anthropic/claude-sonnet-5.5" },
   "builder-prototype-audit": { model: "moonshotai/kimi-k3", maxTokens: 1000, fallback: "anthropic/claude-haiku-5.5" },
+  // The requirement catalogue scripts: the same kind of work as extraction, so the same model. 16000 is the admin form's
+  // ceiling for a key, and there is no fallback because the admin form offers none for this key.
+  catalogue: { model: "anthropic/claude-sonnet-5.5", reasoning: "low", maxTokens: 16000 },
 };
 
 export const TASK_LABELS: Record<RoutingTask, string> = {
@@ -165,6 +169,7 @@ export const TASK_LABELS: Record<RoutingTask, string> = {
   "builder-prototype-review": "Prototype 3: senior review",
   "builder-prototype-build": "Prototype 4: build a screen",
   "builder-prototype-audit": "Prototype 5: audit",
+  catalogue: "Requirement catalogue scripts",
 };
 
 export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
@@ -185,6 +190,8 @@ export const TASK_DESCRIPTIONS: Record<RoutingTask, string> = {
     "Prototype so far, stage 4: one call per screen, in parallel, returning the screen's html, css and js against the plan, the profile and the house style. Up to 90 s per screen with one retry. The server writes the document shell. Has one fallback. Not calibration gated.",
   "builder-prototype-audit":
     "Prototype so far, stage 5: reads the requirements and the assembled document and lists the Must and Should requirements no screen shows. Admin only; never changes the prototype. Can be switched off here. Up to 30 s. Has one fallback. Not calibration gated.",
+  catalogue:
+    "Developer scripts only, never a visitor request: drafts a category's requirements from documentation pages and marks a product against a category, one call each. Structured JSON at temperature 0, up to 240 s per call. No fallback. Not calibration gated.",
 };
 
 export const MODEL_CONFIG_KEY = "admin:model-config";

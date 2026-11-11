@@ -108,6 +108,16 @@ describe("the default routes", () => {
     assert.deepEqual(DEFAULT_ROUTES["builder-prototype-audit"], { model: "moonshotai/kimi-k3", maxTokens: 1000, fallback: "anthropic/claude-haiku-5.5" });
   });
 
+  test("the catalogue key runs on the extraction model, with a label, a description, no fallback and a cap the admin form can save", () => {
+    assert.ok((ROUTING_TASKS as readonly string[]).includes("catalogue"));
+    assert.equal(DEFAULT_ROUTES.catalogue.model, DEFAULT_ROUTES.extraction.model);
+    assert.equal(DEFAULT_ROUTES.catalogue.reasoning, DEFAULT_ROUTES.extraction.reasoning);
+    assert.equal(DEFAULT_ROUTES.catalogue.fallback, undefined);
+    assert.ok((DEFAULT_ROUTES.catalogue.maxTokens ?? 0) > 0 && (DEFAULT_ROUTES.catalogue.maxTokens ?? 0) <= 16000);
+    assert.ok(TASK_LABELS.catalogue.length > 0);
+    assert.ok(TASK_DESCRIPTIONS.catalogue.includes("Not calibration gated"));
+  });
+
   test("every default and fallback is a curated id, and no effort is set on an entry with no reasoning", () => {
     for (const [task, route] of Object.entries(DEFAULT_ROUTES)) {
       const entry = curatedModel(route.model);

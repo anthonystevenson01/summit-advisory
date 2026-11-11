@@ -29,6 +29,7 @@ const DEFAULTS: Record<RoutingTask, RouteConfig> = {
   "builder-prototype-review": { model: "vendor/large", reasoning: "medium", maxTokens: 3000, fallback: "vendor/medium" },
   "builder-prototype-build": { model: "vendor/other", maxTokens: 12000, fallback: "vendor/medium" },
   "builder-prototype-audit": { model: "vendor/small", maxTokens: 1000, fallback: "vendor/small" },
+  catalogue: { model: "vendor/medium", reasoning: "low", maxTokens: 16000 },
 };
 
 const PROTOTYPE_KEYS = ["builder-prototype-research", "builder-prototype-plan", "builder-prototype-review", "builder-prototype-build", "builder-prototype-audit"];
@@ -39,6 +40,11 @@ describe("parseRoutingKey", () => {
     assert.deepEqual(parseRoutingKey("scoring:icp"), { task: "scoring", tool: "icp" });
     assert.deepEqual(parseRoutingKey("builder-read"), { task: "builder-read" });
     for (const key of PROTOTYPE_KEYS) assert.deepEqual(parseRoutingKey(key), { task: key });
+  });
+
+  test("the catalogue key parses and is never narrowed to a tool", () => {
+    assert.deepEqual(parseRoutingKey("catalogue"), { task: "catalogue" });
+    assert.equal(ROUTING_TASKS[ROUTING_TASKS.length - 1], "catalogue");
   });
 
   test("the old builder-prototype key no longer parses, so a stale override under it is ignored", () => {
@@ -126,5 +132,9 @@ describe("isCalibrationGated", () => {
     assert.equal(isCalibrationGated("builder-read"), false);
     assert.equal(isCalibrationGated("builder-suggest"), false);
     assert.equal(isCalibrationGated("builder-ideas"), false);
+  });
+
+  test("the catalogue key is not gated", () => {
+    assert.equal(isCalibrationGated("catalogue"), false);
   });
 });
