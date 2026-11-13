@@ -116,6 +116,7 @@ export const ROUTING_TASKS = [
   "builder-prototype-review",
   "builder-prototype-build",
   "builder-prototype-audit",
+  "catalogue",
 ] as const;
 
 const ICP: ToolEntry = {

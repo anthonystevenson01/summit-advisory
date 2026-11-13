@@ -1,0 +1,78 @@
+openapi: 3.1.0
+info:
+  title: Sample CRM API
+  version: 1.0.0
+  summary: Written for the catalogue tests.
+tags:
+  - name: Deals
+    description: |
+      Deals and their stages.
+      summary: not this either
+  - name: Leads
+    description: Leads before they are qualified.
+paths:
+  # A comment inside the block.
+  /v1/deals:
+    parameters:
+      - name: X-Trace
+        in: header
+        schema:
+          type: string
+    get:
+      tags:
+        - Deals
+      summary: List deals # the plain form
+      operationId: listDeals
+      responses:
+        '200':
+          description: A page of deals.
+          summary: not an operation
+    post:
+      tags: [Deals, Leads]
+      summary: 'Create a deal'
+      operationId: createDeal
+      responses:
+        '201':
+          description: The deal.
+  '/v1/deals/{id}':
+    get:
+      tags:
+      - "Deals"
+      summary: >-
+        Get one deal,
+        with its   stage history
+      operationId: getDeal
+      responses:
+        '200':
+          description: The deal.
+    delete:
+      tags: [Deals]
+      operationId: deleteDeal
+      description: |
+        Removes the deal.
+        get:
+        summary: not this
+      responses:
+        '204':
+          description: Gone.
+  /v1/files/{id}/content:
+    get:
+      summary: "Download a file's content"
+      operationId: downloadFile
+      responses:
+        '200':
+          description: The bytes.
+  /v1/{id}:
+    patch:
+      summary: Update any record by id
+      operationId: updateRecord
+      responses:
+        '200':
+          description: The record.
+components:
+  schemas:
+    Deal:
+      type: object
+      properties:
+        summary:
+          type: string

@@ -10,7 +10,11 @@
     "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"__tests__/*.test.ts\"",
     "calibrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/calibrate.ts",
     "seed-report": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/seed-report.ts",
-    "process-ask": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/process-ask.ts"
+    "process-ask": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/process-ask.ts",
+    "catalogue:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/catalogue-build.ts",
+    "catalogue:spec-check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/catalogue-spec-check.ts",
+    "catalogue:draft": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/catalogue-draft.ts",
+    "catalogue:mark": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/catalogue-mark.ts"
   },
   "dependencies": {
     "@upstash/qstash": "2.12.1",

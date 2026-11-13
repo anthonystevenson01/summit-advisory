@@ -1,0 +1,45 @@
+{
+  "results": [
+    {
+      "name": "Deals",
+      "group": "CRM",
+      "versions": [
+        { "version": "3", "stage": "STABLE", "requirements": { "marketing": null, "sales": "FREE", "service": "FREE" } },
+        { "version": "4", "stage": "STABLE", "requirements": { "marketing": null, "sales": "FREE", "service": "FREE" } },
+        { "version": "2026-03", "stage": "STABLE", "requirements": { "marketing": null, "sales": "FREE", "service": "STARTER" } },
+        { "version": "2025-09", "stage": "STABLE", "requirements": { "marketing": null, "sales": "FREE", "service": "FREE" } },
+        { "version": "2027-03-beta", "stage": "DEVELOPER_PREVIEW", "requirements": { "marketing": null, "sales": "FREE", "service": "FREE" } }
+      ]
+    },
+    {
+      "name": "Deal Splits",
+      "group": "CRM",
+      "versions": [
+        { "version": "2026-09", "stage": "DEVELOPER_PREVIEW", "requirements": { "marketing": null, "sales": "ENTERPRISE", "service": null } }
+      ]
+    },
+    {
+      "name": "Sequences",
+      "group": "Automation",
+      "versions": [
+        { "version": "2026-03", "stage": "STABLE", "requirements": { "marketing": null, "sales": null, "service": "PROFESSIONAL" } },
+        { "version": "4", "stage": "STABLE", "requirements": { "marketing": null, "sales": "PROFESSIONAL", "service": null } }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "group": "Automation",
+      "versions": [
+        { "version": "3", "stage": "STABLE", "requirements": { "marketing": null, "sales": null, "service": null } },
+        { "version": "2026-03", "stage": "LATEST", "requirements": { "marketing": null, "sales": null, "service": null } }
+      ]
+    },
+    {
+      "name": "Deals",
+      "group": "Automation",
+      "versions": [{ "version": "1", "stage": "STABLE", "requirements": { "marketing": null, "sales": "STARTER", "service": null } }]
+    },
+    { "name": "No versions list", "group": "CRM" },
+    { "group": "CRM", "versions": [] }
+  ]
+}
